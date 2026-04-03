@@ -1,0 +1,27 @@
+# Personal graph content — never commit
+journal/
+summaries/
+
+# Generated output (keep .gitkeep)
+generated/*
+!generated/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+
+# uv
+.python-version
+
+# Test artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# macOS
+.DS_Store
