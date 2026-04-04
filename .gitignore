@@ -6,6 +6,8 @@ summaries/
 generated/*
 !generated/.gitkeep
 
+reports/
+
 # Python
 __pycache__/
 *.py[cod]
