@@ -25,3 +25,5 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+.vscode/
