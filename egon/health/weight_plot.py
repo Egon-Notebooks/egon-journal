@@ -1,5 +1,5 @@
 """
-Weight (BodyMass) report plot.
+Weight (BodyMass) report plot, with optional LeanBodyMass overlay.
 """
 from datetime import date as date_type
 from pathlib import Path
@@ -13,12 +13,14 @@ def plot_weight(
     output_path: Path,
     title: str = "Weight",
     unit: str = "kg",
+    lean_data: list[tuple[date_type, float]] | None = None,
 ) -> None:
     """
     Plot daily mean weight over time and save to *output_path*.
 
-    *data* is a list of (date, value) tuples, already filtered to the desired
-    period and sorted by date.
+    If *lean_data* is provided, lean body mass is overlaid as a second series.
+    *data* and *lean_data* are lists of (date, value) tuples, already filtered
+    to the desired period and sorted by date.
     """
     if not data:
         raise ValueError("No weight data found — nothing to plot.")
@@ -27,8 +29,17 @@ def plot_weight(
 
     fig, ax = plt.subplots(figsize=(14, 4))
 
-    ax.plot(dates, values, color="#4C72B0", linewidth=1.5, alpha=0.9)
+    ax.plot(dates, values, color="#4C72B0", linewidth=1.5, alpha=0.9,
+            label=f"Body mass ({unit})")
     ax.scatter(dates, values, color="#4C72B0", s=18, zorder=3, alpha=0.7)
+
+    if lean_data:
+        lean_dates, lean_values = zip(*lean_data)
+        ax.plot(lean_dates, lean_values, color="#DD8452", linewidth=1.5,
+                alpha=0.9, label=f"Lean body mass ({unit})")
+        ax.scatter(lean_dates, lean_values, color="#DD8452", s=18, zorder=3,
+                   alpha=0.7)
+        ax.legend(frameon=False, fontsize=9)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)
     formatter = mdates.ConciseDateFormatter(locator)
