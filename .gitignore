@@ -6,7 +6,8 @@ summaries/
 generated/*
 !generated/.gitkeep
 
-reports/
+reports/*
+!reports/README.md
 
 # Python
 __pycache__/
@@ -29,3 +30,5 @@ htmlcov/
 .DS_Store
 
 .vscode/
+
+old/
