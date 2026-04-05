@@ -1,6 +1,7 @@
 # egon-journal
 
 ![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue)
+![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
 
 Structured journaling support for the [Egon Notebooks](https://egonnotebooks.com) graph.
 

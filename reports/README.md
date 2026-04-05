@@ -156,6 +156,8 @@ Default output: `./reports/vo2max/<period>.pdf`
 ## Sleep
 
 Plots nightly time asleep (hours) from an Apple Health export as a bar chart with 7h/9h reference lines.
+Sleep quality is strongly associated with mental health symptoms.
+Sleep onset rhythmicity--whether you sleep at the same time every day--has been shown to be associated with depressive symptoms.
 
 ```bash
 uv run egon report-sleep

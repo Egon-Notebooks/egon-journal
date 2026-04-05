@@ -1,4 +1,6 @@
 """Tests for egon.health.sleep and egon.health.sleep_plot."""
+from datetime import date
+
 import pytest
 
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
