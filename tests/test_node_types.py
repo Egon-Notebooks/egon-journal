@@ -1,5 +1,4 @@
 """Tests for egon.node_types.* generators."""
-import re
 from datetime import date
 from pathlib import Path
 

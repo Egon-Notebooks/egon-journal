@@ -1,8 +1,6 @@
 """Tests for egon.linker."""
 from pathlib import Path
 
-import pytest
-
 from egon.linker import inject_wikilinks, load_topics, index_graph
 
 

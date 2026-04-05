@@ -1,5 +1,4 @@
 """Tests for egon.schema.validate()."""
-import pytest
 from datetime import date
 
 from egon.schema import validate, VALID_NODE_TYPES
