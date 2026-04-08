@@ -29,6 +29,10 @@ from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.step_count_plot import plot_step_count
 from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
+from egon.limbic.bigfive import bigfive_by_day
+from egon.limbic.bigfive_plot import plot_bigfive
+from egon.limbic.mbti import mbti_by_day
+from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
 from egon.analytics.word_count import (
     filter_entries,
@@ -460,6 +464,138 @@ def report_wordcloud(
 
     typer.echo(f"Found {len(entries)} journal entries for {label}.")
     plot_wordcloud(entries, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-bigfive")
+def report_bigfive(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files "
+             "(default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
+             "Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/bigfive/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot Big Five personality trait scores from journal entries (requires --extra bigfive)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    if not all_entries:
+        typer.echo(f"No journal entries found in: {resolved_dir}", err=True)
+        raise typer.Exit(1)
+
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Found {len(entries)} journal entries for {label}.")
+    typer.echo("Scoring Big Five traits (this may take a moment on first run) …")
+    data = bigfive_by_day(entries)
+
+    resolved_output = output or Path(f"reports/bigfive/{label}.pdf")
+    title = f"Big Five personality traits — {label}"
+
+    plot_bigfive(data, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-mbti")
+def report_mbti(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files "
+             "(default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
+             "Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/mbti/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot MBTI personality dimension scores from journal entries (requires --extra bigfive)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    if not all_entries:
+        typer.echo(f"No journal entries found in: {resolved_dir}", err=True)
+        raise typer.Exit(1)
+
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Found {len(entries)} journal entries for {label}.")
+    typer.echo("Classifying MBTI type per entry …")
+    data = mbti_by_day(entries)
+
+    resolved_output = output or Path(f"reports/mbti/{label}.pdf")
+    title = f"MBTI personality dimensions — {label}"
+
+    plot_mbti(data, resolved_output, title=title)
     typer.echo(f"Saved: {resolved_output}")
 
 
@@ -910,6 +1046,79 @@ def report_vo2max(
     typer.echo(f"Found {len(data)} days of VO2 max data for {label}.")
     plot_vo2max(data, resolved_output, title=title, unit=unit)
     typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report")
+def report_all(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files "
+             "(default: $EGON_JOURNAL_DIR)",
+    ),
+    xml_path: Optional[Path] = typer.Option(
+        None,
+        "--xml",
+        help="Path to Apple Health export.xml (default: $EGON_APPLE_HEALTH_XML)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
+             "Overrides --period.",
+    ),
+) -> None:
+    """Generate all reports for the given period."""
+    _journal_reports = [
+        ("word-count",  lambda: report_word_count(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+        ("sentiment",   lambda: report_sentiment(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+        ("wordcloud",   lambda: report_wordcloud(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+        ("bigfive",     lambda: report_bigfive(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+        ("mbti",        lambda: report_mbti(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+    ]
+    _health_reports = [
+        ("weight",               lambda: report_weight(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("resting-heart-rate",   lambda: report_resting_heart_rate(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("hrv",                  lambda: report_hrv(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("sleep",                lambda: report_sleep(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("step-count",           lambda: report_step_count(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("vo2max",               lambda: report_vo2max(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+    ]
+
+    period_display = for_period or period
+    typer.echo(f"Generating all reports for: {period_display}\n")
+
+    ok: list[str] = []
+    skipped: list[str] = []
+    failed: list[str] = []
+
+    for name, fn in [*_journal_reports, *_health_reports]:
+        typer.echo(f"[ {name} ]")
+        try:
+            fn()
+            ok.append(name)
+        except typer.Exit:
+            # Sub-command printed its own error and exited — treat as skipped
+            skipped.append(name)
+        except Exception as exc:
+            typer.echo(f"  Error: {exc}", err=True)
+            failed.append(name)
+        typer.echo("")
+
+    # Summary
+    typer.echo("─" * 50)
+    typer.echo(f"Done: {len(ok)} generated, {len(skipped)} skipped, {len(failed)} failed")
+    if ok:
+        typer.echo(f"  Generated : {', '.join(ok)}")
+    if skipped:
+        typer.echo(f"  Skipped   : {', '.join(skipped)}")
+    if failed:
+        typer.echo(f"  Failed    : {', '.join(failed)}")
 
 
 # ---------------------------------------------------------------------------
