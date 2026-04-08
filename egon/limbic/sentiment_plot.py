@@ -9,6 +9,8 @@ import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import numpy as np
 
+from egon.plot_style import apply_style
+
 from egon.analytics.loader import JournalEntry
 from egon.limbic.sentiment import sentiment_by_day
 
@@ -24,6 +26,7 @@ def plot_sentiment(
     Bars are coloured on a red–grey–green gradient based on the VADER
     compound score. The neutral band ([-0.05, +0.05]) is shown in grey.
     """
+    apply_style()
     data = sentiment_by_day(entries)
     if not data:
         raise ValueError("No journal entries found — nothing to plot.")

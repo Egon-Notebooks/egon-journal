@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 
+from egon.plot_style import apply_style
+
 _ONSET_REF_HOUR = 18  # must match sleep.py
 
 
@@ -48,6 +50,7 @@ def plot_sleep(
     if not data:
         raise ValueError("No sleep data found — nothing to plot.")
 
+    apply_style()
     dates, hours = zip(*data)
 
     n_rows = 2 if onset_data else 1
@@ -90,7 +93,7 @@ def plot_sleep(
         ax_onset.axhspan(avg - std, avg + std, color="#C44E52", alpha=0.08,
                          label=f"±1σ  ({_fmt_std(std)})")
 
-        ax_onset.legend(frameon=False, fontsize=9, loc="upper right")
+        ax_onset.legend(frameon=False, loc="upper right")
         ax_onset.yaxis.set_major_formatter(mticker.FuncFormatter(_onset_label))
         ax_onset.invert_yaxis()  # earlier = higher on the chart (healthier)
         ax_onset.set_ylabel("sleep onset")

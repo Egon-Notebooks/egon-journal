@@ -11,6 +11,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+from egon.plot_style import apply_style
+
 
 def plot_hrv(
     data: list[tuple[date_type, float]],
@@ -24,6 +26,7 @@ def plot_hrv(
     if not data:
         raise ValueError("No HRV data found — nothing to plot.")
 
+    apply_style()
     dates, values = zip(*data)
 
     fig, ax = plt.subplots(figsize=(14, 4))

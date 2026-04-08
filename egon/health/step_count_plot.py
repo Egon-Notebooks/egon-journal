@@ -7,6 +7,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+from egon.plot_style import apply_style
+
 _STEPS_10K = 10_000
 
 
@@ -26,6 +28,7 @@ def plot_step_count(
     if not data:
         raise ValueError("No step count data found — nothing to plot.")
 
+    apply_style()
     dates, values = zip(*data)
 
     fig, ax = plt.subplots(figsize=(14, 4))

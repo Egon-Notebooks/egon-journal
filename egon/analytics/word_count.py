@@ -9,6 +9,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+from egon.plot_style import apply_style
+
 from egon.analytics.loader import JournalEntry
 
 
@@ -162,6 +164,7 @@ def plot_word_count(
 
     The file format is inferred from the extension (.pdf, .png, .svg, …).
     """
+    apply_style()
     data = word_counts_by_day(entries)
     if not data:
         raise ValueError("No journal entries found — nothing to plot.")

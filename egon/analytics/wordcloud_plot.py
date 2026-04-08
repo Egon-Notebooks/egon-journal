@@ -7,6 +7,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud, STOPWORDS
 
+from egon.plot_style import apply_style
+
 from egon.analytics.loader import JournalEntry
 
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -36,6 +38,7 @@ def plot_wordcloud(
     """
     Generate a word cloud from all journal entry bodies and save to *output_path*.
     """
+    apply_style()
     if not entries:
         raise ValueError("No journal entries found — nothing to plot.")
 
@@ -55,7 +58,7 @@ def plot_wordcloud(
     fig, ax = plt.subplots(figsize=(14, 7))
     ax.imshow(wc, interpolation="bilinear")
     ax.axis("off")
-    ax.set_title(title, fontsize=14, pad=12)
+    ax.set_title(title, pad=12)
 
     fig.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)

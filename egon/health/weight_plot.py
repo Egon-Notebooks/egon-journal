@@ -8,6 +8,8 @@ from statistics import mean
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+from egon.plot_style import apply_style
+
 
 def plot_weight(
     data: list[tuple[date_type, float]],
@@ -32,6 +34,7 @@ def plot_weight(
     if not data:
         raise ValueError("No weight data found — nothing to plot.")
 
+    apply_style()
     dates, values = zip(*data)
     avg = mean(values)
 
@@ -61,7 +64,7 @@ def plot_weight(
                        linestyle=":", alpha=0.7,
                        label=f"lean goal {target_lean_body_mass:.1f} {unit}")
 
-    ax.legend(frameon=False, fontsize=9)
+    ax.legend(frameon=False)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)
     formatter = mdates.ConciseDateFormatter(locator)
