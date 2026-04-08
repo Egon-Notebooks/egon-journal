@@ -1072,6 +1072,11 @@ def report_all(
         help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
              "Overrides --period.",
     ),
+    full: bool = typer.Option(
+        False,
+        "--full",
+        help="Also compile all figures into a single combined PDF report.",
+    ),
 ) -> None:
     """Generate all reports for the given period."""
     _journal_reports = [
@@ -1119,6 +1124,63 @@ def report_all(
         typer.echo(f"  Skipped   : {', '.join(skipped)}")
     if failed:
         typer.echo(f"  Failed    : {', '.join(failed)}")
+
+    # ------------------------------------------------------------------
+    # Full combined PDF report
+    # ------------------------------------------------------------------
+    if not full:
+        return
+
+    typer.echo("\n[ full-report ]")
+
+    # Resolve period bounds and label (needed to load filtered entries).
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"  Error resolving period: {exc}", err=True)
+        return
+
+    # Load and filter journal entries.
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    entries: list = []
+    if resolved_dir.is_dir():
+        from egon.analytics.word_count import filter_entries
+        all_entries = load_journal_entries(resolved_dir)
+        entries = filter_entries(all_entries, start, end)
+
+    # Resolve Apple Health XML.
+    resolved_xml = _resolve_apple_health_xml(xml_path)
+
+    # Target weight lines from environment.
+    def _parse_target(env_key: str) -> float | None:
+        raw = os.getenv(env_key, "").strip()
+        try:
+            return float(raw) if raw else None
+        except ValueError:
+            return None
+
+    from egon.full_report import generate_full_report
+
+    full_output = Path(f"reports/full-report/{label}.pdf")
+    typer.echo(f"  Compiling full report → {full_output} …")
+    try:
+        generate_full_report(
+            journal_entries=entries,
+            xml_path=resolved_xml,
+            start=start,
+            end=end,
+            label=label,
+            target_body_mass=_parse_target("EGON_TARGET_BODY_MASS"),
+            target_lean_body_mass=_parse_target("EGON_TARGET_LEAN_BODY_MASS"),
+            output_path=full_output,
+        )
+        typer.echo(f"  Saved: {full_output}")
+    except Exception as exc:
+        typer.echo(f"  Error generating full report: {exc}", err=True)
 
 
 # ---------------------------------------------------------------------------
