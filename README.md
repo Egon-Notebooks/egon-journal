@@ -29,3 +29,44 @@ cp .env.example .env
 # Edit .env and set EGON_JOURNAL_DIR, EGON_SUMMARIES_DIR, EGON_GRAPH_DIR
 ```
 
+---
+
+## Reports
+
+Available reports: word count, sentiment, word cloud, weight, resting heart rate, HRV, sleep.
+
+See [reports/README.md](reports/README.md) for full usage instructions.
+
+---
+
+## Environment variables
+
+Set these in `.env` (copy from `.env.example`):
+
+| Variable             | Purpose                                               |
+|----------------------|-------------------------------------------------------|
+| `EGON_JOURNAL_DIR`   | Where `new-entry` and `report-*` commands read/write  |
+| `EGON_SUMMARIES_DIR` | Where `new-summary` writes                            |
+| `EGON_GRAPH_DIR`     | Root of your assembled graph (used by `index`)        |
+
+All variables are optional.
+Commands fall back to `./generated/` if unset.
+
+---
+
+## Development
+
+```bash
+# Install with dev dependencies (pytest, ruff)
+uv sync --extra dev
+
+# Run tests
+uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov=egon --cov-report=term-missing
+
+# Lint
+uv run ruff check egon/ tests/
+uv run ruff format --check egon/ tests/
+```
