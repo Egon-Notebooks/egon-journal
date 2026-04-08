@@ -28,6 +28,12 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.4",
 ]
+bigfive = [
+    "transformers>=4.40",
+    "torch>=2.0",
+    "sentencepiece",
+    "protobuf",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
