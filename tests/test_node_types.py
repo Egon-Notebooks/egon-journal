@@ -6,23 +6,23 @@ import pytest
 import yaml
 
 from egon.node_types.journal_entry import (
+    generate_journal_entry,
     journal_entry_filename,
     make_journal_entry,
-    generate_journal_entry,
 )
-from egon.node_types.prompt import make_prompt_node, prompt_filename, generate_prompt
 from egon.node_types.program import (
-    make_program_index,
-    make_program_day,
     generate_program,
+    make_program_day,
+    make_program_index,
 )
+from egon.node_types.prompt import generate_prompt, make_prompt_node, prompt_filename
 from egon.node_types.summary import (
-    make_weekly_summary,
-    make_monthly_summary,
-    weekly_summary_filename,
-    monthly_summary_filename,
-    generate_weekly_summary,
     generate_monthly_summary,
+    generate_weekly_summary,
+    make_monthly_summary,
+    make_weekly_summary,
+    monthly_summary_filename,
+    weekly_summary_filename,
 )
 from egon.schema import validate
 

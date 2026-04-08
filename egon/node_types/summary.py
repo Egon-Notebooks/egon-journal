@@ -5,7 +5,8 @@ Filename conventions:
   - Weekly:  Weekly Summary — YYYY-WNN.md
   - Monthly: Monthly Summary — YYYY-MM.md
 """
-from datetime import date as date_type, timedelta
+from datetime import date as date_type
+from datetime import timedelta
 from pathlib import Path
 
 from egon.renderer import write_node

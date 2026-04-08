@@ -1,18 +1,15 @@
 """
 Sentiment-by-day plot for the Limbic engine.
 """
-from datetime import date as date_type
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
-
-from egon.plot_style import apply_style
 
 from egon.analytics.loader import JournalEntry
 from egon.limbic.sentiment import sentiment_by_day
+from egon.plot_style import apply_style
 
 
 def plot_sentiment(

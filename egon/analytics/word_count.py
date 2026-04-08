@@ -6,13 +6,11 @@ import re
 from datetime import date as date_type, timedelta
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-from egon.plot_style import apply_style
+import matplotlib.pyplot as plt
 
 from egon.analytics.loader import JournalEntry
-
+from egon.plot_style import apply_style
 
 # HTML/Markdown comment pattern (<!-- ... -->)
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)

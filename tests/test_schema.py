@@ -1,8 +1,7 @@
 """Tests for egon.schema.validate()."""
 from datetime import date
 
-from egon.schema import validate, VALID_NODE_TYPES
-
+from egon.schema import VALID_NODE_TYPES, validate
 
 # ---------------------------------------------------------------------------
 # Helpers

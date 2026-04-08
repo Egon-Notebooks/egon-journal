@@ -14,6 +14,13 @@ import yaml
 from dotenv import load_dotenv
 
 from egon.analytics.loader import load_journal_entries
+from egon.analytics.word_count import (
+    filter_entries,
+    parse_period_value,
+    period_bounds,
+    period_label,
+    plot_word_count,
+)
 from egon.analytics.wordcloud_plot import plot_wordcloud
 from egon.health.apple_health import (
     daily_mean,
@@ -23,9 +30,9 @@ from egon.health.apple_health import (
     load_records,
 )
 from egon.health.hrv_plot import plot_hrv
+from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
 from egon.health.sleep_plot import plot_sleep
-from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.step_count_plot import plot_step_count
 from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
@@ -34,21 +41,16 @@ from egon.limbic.bigfive_plot import plot_bigfive
 from egon.limbic.mbti import mbti_by_day
 from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
-from egon.analytics.word_count import (
-    filter_entries,
-    parse_period_value,
-    period_bounds,
-    period_label,
-    plot_word_count,
-)
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.node_types.journal_entry import generate_journal_entry
-from egon.node_types.prompt import generate_prompts_from_dir
 from egon.node_types.program import (
     generate_program as _generate_program,
+)
+from egon.node_types.program import (
     generate_programs_from_dir,
     load_program_yaml,
 )
+from egon.node_types.prompt import generate_prompts_from_dir
 from egon.node_types.summary import generate_monthly_summary, generate_weekly_summary
 from egon.schema import validate as _validate_frontmatter
 
@@ -1079,20 +1081,22 @@ def report_all(
     ),
 ) -> None:
     """Generate all reports for the given period."""
+    _kw = dict(period=period, for_period=for_period, output=None)
     _journal_reports = [
-        ("word-count",  lambda: report_word_count(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
-        ("sentiment",   lambda: report_sentiment(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
-        ("wordcloud",   lambda: report_wordcloud(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
-        ("bigfive",     lambda: report_bigfive(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
-        ("mbti",        lambda: report_mbti(journal_dir=journal_dir, period=period, for_period=for_period, output=None)),
+        ("word-count", lambda: report_word_count(journal_dir=journal_dir, **_kw)),
+        ("sentiment",  lambda: report_sentiment(journal_dir=journal_dir, **_kw)),
+        ("wordcloud",  lambda: report_wordcloud(journal_dir=journal_dir, **_kw)),
+        ("bigfive",    lambda: report_bigfive(journal_dir=journal_dir, **_kw)),
+        ("mbti",       lambda: report_mbti(journal_dir=journal_dir, **_kw)),
     ]
+    _hkw = dict(period=period, for_period=for_period, output=None)
     _health_reports = [
-        ("weight",               lambda: report_weight(xml_path=xml_path, period=period, for_period=for_period, output=None)),
-        ("resting-heart-rate",   lambda: report_resting_heart_rate(xml_path=xml_path, period=period, for_period=for_period, output=None)),
-        ("hrv",                  lambda: report_hrv(xml_path=xml_path, period=period, for_period=for_period, output=None)),
-        ("sleep",                lambda: report_sleep(xml_path=xml_path, period=period, for_period=for_period, output=None)),
-        ("step-count",           lambda: report_step_count(xml_path=xml_path, period=period, for_period=for_period, output=None)),
-        ("vo2max",               lambda: report_vo2max(xml_path=xml_path, period=period, for_period=for_period, output=None)),
+        ("weight",             lambda: report_weight(xml_path=xml_path, **_hkw)),
+        ("resting-heart-rate", lambda: report_resting_heart_rate(xml_path=xml_path, **_hkw)),
+        ("hrv",                lambda: report_hrv(xml_path=xml_path, **_hkw)),
+        ("sleep",              lambda: report_sleep(xml_path=xml_path, **_hkw)),
+        ("step-count",         lambda: report_step_count(xml_path=xml_path, **_hkw)),
+        ("vo2max",             lambda: report_vo2max(xml_path=xml_path, **_hkw)),
     ]
 
     period_display = for_period or period

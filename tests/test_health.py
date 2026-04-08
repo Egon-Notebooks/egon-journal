@@ -17,7 +17,6 @@ from egon.health.step_count_plot import plot_step_count
 from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
 
-
 # ---------------------------------------------------------------------------
 # Minimal Apple Health XML fixture
 # ---------------------------------------------------------------------------
@@ -38,12 +37,14 @@ def _make_export_xml(records: list[dict]) -> str:
     )
 
 
+_BM = "HKQuantityTypeIdentifierBodyMass"
+_RHR = "HKQuantityTypeIdentifierRestingHeartRate"
 WEIGHT_RECORDS = [
-    {"type": "HKQuantityTypeIdentifierBodyMass", "value": "80.5", "unit": "kg", "date": "2026-04-01"},
-    {"type": "HKQuantityTypeIdentifierBodyMass", "value": "80.2", "unit": "kg", "date": "2026-04-01"},  # second reading same day
-    {"type": "HKQuantityTypeIdentifierBodyMass", "value": "79.8", "unit": "kg", "date": "2026-04-02"},
-    {"type": "HKQuantityTypeIdentifierBodyMass", "value": "79.5", "unit": "kg", "date": "2026-04-03"},
-    {"type": "HKQuantityTypeIdentifierRestingHeartRate", "value": "58", "unit": "count/min", "date": "2026-04-01"},
+    {"type": _BM, "value": "80.5", "unit": "kg", "date": "2026-04-01"},
+    {"type": _BM, "value": "80.2", "unit": "kg", "date": "2026-04-01"},  # second reading
+    {"type": _BM, "value": "79.8", "unit": "kg", "date": "2026-04-02"},
+    {"type": _BM, "value": "79.5", "unit": "kg", "date": "2026-04-03"},
+    {"type": _RHR, "value": "58", "unit": "count/min", "date": "2026-04-01"},
 ]
 
 
@@ -83,7 +84,7 @@ class TestLoadRecords:
 
     def test_skips_non_numeric_values(self, tmp_path):
         xml = _make_export_xml([
-            {"type": "HKQuantityTypeIdentifierBodyMass", "value": "N/A", "unit": "kg", "date": "2026-04-01"},
+            {"type": _BM, "value": "N/A", "unit": "kg", "date": "2026-04-01"},
         ])
         path = tmp_path / "export.xml"
         path.write_text(xml)
@@ -115,9 +116,10 @@ class TestDailyAggregation:
         assert dates == sorted(dates)
 
     def test_daily_sum(self, tmp_path):
+        _SC = "HKQuantityTypeIdentifierStepCount"
         xml = _make_export_xml([
-            {"type": "HKQuantityTypeIdentifierStepCount", "value": "3000", "unit": "count", "date": "2026-04-01"},
-            {"type": "HKQuantityTypeIdentifierStepCount", "value": "2000", "unit": "count", "date": "2026-04-01"},
+            {"type": _SC, "value": "3000", "unit": "count", "date": "2026-04-01"},
+            {"type": _SC, "value": "2000", "unit": "count", "date": "2026-04-01"},
         ])
         path = tmp_path / "export.xml"
         path.write_text(xml)

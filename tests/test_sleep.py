@@ -57,7 +57,7 @@ OVERLAPPING_SOURCES_NIGHT = [
     {"value": _CORE,   "start": "2026-04-06 23:00:00", "end": "2026-04-07 01:00:00"},  # 2h
     {"value": _REM,    "start": "2026-04-07 01:00:00", "end": "2026-04-07 05:00:00"},  # 4h
     {"value": _DEEP,   "start": "2026-04-07 05:00:00", "end": "2026-04-07 07:00:00"},  # 2h
-    {"value": _ASLEEP, "start": "2026-04-06 23:00:00", "end": "2026-04-07 06:30:00"},  # 7.5h overlap
+    {"value": _ASLEEP, "start": "2026-04-06 23:00:00", "end": "2026-04-07 06:30:00"},  # overlap
 ]  # merged union: 23:00–07:00 = 8h
 
 

@@ -5,12 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pathlib import Path
-
 from egon.analytics.loader import JournalEntry
 from egon.limbic.bigfive import BigFiveScores, bigfive_by_day, score_text
 from egon.limbic.bigfive_plot import plot_bigfive
-
 
 # ---------------------------------------------------------------------------
 # BigFiveScores

@@ -9,7 +9,6 @@ from egon.analytics.loader import JournalEntry
 from egon.limbic.mbti import MBTIScores, _type_to_scores, mbti_by_day, score_text
 from egon.limbic.mbti_plot import plot_mbti
 
-
 # ---------------------------------------------------------------------------
 # _type_to_scores
 # ---------------------------------------------------------------------------
