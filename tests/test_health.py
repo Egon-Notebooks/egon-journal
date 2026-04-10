@@ -1,4 +1,5 @@
 """Tests for egon.health.apple_health, weight_plot, and step_count_plot."""
+
 from datetime import date
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from egon.health.weight_plot import plot_weight
 # Minimal Apple Health XML fixture
 # ---------------------------------------------------------------------------
 
+
 def _make_export_xml(records: list[dict]) -> str:
     """Build a minimal export.xml string from a list of record attribute dicts."""
     record_lines = "\n".join(
@@ -31,7 +33,7 @@ def _make_export_xml(records: list[dict]) -> str:
     )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        "<HealthData locale=\"en_GB\">\n"
+        '<HealthData locale="en_GB">\n'
         f"{record_lines}\n"
         "</HealthData>\n"
     )
@@ -59,6 +61,7 @@ def export_xml(tmp_path) -> Path:
 # load_records
 # ---------------------------------------------------------------------------
 
+
 class TestLoadRecords:
     def test_strips_prefix(self, export_xml):
         records = load_records(export_xml)
@@ -83,9 +86,11 @@ class TestLoadRecords:
         assert "kg" in units
 
     def test_skips_non_numeric_values(self, tmp_path):
-        xml = _make_export_xml([
-            {"type": _BM, "value": "N/A", "unit": "kg", "date": "2026-04-01"},
-        ])
+        xml = _make_export_xml(
+            [
+                {"type": _BM, "value": "N/A", "unit": "kg", "date": "2026-04-01"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         records = load_records(path)
@@ -95,6 +100,7 @@ class TestLoadRecords:
 # ---------------------------------------------------------------------------
 # daily_mean / daily_sum
 # ---------------------------------------------------------------------------
+
 
 class TestDailyAggregation:
     def test_daily_mean_averages_multiple_readings(self, export_xml):
@@ -117,10 +123,12 @@ class TestDailyAggregation:
 
     def test_daily_sum(self, tmp_path):
         _SC = "HKQuantityTypeIdentifierStepCount"
-        xml = _make_export_xml([
-            {"type": _SC, "value": "3000", "unit": "count", "date": "2026-04-01"},
-            {"type": _SC, "value": "2000", "unit": "count", "date": "2026-04-01"},
-        ])
+        xml = _make_export_xml(
+            [
+                {"type": _SC, "value": "3000", "unit": "count", "date": "2026-04-01"},
+                {"type": _SC, "value": "2000", "unit": "count", "date": "2026-04-01"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         records = load_records(path)
@@ -131,6 +139,7 @@ class TestDailyAggregation:
 # ---------------------------------------------------------------------------
 # filter_by_date
 # ---------------------------------------------------------------------------
+
 
 class TestFilterByDate:
     def test_inclusive_bounds(self):
@@ -147,6 +156,7 @@ class TestFilterByDate:
 # infer_unit
 # ---------------------------------------------------------------------------
 
+
 class TestInferUnit:
     def test_returns_most_common_unit(self, export_xml):
         records = load_records(export_xml)
@@ -159,6 +169,7 @@ class TestInferUnit:
 # ---------------------------------------------------------------------------
 # plot_weight
 # ---------------------------------------------------------------------------
+
 
 class TestPlotHrv:
     DATA = [(date(2026, 4, d), 40.0 + d * 0.5) for d in range(1, 8)]
@@ -230,8 +241,13 @@ class TestPlotWeight:
 
     def test_target_lines(self, tmp_path):
         out = tmp_path / "weight_targets.pdf"
-        plot_weight(self.DATA, out, lean_data=self.LEAN_DATA,
-                    target_body_mass=75.0, target_lean_body_mass=65.0)
+        plot_weight(
+            self.DATA,
+            out,
+            lean_data=self.LEAN_DATA,
+            target_body_mass=75.0,
+            target_lean_body_mass=65.0,
+        )
         assert out.exists()
         assert out.stat().st_size > 0
 

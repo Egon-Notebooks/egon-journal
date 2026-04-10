@@ -1,4 +1,5 @@
 """Tests for egon.limbic.sentiment and egon.limbic.sentiment_plot."""
+
 from datetime import date
 from pathlib import Path
 

@@ -1,6 +1,7 @@
 """
 Word cloud plot for journal entries.
 """
+
 import re
 from pathlib import Path
 
@@ -14,12 +15,51 @@ _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
 # Common Logseq/Markdown structural tokens that add no meaning
 _EXTRA_STOPWORDS = {
-    "will", "one", "also", "get", "got", "go", "went", "day", "time",
-    "today", "yesterday", "week", "bit", "felt", "feel", "feeling",
-    "think", "thinking", "thought", "know", "really", "quite", "much",
-    "still", "like", "just", "little", "lot", "things", "thing",
-    "back", "going", "way", "good", "made", "done", "said", "want",
-    "need", "make", "see", "look", "come", "came", "something",
+    "will",
+    "one",
+    "also",
+    "get",
+    "got",
+    "go",
+    "went",
+    "day",
+    "time",
+    "today",
+    "yesterday",
+    "week",
+    "bit",
+    "felt",
+    "feel",
+    "feeling",
+    "think",
+    "thinking",
+    "thought",
+    "know",
+    "really",
+    "quite",
+    "much",
+    "still",
+    "like",
+    "just",
+    "little",
+    "lot",
+    "things",
+    "thing",
+    "back",
+    "going",
+    "way",
+    "good",
+    "made",
+    "done",
+    "said",
+    "want",
+    "need",
+    "make",
+    "see",
+    "look",
+    "come",
+    "came",
+    "something",
 }
 
 

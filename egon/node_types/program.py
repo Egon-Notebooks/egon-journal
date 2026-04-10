@@ -27,6 +27,7 @@ YAML source schema (content/programs/*.yaml):
       - day: 2
         …
 """
+
 from datetime import date as date_type
 from pathlib import Path
 

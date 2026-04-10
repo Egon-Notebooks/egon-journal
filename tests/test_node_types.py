@@ -1,4 +1,5 @@
 """Tests for egon.node_types.* generators."""
+
 from datetime import date
 from pathlib import Path
 
@@ -33,6 +34,7 @@ EM = "\u2014"  # em dash
 # Shared helpers
 # ---------------------------------------------------------------------------
 
+
 def _parse(content: str) -> tuple[dict, str]:
     """Split rendered Markdown into (frontmatter_dict, body_str)."""
     assert content.startswith("---"), "Node must start with '---'"
@@ -44,6 +46,7 @@ def _parse(content: str) -> tuple[dict, str]:
 # ---------------------------------------------------------------------------
 # Journal entry
 # ---------------------------------------------------------------------------
+
 
 class TestJournalEntry:
     REF = date(2026, 4, 3)
@@ -136,6 +139,7 @@ class TestPromptNode:
     def test_generate_from_real_yaml(self, tmp_path):
         """Smoke test: generate from the actual YAML files in content/prompts/."""
         from egon.node_types.prompt import generate_prompts_from_dir
+
         content_dir = Path(__file__).parent.parent / "content" / "prompts"
         if not content_dir.exists():
             pytest.skip("content/prompts not found")
@@ -250,6 +254,7 @@ class TestProgramNode:
     def test_generate_from_real_yaml(self, tmp_path):
         """Smoke test: generate from the actual 14-day sleep YAML."""
         from egon.node_types.program import generate_programs_from_dir
+
         content_dir = Path(__file__).parent.parent / "content" / "programs"
         if not content_dir.exists():
             pytest.skip("content/programs not found")
@@ -265,6 +270,7 @@ class TestProgramNode:
 # ---------------------------------------------------------------------------
 # Summary node
 # ---------------------------------------------------------------------------
+
 
 class TestWeeklySummary:
     REF = date(2026, 4, 3)  # ISO week 14

@@ -1,6 +1,7 @@
 """
 Word count by day — analytics and plot.
 """
+
 import math
 import re
 from datetime import date as date_type
@@ -34,6 +35,7 @@ def word_counts_by_day(entries: list[JournalEntry]) -> list[tuple[date_type, int
 # ---------------------------------------------------------------------------
 # Period helpers
 # ---------------------------------------------------------------------------
+
 
 def period_bounds(period: str, ref: date_type) -> tuple[date_type, date_type]:
     """
@@ -92,9 +94,9 @@ def period_label(period: str, ref: date_type) -> str:
             raise ValueError(f"Unknown period '{period}'")
 
 
-_YEAR_RE    = re.compile(r"^(\d{4})$")
-_MONTH_RE   = re.compile(r"^(\d{4})-(\d{2})$")
-_WEEK_RE    = re.compile(r"^(\d{4})-W(\d{2})$")
+_YEAR_RE = re.compile(r"^(\d{4})$")
+_MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
+_WEEK_RE = re.compile(r"^(\d{4})-W(\d{2})$")
 _QUARTER_RE = re.compile(r"^(\d{4})-Q([1-4])$")
 
 
@@ -139,8 +141,7 @@ def parse_period_value(value: str) -> tuple[date_type, date_type, str]:
         return start, end, value
 
     raise ValueError(
-        f"Cannot parse period value '{value}'. "
-        "Expected: YYYY, YYYY-MM, YYYY-WNN, or YYYY-QN"
+        f"Cannot parse period value '{value}'. Expected: YYYY, YYYY-MM, YYYY-WNN, or YYYY-QN"
     )
 
 
@@ -154,6 +155,7 @@ def filter_entries(
 # ---------------------------------------------------------------------------
 # Plot
 # ---------------------------------------------------------------------------
+
 
 def plot_word_count(
     entries: list[JournalEntry],

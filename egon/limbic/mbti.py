@@ -14,6 +14,7 @@ Requires the `bigfive` optional dependency group (same venv as Big Five):
   bash scripts/setup_bigfive.sh   # Intel Mac
   uv sync --extra bigfive         # Linux, Apple Silicon, Windows
 """
+
 import json
 import platform
 import subprocess
@@ -49,6 +50,7 @@ class MBTIScores(NamedTuple):
       tf: T=1, F=0
       jp: J=1, P=0
     """
+
     ei: int
     ns: int
     tf: int
@@ -71,9 +73,7 @@ def _type_to_scores(mbti_type: str) -> MBTIScores:
 
 def _use_subprocess_venv() -> bool:
     return (
-        _BIGFIVE_VENV.is_dir()
-        and platform.system() == "Darwin"
-        and platform.machine() == "x86_64"
+        _BIGFIVE_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
     )
 
 
@@ -103,9 +103,7 @@ def _score_batch_via_subprocess(texts: list[str]) -> list[MBTIScores]:
             check=True,
         )
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"MBTI subprocess failed:\n{exc.stderr}"
-        ) from exc
+        raise RuntimeError(f"MBTI subprocess failed:\n{exc.stderr}") from exc
     return [_type_to_scores(label) for label in json.loads(result.stdout.strip())]
 
 
@@ -122,8 +120,7 @@ def _load_pipeline() -> None:
             "On Intel Mac: bash scripts/setup_bigfive.sh"
         ) from exc
 
-    print(f"Loading MBTI model '{_MODEL_ID}' (first run downloads ~45 MB) …",
-          file=sys.stderr)
+    print(f"Loading MBTI model '{_MODEL_ID}' (first run downloads ~45 MB) …", file=sys.stderr)
     _pipeline = pipeline(
         "text-classification",
         model=_MODEL_ID,
@@ -189,8 +186,6 @@ def mbti_by_day(
     for day in sorted(by_date):
         scores_list = by_date[day]
         n = len(scores_list)
-        averaged = MBTIScores(
-            *(sum(s[i] for s in scores_list) / n for i in range(4))
-        )
+        averaged = MBTIScores(*(sum(s[i] for s in scores_list) / n for i in range(4)))
         result.append((day, averaged))
     return result

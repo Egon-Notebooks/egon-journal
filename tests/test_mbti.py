@@ -1,4 +1,5 @@
 """Tests for egon.limbic.mbti and egon.limbic.mbti_plot."""
+
 from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -12,6 +13,7 @@ from egon.limbic.mbti_plot import plot_mbti
 # ---------------------------------------------------------------------------
 # _type_to_scores
 # ---------------------------------------------------------------------------
+
 
 class TestTypeToScores:
     def test_intj(self):
@@ -41,6 +43,7 @@ class TestTypeToScores:
 # score_text
 # ---------------------------------------------------------------------------
 
+
 class TestScoreText:
     def test_empty_text_returns_zeros(self):
         assert score_text("") == MBTIScores(0, 0, 0, 0)
@@ -65,6 +68,7 @@ class TestScoreText:
 # mbti_by_day
 # ---------------------------------------------------------------------------
 
+
 class TestMbtiByDay:
     def _entries(self, dates_texts):
         return [JournalEntry(date=d, body=t, path=Path("t.md")) for d, t in dates_texts]
@@ -76,18 +80,22 @@ class TestMbtiByDay:
 
     def test_multiple_entries_same_day_averaged(self):
         # Two empty entries → still zeros
-        entries = self._entries([
-            (date(2026, 4, 1), ""),
-            (date(2026, 4, 1), ""),
-        ])
+        entries = self._entries(
+            [
+                (date(2026, 4, 1), ""),
+                (date(2026, 4, 1), ""),
+            ]
+        )
         result = mbti_by_day(entries)
         assert len(result) == 1
 
     def test_sorted_by_date(self):
-        entries = self._entries([
-            (date(2026, 4, 3), ""),
-            (date(2026, 4, 1), ""),
-        ])
+        entries = self._entries(
+            [
+                (date(2026, 4, 3), ""),
+                (date(2026, 4, 1), ""),
+            ]
+        )
         dates = [d for d, _ in mbti_by_day(entries)]
         assert dates == sorted(dates)
 
@@ -96,11 +104,9 @@ class TestMbtiByDay:
 # plot_mbti
 # ---------------------------------------------------------------------------
 
+
 class TestPlotMbti:
-    DATA = [
-        (date(2026, 4, d), MBTIScores(ei=d % 2, ns=1, tf=0, jp=1))
-        for d in range(1, 8)
-    ]
+    DATA = [(date(2026, 4, d), MBTIScores(ei=d % 2, ns=1, tf=0, jp=1)) for d in range(1, 8)]
 
     def test_saves_pdf(self, tmp_path):
         out = tmp_path / "mbti.pdf"

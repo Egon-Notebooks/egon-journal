@@ -13,6 +13,7 @@ No network calls. No third-party dependencies beyond the standard library.
 All date handling uses date objects (not datetime) so records align naturally
 with journal entries.
 """
+
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date as date_type
@@ -35,7 +36,7 @@ class HealthRecord(NamedTuple):
 def _strip_prefix(type_str: str) -> str:
     for prefix in (_QUANTITY_PREFIX, _CATEGORY_PREFIX):
         if type_str.startswith(prefix):
-            return type_str[len(prefix):]
+            return type_str[len(prefix) :]
     return type_str
 
 

@@ -22,6 +22,7 @@ to it via subprocess so the main project venv is unaffected.
 
 The model is downloaded on first use (~270 MB) and cached at ~/.cache/huggingface/.
 """
+
 import json
 import platform
 import subprocess
@@ -66,9 +67,7 @@ class BigFiveScores(NamedTuple):
 def _use_subprocess_venv() -> bool:
     """True when we should delegate to the .venv-bigfive subprocess venv."""
     return (
-        _BIGFIVE_VENV.is_dir()
-        and platform.system() == "Darwin"
-        and platform.machine() == "x86_64"
+        _BIGFIVE_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
     )
 
 
@@ -106,9 +105,7 @@ def _score_batch_via_subprocess(texts: list[str]) -> list[BigFiveScores]:
             check=True,
         )
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"Big Five subprocess failed:\n{exc.stderr}"
-        ) from exc
+        raise RuntimeError(f"Big Five subprocess failed:\n{exc.stderr}") from exc
     return [BigFiveScores(*scores) for scores in json.loads(result.stdout.strip())]
 
 
@@ -127,8 +124,7 @@ def _load_model() -> None:
 
     import torch  # noqa: F401 — verify torch is available too
 
-    print(f"Loading Big Five model '{_MODEL_ID}' (first run downloads ~270 MB) …",
-          file=sys.stderr)
+    print(f"Loading Big Five model '{_MODEL_ID}' (first run downloads ~270 MB) …", file=sys.stderr)
     _tokenizer = AutoTokenizer.from_pretrained(_MODEL_ID)
     _model = AutoModelForSequenceClassification.from_pretrained(_MODEL_ID)
     _model.eval()
@@ -205,8 +201,6 @@ def bigfive_by_day(
     for day in sorted(by_date):
         scores_list = by_date[day]
         n = len(scores_list)
-        averaged = BigFiveScores(
-            *(sum(s[i] for s in scores_list) / n for i in range(5))
-        )
+        averaged = BigFiveScores(*(sum(s[i] for s in scores_list) / n for i in range(5)))
         result.append((day, averaged))
     return result

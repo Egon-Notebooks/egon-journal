@@ -1,4 +1,5 @@
 """Tests for egon.schema.validate()."""
+
 from datetime import date
 
 from egon.schema import VALID_NODE_TYPES, validate
@@ -6,6 +7,7 @@ from egon.schema import VALID_NODE_TYPES, validate
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _base(type_: str, **overrides) -> dict:
     """Return a minimal valid universal frontmatter dict for *type_*."""
@@ -53,6 +55,7 @@ def _summary(period="week", **kw) -> dict:
 # Universal field tests
 # ---------------------------------------------------------------------------
 
+
 class TestUniversalFields:
     def test_valid_journal_returns_no_errors(self):
         assert validate(_journal()) == []
@@ -95,8 +98,13 @@ class TestUniversalFields:
     def test_all_valid_types_accepted(self):
         for node_type in VALID_NODE_TYPES:
             # Build a valid fm for each type without type-specific extras
-            fm = {"title": "T", "date": date(2026, 1, 1), "type": node_type,
-                  "tags": [], "egon_version": "1"}
+            fm = {
+                "title": "T",
+                "date": date(2026, 1, 1),
+                "type": node_type,
+                "tags": [],
+                "egon_version": "1",
+            }
             errors = validate(fm)
             # Should not report an "Invalid type" error
             assert not any("Invalid type" in e for e in errors)
@@ -128,6 +136,7 @@ class TestUniversalFields:
 # ---------------------------------------------------------------------------
 # Type-specific field tests
 # ---------------------------------------------------------------------------
+
 
 class TestPromptNode:
     def test_valid(self):

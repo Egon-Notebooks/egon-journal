@@ -1,6 +1,7 @@
 """
 Resting heart rate report plot.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
@@ -34,12 +35,23 @@ def plot_resting_heart_rate(
 
     ax.plot(dates, values, color="#C44E52", linewidth=1.5, alpha=0.9)
     ax.scatter(dates, values, color="#C44E52", s=18, zorder=3, alpha=0.7)
-    ax.axhline(avg, color="#C44E52", linewidth=0.9, linestyle="--", alpha=0.5,
-               label=f"avg {avg:.0f} {unit}")
+    ax.axhline(
+        avg,
+        color="#C44E52",
+        linewidth=0.9,
+        linestyle="--",
+        alpha=0.5,
+        label=f"avg {avg:.0f} {unit}",
+    )
     if target_resting_heart_rate is not None:
-        ax.axhline(target_resting_heart_rate, color="#C44E52", linewidth=0.9,
-                   linestyle=":", alpha=0.7,
-                   label=f"goal {target_resting_heart_rate:.0f} {unit}")
+        ax.axhline(
+            target_resting_heart_rate,
+            color="#C44E52",
+            linewidth=0.9,
+            linestyle=":",
+            alpha=0.7,
+            label=f"goal {target_resting_heart_rate:.0f} {unit}",
+        )
     ax.legend(frameon=False)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)

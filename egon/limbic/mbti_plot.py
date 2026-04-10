@@ -6,6 +6,7 @@ Each subplot shows the daily binary dimension score (0 or 1) as a scatter chart.
 A dashed average line shows the proportion of days leaning toward each pole.
 To the right of each subplot the dominant pole letter and proportion are annotated.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
@@ -43,15 +44,14 @@ def plot_mbti(
     dates, scores = zip(*data)
 
     fig, axes = plt.subplots(
-        4, 1,
+        4,
+        1,
         figsize=(14, 11),
         sharex=True,
         layout="constrained",
     )
 
-    for i, (ax, (pos, neg, label), colour) in enumerate(
-        zip(axes, DIMENSIONS, _COLOURS)
-    ):
+    for i, (ax, (pos, neg, label), colour) in enumerate(zip(axes, DIMENSIONS, _COLOURS)):
         values = [s[i] for s in scores]
         avg = mean(values)
         dominant = pos if avg >= 0.5 else neg

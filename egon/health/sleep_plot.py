@@ -4,6 +4,7 @@ Sleep report plot — time asleep per night with optional sleep onset subplot.
 Sleep onset regularity is a strong predictor of mental health: irregular
 bedtimes are associated with depression, anxiety, and poor mood.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean, stdev
@@ -55,7 +56,8 @@ def plot_sleep(
 
     n_rows = 2 if onset_data else 1
     fig, axes = plt.subplots(
-        n_rows, 1,
+        n_rows,
+        1,
         figsize=(14, 4 * n_rows),
         sharex=True,
         layout="constrained",
@@ -80,18 +82,23 @@ def plot_sleep(
         std = stdev(onset_values) if len(onset_values) > 1 else 0.0
 
         ax_onset = axes[1]
-        ax_onset.scatter(onset_dates, onset_values, color="#C44E52", s=22,
-                         zorder=3, alpha=0.8)
-        ax_onset.plot(onset_dates, onset_values, color="#C44E52", linewidth=1.0,
-                      alpha=0.4)
+        ax_onset.scatter(onset_dates, onset_values, color="#C44E52", s=22, zorder=3, alpha=0.8)
+        ax_onset.plot(onset_dates, onset_values, color="#C44E52", linewidth=1.0, alpha=0.4)
 
         # Average onset line
-        ax_onset.axhline(avg, color="#C44E52", linewidth=1.0, linestyle="--",
-                         alpha=0.7, label=f"avg {_onset_label(avg)}")
+        ax_onset.axhline(
+            avg,
+            color="#C44E52",
+            linewidth=1.0,
+            linestyle="--",
+            alpha=0.7,
+            label=f"avg {_onset_label(avg)}",
+        )
 
         # ±1σ shaded band — rhythmicity window
-        ax_onset.axhspan(avg - std, avg + std, color="#C44E52", alpha=0.08,
-                         label=f"±1σ  ({_fmt_std(std)})")
+        ax_onset.axhspan(
+            avg - std, avg + std, color="#C44E52", alpha=0.08, label=f"±1σ  ({_fmt_std(std)})"
+        )
 
         ax_onset.legend(frameon=False, loc="upper right")
         ax_onset.yaxis.set_major_formatter(mticker.FuncFormatter(_onset_label))

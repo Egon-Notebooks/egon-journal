@@ -4,6 +4,7 @@ Shared Markdown rendering utilities.
 Nodes are plain Markdown files with YAML frontmatter. This module provides
 helpers for serializing frontmatter and writing complete node files.
 """
+
 from pathlib import Path
 
 import yaml

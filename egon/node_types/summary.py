@@ -5,6 +5,7 @@ Filename conventions:
   - Weekly:  Weekly Summary — YYYY-WNN.md
   - Monthly: Monthly Summary — YYYY-MM.md
 """
+
 from datetime import date as date_type
 from datetime import timedelta
 from pathlib import Path
@@ -27,6 +28,7 @@ def _week_bounds(d: date_type) -> tuple[date_type, date_type]:
 # ---------------------------------------------------------------------------
 # Weekly summary
 # ---------------------------------------------------------------------------
+
 
 def make_weekly_summary(ref_date: date_type) -> tuple[dict, str]:
     """Return (frontmatter, body) for a weekly summary node."""
@@ -85,6 +87,7 @@ def generate_weekly_summary(ref_date: date_type, output_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Monthly summary
 # ---------------------------------------------------------------------------
+
 
 def make_monthly_summary(ref_date: date_type) -> tuple[dict, str]:
     """Return (frontmatter, body) for a monthly summary node."""

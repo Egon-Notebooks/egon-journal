@@ -5,6 +5,7 @@ VADER is a rule-based model tuned for social/informal text. It returns a
 compound score in [-1, +1]: negative below -0.05, positive above +0.05,
 neutral in between. Runs fully offline — no model download required.
 """
+
 from datetime import date as date_type
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer

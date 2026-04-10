@@ -3,6 +3,7 @@ Journal entry node generator (type: journal).
 
 Filename convention: Journal — YYYY-MM-DD.md  (em dash, not hyphen)
 """
+
 from datetime import date as date_type
 from pathlib import Path
 

@@ -1,6 +1,7 @@
 """
 Sentiment-by-day plot for the Limbic engine.
 """
+
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -39,9 +40,9 @@ def plot_sentiment(
     ax.bar(dates, scores_arr, width=0.8, color=colours, alpha=0.9)
 
     # Neutral band reference lines
-    ax.axhline(0.05,  color="grey", linewidth=0.6, linestyle="--", alpha=0.5)
+    ax.axhline(0.05, color="grey", linewidth=0.6, linestyle="--", alpha=0.5)
     ax.axhline(-0.05, color="grey", linewidth=0.6, linestyle="--", alpha=0.5)
-    ax.axhline(0.0,   color="grey", linewidth=0.8, linestyle="-",  alpha=0.3)
+    ax.axhline(0.0, color="grey", linewidth=0.8, linestyle="-", alpha=0.3)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)
     formatter = mdates.ConciseDateFormatter(locator)

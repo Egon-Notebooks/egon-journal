@@ -4,6 +4,7 @@ VO2 max report plot.
 Apple Health records VO2 max as VO2Max — estimated maximal oxygen uptake
 in mL/min/kg. Higher values indicate better aerobic fitness.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
@@ -35,8 +36,14 @@ def plot_vo2max(
 
     ax.plot(dates, values, color="#8172B3", linewidth=1.5, alpha=0.9)
     ax.scatter(dates, values, color="#8172B3", s=18, zorder=3, alpha=0.7)
-    ax.axhline(avg, color="#8172B3", linewidth=0.9, linestyle="--", alpha=0.5,
-               label=f"avg {avg:.1f} {unit}")
+    ax.axhline(
+        avg,
+        color="#8172B3",
+        linewidth=0.9,
+        linestyle="--",
+        alpha=0.5,
+        label=f"avg {avg:.1f} {unit}",
+    )
     ax.legend(frameon=False)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)

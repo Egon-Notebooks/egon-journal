@@ -17,6 +17,7 @@ Usage:
         output_path=Path("reports/full-report/2026-Q1.pdf"),
     )
 """
+
 import io
 import json
 import struct
@@ -55,22 +56,22 @@ from egon.plot_style import apply_style
 # Page dimensions (A4) and layout constants
 # ---------------------------------------------------------------------------
 
-_W = 8.27    # A4 width  (inches)
-_H = 11.69   # A4 height (inches)
+_W = 8.27  # A4 width  (inches)
+_H = 11.69  # A4 height (inches)
 
-_MARGIN_H = 0.65   # left/right margin (inches)
-_MARGIN_V = 0.55   # top/bottom margin (inches)
+_MARGIN_H = 0.65  # left/right margin (inches)
+_MARGIN_V = 0.55  # top/bottom margin (inches)
 
 # Space reserved at the bottom of each figure page for caption + commentary
-_TEXT_AREA_H = 1.80   # inches
+_TEXT_AREA_H = 1.80  # inches
 
-_NAVY    = "#1D3461"
-_BLUE    = "#4C72B0"
-_LIGHT   = "#EEF3FA"
-_RULE    = "#C5D3E8"
-_BODY    = "#2D2D2D"
+_NAVY = "#1D3461"
+_BLUE = "#4C72B0"
+_LIGHT = "#EEF3FA"
+_RULE = "#C5D3E8"
+_BODY = "#2D2D2D"
 _CAPTION = "#6B7A8D"
-_WHITE   = "#FFFFFF"
+_WHITE = "#FFFFFF"
 
 # ---------------------------------------------------------------------------
 # Placeholder commentary text — one entry per figure
@@ -222,41 +223,32 @@ _PHYSIO_INTRO = (
 # ML data cache helpers
 # ---------------------------------------------------------------------------
 
-def _save_bigfive_cache(
-    data: list[tuple[date_type, BigFiveScores]], path: Path
-) -> None:
+
+def _save_bigfive_cache(data: list[tuple[date_type, BigFiveScores]], path: Path) -> None:
     path.write_text(json.dumps([[d.isoformat(), list(s)] for d, s in data]))
 
 
 def _load_bigfive_cache(path: Path) -> list[tuple[date_type, BigFiveScores]]:
     return [
-        (date_type.fromisoformat(d), BigFiveScores(*s))
-        for d, s in json.loads(path.read_text())
+        (date_type.fromisoformat(d), BigFiveScores(*s)) for d, s in json.loads(path.read_text())
     ]
 
 
-def _save_mbti_cache(
-    data: list[tuple[date_type, MBTIScores]], path: Path
-) -> None:
+def _save_mbti_cache(data: list[tuple[date_type, MBTIScores]], path: Path) -> None:
     path.write_text(json.dumps([[d.isoformat(), list(s)] for d, s in data]))
 
 
 def _load_mbti_cache(path: Path) -> list[tuple[date_type, MBTIScores]]:
-    return [
-        (date_type.fromisoformat(d), MBTIScores(*s))
-        for d, s in json.loads(path.read_text())
-    ]
+    return [(date_type.fromisoformat(d), MBTIScores(*s)) for d, s in json.loads(path.read_text())]
 
 
 # ---------------------------------------------------------------------------
 # Page helpers
 # ---------------------------------------------------------------------------
 
+
 def _para(text: str, width: int = 86) -> str:
-    return "\n\n".join(
-        textwrap.fill(p.replace("\n", " "), width=width)
-        for p in text.split("\n\n")
-    )
+    return "\n\n".join(textwrap.fill(p.replace("\n", " "), width=width) for p in text.split("\n\n"))
 
 
 def _add_footer(fig: plt.Figure) -> None:
@@ -264,9 +256,17 @@ def _add_footer(fig: plt.Figure) -> None:
     ax.set_facecolor(_WHITE)
     ax.axis("off")
     ax.axhline(0.9, xmin=0.04, xmax=0.96, color=_RULE, linewidth=0.6)
-    ax.text(0.5, 0.28, "Egon Notebooks",
-            ha="center", va="center", color=_CAPTION,
-            fontsize=7.5, fontfamily="serif", transform=ax.transAxes)
+    ax.text(
+        0.5,
+        0.28,
+        "Egon Notebooks",
+        ha="center",
+        va="center",
+        color=_CAPTION,
+        fontsize=7.5,
+        fontfamily="serif",
+        transform=ax.transAxes,
+    )
 
 
 def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> None:
@@ -277,42 +277,92 @@ def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> 
     ax_top = fig.add_axes([0, 1 - top_h, 1, top_h])
     ax_top.set_facecolor(_NAVY)
     ax_top.axis("off")
-    ax_top.text(0.5, 0.62, "EGON NOTEBOOKS",
-                ha="center", va="center", color=_WHITE,
-                fontsize=26, fontweight="bold", fontfamily="serif",
-                transform=ax_top.transAxes)
-    ax_top.text(0.5, 0.24, "Personal Journal & Health Report",
-                ha="center", va="center", color=_WHITE,
-                fontsize=11, fontfamily="serif", alpha=0.80,
-                transform=ax_top.transAxes)
+    ax_top.text(
+        0.5,
+        0.62,
+        "EGON NOTEBOOKS",
+        ha="center",
+        va="center",
+        color=_WHITE,
+        fontsize=26,
+        fontweight="bold",
+        fontfamily="serif",
+        transform=ax_top.transAxes,
+    )
+    ax_top.text(
+        0.5,
+        0.24,
+        "Personal Journal & Health Report",
+        ha="center",
+        va="center",
+        color=_WHITE,
+        fontsize=11,
+        fontfamily="serif",
+        alpha=0.80,
+        transform=ax_top.transAxes,
+    )
 
     ax = fig.add_axes([0.12, 0.10, 0.76, 0.71])
     ax.set_facecolor(_WHITE)
     ax.axis("off")
-    ax.text(0.5, 0.86, label,
-            ha="center", va="top", color=_BLUE,
-            fontsize=32, fontfamily="serif", fontweight="bold",
-            transform=ax.transAxes)
-    ax.text(0.5, 0.71,
-            f"{start.strftime('%B %-d')} \u2013 {end.strftime('%B %-d, %Y')}",
-            ha="center", va="top", color=_NAVY,
-            fontsize=12, fontfamily="serif",
-            transform=ax.transAxes)
-    ax.plot([0.10, 0.90], [0.60, 0.60], color=_RULE, linewidth=0.9,
-            transform=ax.transAxes, clip_on=False)
-    ax.text(0.5, 0.52,
-            f"Generated {date_type.today().strftime('%B %-d, %Y')}",
-            ha="center", va="top", color=_CAPTION,
-            fontsize=10, fontfamily="serif",
-            transform=ax.transAxes)
+    ax.text(
+        0.5,
+        0.86,
+        label,
+        ha="center",
+        va="top",
+        color=_BLUE,
+        fontsize=32,
+        fontfamily="serif",
+        fontweight="bold",
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.5,
+        0.71,
+        f"{start.strftime('%B %-d')} \u2013 {end.strftime('%B %-d, %Y')}",
+        ha="center",
+        va="top",
+        color=_NAVY,
+        fontsize=12,
+        fontfamily="serif",
+        transform=ax.transAxes,
+    )
+    ax.plot(
+        [0.10, 0.90],
+        [0.60, 0.60],
+        color=_RULE,
+        linewidth=0.9,
+        transform=ax.transAxes,
+        clip_on=False,
+    )
+    ax.text(
+        0.5,
+        0.52,
+        f"Generated {date_type.today().strftime('%B %-d, %Y')}",
+        ha="center",
+        va="top",
+        color=_CAPTION,
+        fontsize=10,
+        fontfamily="serif",
+        transform=ax.transAxes,
+    )
 
     ax_bot = fig.add_axes([0, 0, 1, 0.03])
     ax_bot.set_facecolor(_NAVY)
     ax_bot.axis("off")
-    ax_bot.text(0.96, 0.5, "egonnotebooks.com",
-                ha="right", va="center", color=_WHITE,
-                fontsize=8, fontfamily="serif", alpha=0.65,
-                transform=ax_bot.transAxes)
+    ax_bot.text(
+        0.96,
+        0.5,
+        "egonnotebooks.com",
+        ha="right",
+        va="center",
+        color=_WHITE,
+        fontsize=8,
+        fontfamily="serif",
+        alpha=0.65,
+        transform=ax_bot.transAxes,
+    )
 
     pdf.savefig(fig)
     plt.close(fig)
@@ -333,28 +383,61 @@ def _text_page(
     ax_hdr.axis("off")
     ax_hdr.axhline(0.03, xmin=0, xmax=1, color=_RULE, linewidth=0.7)
     if section_num is not None:
-        ax_hdr.text(0.055, 0.55, str(section_num),
-                    ha="center", va="center", color=_BLUE,
-                    fontsize=30, fontweight="bold", fontfamily="serif",
-                    alpha=0.50, transform=ax_hdr.transAxes)
-        ax_hdr.text(0.13, 0.55, title,
-                    ha="left", va="center", color=_NAVY,
-                    fontsize=16, fontweight="bold", fontfamily="serif",
-                    transform=ax_hdr.transAxes)
+        ax_hdr.text(
+            0.055,
+            0.55,
+            str(section_num),
+            ha="center",
+            va="center",
+            color=_BLUE,
+            fontsize=30,
+            fontweight="bold",
+            fontfamily="serif",
+            alpha=0.50,
+            transform=ax_hdr.transAxes,
+        )
+        ax_hdr.text(
+            0.13,
+            0.55,
+            title,
+            ha="left",
+            va="center",
+            color=_NAVY,
+            fontsize=16,
+            fontweight="bold",
+            fontfamily="serif",
+            transform=ax_hdr.transAxes,
+        )
     else:
-        ax_hdr.text(0.055, 0.55, title,
-                    ha="left", va="center", color=_NAVY,
-                    fontsize=16, fontweight="bold", fontfamily="serif",
-                    transform=ax_hdr.transAxes)
+        ax_hdr.text(
+            0.055,
+            0.55,
+            title,
+            ha="left",
+            va="center",
+            color=_NAVY,
+            fontsize=16,
+            fontweight="bold",
+            fontfamily="serif",
+            transform=ax_hdr.transAxes,
+        )
 
     body_top = 1 - hdr_h - 0.04
     ax_body = fig.add_axes([0.08, 0.055, 0.84, body_top - 0.055])
     ax_body.set_facecolor(_WHITE)
     ax_body.axis("off")
-    ax_body.text(0, 1, _para(body),
-                 ha="left", va="top", color=_BODY,
-                 fontsize=10.5, fontfamily="serif",
-                 linespacing=1.70, transform=ax_body.transAxes)
+    ax_body.text(
+        0,
+        1,
+        _para(body),
+        ha="left",
+        va="top",
+        color=_BODY,
+        fontsize=10.5,
+        fontfamily="serif",
+        linespacing=1.70,
+        transform=ax_body.transAxes,
+    )
 
     _add_footer(fig)
     pdf.savefig(fig)
@@ -371,7 +454,7 @@ def _tight_size(fig: plt.Figure) -> tuple[float, float]:
     fig.savefig(buf, format="png", bbox_inches="tight", dpi=72)
     buf.seek(0)
     # bbox_inches="tight" saves at the tight-bbox size; read back the pixel dims
-    buf.seek(16)   # PNG IHDR chunk starts at byte 16
+    buf.seek(16)  # PNG IHDR chunk starts at byte 16
     w_px, h_px = struct.unpack(">II", buf.read(8))
     dpi = 72
     return w_px / dpi, h_px / dpi
@@ -423,13 +506,13 @@ def _figure_page(
     # How the original figure maps onto the tight bbox (tight bbox may be
     # slightly larger or smaller than the figure due to savefig padding).
     # In practice tight_w ≥ orig_w, so this ratio ≤ 1.
-    fw_ratio = orig_w / tight_w   # fraction of tight bbox width that is the figure
+    fw_ratio = orig_w / tight_w  # fraction of tight bbox width that is the figure
     fh_ratio = orig_h / tight_h
 
     # Centre the plot area horizontally; sit it at the top of the page body.
-    plot_left   = (_W - plot_w) / 2 / _W
+    plot_left = (_W - plot_w) / 2 / _W
     plot_bottom = (_MARGIN_V + _TEXT_AREA_H) / _H
-    plot_width  = plot_w / _W
+    plot_width = plot_w / _W
     plot_height = plot_h / _H
 
     # Resize figure to A4 and remap all axes into the plot area.
@@ -438,29 +521,45 @@ def _figure_page(
 
     for ax in fig.get_axes():
         pos = ax.get_position()
-        ax.set_position([
-            plot_left   + pos.x0 * plot_width  * fw_ratio,
-            plot_bottom + pos.y0 * plot_height * fh_ratio,
-            pos.width   * plot_width  * fw_ratio,
-            pos.height  * plot_height * fh_ratio,
-        ])
+        ax.set_position(
+            [
+                plot_left + pos.x0 * plot_width * fw_ratio,
+                plot_bottom + pos.y0 * plot_height * fh_ratio,
+                pos.width * plot_width * fw_ratio,
+                pos.height * plot_height * fh_ratio,
+            ]
+        )
 
     # Commentary paragraph
     commentary_bottom = (_MARGIN_V + 0.42) / _H
     commentary_height = (_TEXT_AREA_H - 0.52) / _H
-    ax_text = fig.add_axes(
-        [_MARGIN_H / _W, commentary_bottom, avail_w / _W, commentary_height]
-    )
+    ax_text = fig.add_axes([_MARGIN_H / _W, commentary_bottom, avail_w / _W, commentary_height])
     ax_text.axis("off")
-    ax_text.text(0, 1, _para(commentary, width=82),
-                 ha="left", va="top", color=_BODY,
-                 fontsize=9.5, fontfamily="serif", linespacing=1.55,
-                 transform=ax_text.transAxes)
+    ax_text.text(
+        0,
+        1,
+        _para(commentary, width=82),
+        ha="left",
+        va="top",
+        color=_BODY,
+        fontsize=9.5,
+        fontfamily="serif",
+        linespacing=1.55,
+        transform=ax_text.transAxes,
+    )
 
     # Caption line
-    fig.text(0.5, (_MARGIN_V + 0.12) / _H, caption,
-             ha="center", va="bottom", color=_CAPTION,
-             fontsize=9, fontfamily="serif", style="italic")
+    fig.text(
+        0.5,
+        (_MARGIN_V + 0.12) / _H,
+        caption,
+        ha="center",
+        va="bottom",
+        color=_CAPTION,
+        fontsize=9,
+        fontfamily="serif",
+        style="italic",
+    )
 
     _add_footer(fig)
     pdf.savefig(fig)
@@ -470,6 +569,7 @@ def _figure_page(
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def generate_full_report(
     *,
@@ -497,10 +597,10 @@ def generate_full_report(
     # -----------------------------------------------------------------------
     # ML cache
     # -----------------------------------------------------------------------
-    bf_cache   = cache_dir / "bigfive_data.json"
+    bf_cache = cache_dir / "bigfive_data.json"
     mbti_cache = cache_dir / "mbti_data.json"
     bigfive_data = None
-    mbti_data    = None
+    mbti_data = None
 
     if journal_entries:
         if bf_cache.exists():
@@ -553,131 +653,163 @@ def generate_full_report(
     # Assemble PDF
     # -----------------------------------------------------------------------
     with PdfPages(str(output_path)) as pdf:
-
         _cover_page(pdf, label, start, end)
         _text_page(pdf, "Executive Summary", _EXEC_SUMMARY)
 
         # --- Section 1: Journal Insights ---
         _text_page(pdf, "Journal Insights", _JOURNAL_INTRO, section_num=1)
 
-        fig = _capture(plot_word_count, "word-count",
-                       journal_entries, title=f"Journal word count \u2014 {label}")
+        fig = _capture(
+            plot_word_count,
+            "word-count",
+            journal_entries,
+            title=f"Journal word count \u2014 {label}",
+        )
         if fig:
             _fp(fig, "Figure 1.1 \u2014 Daily journal word count", "word-count")
 
-        fig = _capture(plot_sentiment, "sentiment",
-                       journal_entries, title=f"Journal sentiment \u2014 {label}")
+        fig = _capture(
+            plot_sentiment, "sentiment", journal_entries, title=f"Journal sentiment \u2014 {label}"
+        )
         if fig:
-            _fp(fig,
+            _fp(
+                fig,
                 "Figure 1.2 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
-                "sentiment")
+                "sentiment",
+            )
 
-        fig = _capture(plot_wordcloud, "wordcloud",
-                       journal_entries, title=f"Journal word cloud \u2014 {label}")
+        fig = _capture(
+            plot_wordcloud, "wordcloud", journal_entries, title=f"Journal word cloud \u2014 {label}"
+        )
         if fig:
             _fp(fig, "Figure 1.3 \u2014 Word cloud of most frequent themes", "wordcloud")
 
         # --- Section 2: Personality & Affective Patterns ---
-        _text_page(pdf, "Personality & Affective Patterns",
-                   _PERSONALITY_INTRO, section_num=2)
+        _text_page(pdf, "Personality & Affective Patterns", _PERSONALITY_INTRO, section_num=2)
 
         if bigfive_data:
-            fig = _capture(plot_bigfive, "bigfive", bigfive_data,
-                           title=f"Big Five personality traits \u2014 {label}")
+            fig = _capture(
+                plot_bigfive,
+                "bigfive",
+                bigfive_data,
+                title=f"Big Five personality traits \u2014 {label}",
+            )
             if fig:
-                _fp(fig,
-                    "Figure 2.1 \u2014 Big Five trait scores by day (O, C, E, A, N)",
-                    "bigfive")
+                _fp(
+                    fig, "Figure 2.1 \u2014 Big Five trait scores by day (O, C, E, A, N)", "bigfive"
+                )
 
         if mbti_data:
-            fig = _capture(plot_mbti, "mbti", mbti_data,
-                           title=f"MBTI personality dimensions \u2014 {label}")
+            fig = _capture(
+                plot_mbti, "mbti", mbti_data, title=f"MBTI personality dimensions \u2014 {label}"
+            )
             if fig:
-                _fp(fig,
+                _fp(
+                    fig,
                     "Figure 2.2 \u2014 MBTI dimension scores by day (E/I, N/S, T/F, J/P)",
-                    "mbti")
+                    "mbti",
+                )
 
         # --- Section 3: Physiological Measures ---
         _text_page(pdf, "Physiological Measures", _PHYSIO_INTRO, section_num=3)
 
-        if (weight_recs := health_records.get("BodyMass")):
-            unit        = infer_unit(weight_recs)
+        if weight_recs := health_records.get("BodyMass"):
+            unit = infer_unit(weight_recs)
             weight_data = filter_by_date(daily_mean(weight_recs), start, end)
-            lean_recs   = health_records.get("LeanBodyMass", [])
-            lean_data   = (
-                filter_by_date(daily_mean(lean_recs), start, end) or None
-                if lean_recs else None
+            lean_recs = health_records.get("LeanBodyMass", [])
+            lean_data = (
+                filter_by_date(daily_mean(lean_recs), start, end) or None if lean_recs else None
             )
             if weight_data:
-                fig = _capture(plot_weight, "weight", weight_data,
-                               title=f"Weight \u2014 {label}", unit=unit,
-                               lean_data=lean_data,
-                               target_body_mass=target_body_mass,
-                               target_lean_body_mass=target_lean_body_mass)
+                fig = _capture(
+                    plot_weight,
+                    "weight",
+                    weight_data,
+                    title=f"Weight \u2014 {label}",
+                    unit=unit,
+                    lean_data=lean_data,
+                    target_body_mass=target_body_mass,
+                    target_lean_body_mass=target_lean_body_mass,
+                )
                 if fig:
-                    _fp(fig,
-                        "Figure 3.1 \u2014 Daily body weight"
-                        " (and lean body mass if available)",
-                        "weight")
+                    _fp(
+                        fig,
+                        "Figure 3.1 \u2014 Daily body weight (and lean body mass if available)",
+                        "weight",
+                    )
 
-        if (rhr_recs := health_records.get("RestingHeartRate")):
+        if rhr_recs := health_records.get("RestingHeartRate"):
             rhr_unit = infer_unit(rhr_recs)
             rhr_data = filter_by_date(daily_mean(rhr_recs), start, end)
             if rhr_data:
-                fig = _capture(plot_resting_heart_rate, "resting-heart-rate",
-                               rhr_data,
-                               title=f"Resting heart rate \u2014 {label}",
-                               unit=rhr_unit,
-                               target_resting_heart_rate=target_resting_heart_rate)
+                fig = _capture(
+                    plot_resting_heart_rate,
+                    "resting-heart-rate",
+                    rhr_data,
+                    title=f"Resting heart rate \u2014 {label}",
+                    unit=rhr_unit,
+                    target_resting_heart_rate=target_resting_heart_rate,
+                )
                 if fig:
-                    _fp(fig, "Figure 3.2 \u2014 Daily resting heart rate",
-                        "resting-heart-rate")
+                    _fp(fig, "Figure 3.2 \u2014 Daily resting heart rate", "resting-heart-rate")
 
-        if (hrv_recs := health_records.get("HeartRateVariabilitySDNN")):
+        if hrv_recs := health_records.get("HeartRateVariabilitySDNN"):
             hrv_unit = infer_unit(hrv_recs)
             hrv_data = filter_by_date(daily_mean(hrv_recs), start, end)
             if hrv_data:
-                fig = _capture(plot_hrv, "hrv", hrv_data,
-                               title=f"Heart rate variability \u2014 {label}",
-                               unit=hrv_unit)
+                fig = _capture(
+                    plot_hrv,
+                    "hrv",
+                    hrv_data,
+                    title=f"Heart rate variability \u2014 {label}",
+                    unit=hrv_unit,
+                )
                 if fig:
-                    _fp(fig,
-                        "Figure 3.3 \u2014 Daily heart rate variability (HRV SDNN)",
-                        "hrv")
+                    _fp(fig, "Figure 3.3 \u2014 Daily heart rate variability (HRV SDNN)", "hrv")
 
         if xml_path and xml_path.is_file():
             try:
-                sleep_data = filter_sleep_by_date(
-                    load_sleep_records(xml_path), start, end)
-                onset_data = (
-                    filter_sleep_by_date(load_sleep_onset(xml_path), start, end) or None
-                )
+                sleep_data = filter_sleep_by_date(load_sleep_records(xml_path), start, end)
+                onset_data = filter_sleep_by_date(load_sleep_onset(xml_path), start, end) or None
                 if sleep_data:
-                    fig = _capture(plot_sleep, "sleep", sleep_data,
-                                   title=f"Time asleep \u2014 {label}",
-                                   onset_data=onset_data)
+                    fig = _capture(
+                        plot_sleep,
+                        "sleep",
+                        sleep_data,
+                        title=f"Time asleep \u2014 {label}",
+                        onset_data=onset_data,
+                    )
                     if fig:
-                        _fp(fig,
+                        _fp(
+                            fig,
                             "Figure 3.4 \u2014 Nightly time asleep and sleep onset time",
-                            "sleep")
+                            "sleep",
+                        )
             except Exception as exc:
                 print(f"  [full report] skipping 'sleep': {exc}")
 
-        if (step_recs := health_records.get("StepCount")):
+        if step_recs := health_records.get("StepCount"):
             steps_data = filter_by_date(daily_sum(step_recs), start, end)
             if steps_data:
-                fig = _capture(plot_step_count, "step-count", steps_data,
-                               title=f"Daily step count \u2014 {label}")
+                fig = _capture(
+                    plot_step_count,
+                    "step-count",
+                    steps_data,
+                    title=f"Daily step count \u2014 {label}",
+                )
                 if fig:
                     _fp(fig, "Figure 3.5 \u2014 Daily step count", "step-count")
 
-        if (vo2_recs := health_records.get("VO2Max")):
+        if vo2_recs := health_records.get("VO2Max"):
             vo2_unit = infer_unit(vo2_recs)
             vo2_data = filter_by_date(daily_mean(vo2_recs), start, end)
             if vo2_data:
-                fig = _capture(plot_vo2max, "vo2max", vo2_data,
-                               title=f"VO\u2082 max \u2014 {label}",
-                               unit=vo2_unit)
+                fig = _capture(
+                    plot_vo2max,
+                    "vo2max",
+                    vo2_data,
+                    title=f"VO\u2082 max \u2014 {label}",
+                    unit=vo2_unit,
+                )
                 if fig:
-                    _fp(fig, "Figure 3.6 \u2014 Daily VO\u2082 max (mL/min/kg)",
-                        "vo2max")
+                    _fp(fig, "Figure 3.6 \u2014 Daily VO\u2082 max (mL/min/kg)", "vo2max")

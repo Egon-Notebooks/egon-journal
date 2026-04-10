@@ -4,6 +4,7 @@ Journal entry loader for analytics.
 Scans a directory for journal entry Markdown files (type: journal) and
 returns their date and body text. Files are returned in chronological order.
 """
+
 import re
 from datetime import date as date_type
 from pathlib import Path
@@ -14,7 +15,7 @@ import yaml
 
 class JournalEntry(NamedTuple):
     date: date_type
-    body: str       # raw body text (after frontmatter)
+    body: str  # raw body text (after frontmatter)
     path: Path
 
 

@@ -13,6 +13,7 @@ YAML source schema:
     starter: "A thought that kept coming back to me recently…"
     duration_minutes: 5
 """
+
 from datetime import date as date_type
 from pathlib import Path
 

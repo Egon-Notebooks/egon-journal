@@ -3,6 +3,7 @@ CLI entry point for egon-journal.
 
 Run via:  uv run egon <command>
 """
+
 import os
 import subprocess
 from datetime import date as date_type
@@ -71,6 +72,7 @@ _GENERATED_DIR = _REPO_ROOT / "generated"
 # Output directory helpers
 # ---------------------------------------------------------------------------
 
+
 def _resolve_output(cli_output: Optional[Path], env_var: str) -> Path:
     if cli_output:
         return cli_output
@@ -84,11 +86,10 @@ def _resolve_output(cli_output: Optional[Path], env_var: str) -> Path:
 # Commands
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def new_entry(
-    date: Optional[str] = typer.Option(
-        None, help="Entry date as YYYY-MM-DD (default: today)"
-    ),
+    date: Optional[str] = typer.Option(None, help="Entry date as YYYY-MM-DD (default: today)"),
     open: bool = typer.Option(False, "--open", help="Open the file in $EDITOR after creating"),
     output: Optional[Path] = typer.Option(None, help="Output directory"),
 ) -> None:
@@ -250,9 +251,7 @@ def index_cmd(
 @app.command()
 def link(
     file: Path = typer.Argument(..., help="Markdown file to inject wikilinks into"),
-    topics_file: Path = typer.Option(
-        Path("TOPICS.txt"), "--topics", help="Path to TOPICS.txt"
-    ),
+    topics_file: Path = typer.Option(Path("TOPICS.txt"), "--topics", help="Path to TOPICS.txt"),
 ) -> None:
     """Inject wikilinks into a Markdown file based on TOPICS.txt."""
     if not file.is_file():
@@ -281,8 +280,7 @@ def report_word_count(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     period: str = typer.Option(
         "all-time",
@@ -292,8 +290,7 @@ def report_word_count(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -328,9 +325,7 @@ def report_word_count(
 
     entries = filter_entries(all_entries, start, end)
     if not entries:
-        typer.echo(
-            f"No journal entries found for period '{period}' ({label}).", err=True
-        )
+        typer.echo(f"No journal entries found for period '{period}' ({label}).", err=True)
         raise typer.Exit(1)
 
     resolved_output = output or Path(f"reports/word_count/{label}.pdf")
@@ -346,8 +341,7 @@ def report_sentiment(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     period: str = typer.Option(
         "all-time",
@@ -357,8 +351,7 @@ def report_sentiment(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -393,9 +386,7 @@ def report_sentiment(
 
     entries = filter_entries(all_entries, start, end)
     if not entries:
-        typer.echo(
-            f"No journal entries found for period '{label}'.", err=True
-        )
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
     resolved_output = output or Path(f"reports/sentiment/{label}.pdf")
@@ -411,8 +402,7 @@ def report_wordcloud(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     period: str = typer.Option(
         "all-time",
@@ -422,8 +412,7 @@ def report_wordcloud(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -474,8 +463,7 @@ def report_bigfive(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     period: str = typer.Option(
         "all-time",
@@ -485,8 +473,7 @@ def report_bigfive(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -540,8 +527,7 @@ def report_mbti(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     period: str = typer.Option(
         "all-time",
@@ -551,8 +537,7 @@ def report_mbti(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -605,6 +590,7 @@ def report_mbti(
 # Health reports
 # ---------------------------------------------------------------------------
 
+
 def _resolve_apple_health_xml(cli_path: Optional[Path]) -> Optional[Path]:
     if cli_path:
         return cli_path
@@ -636,8 +622,7 @@ def report_weight(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -702,7 +687,10 @@ def report_weight(
 
     typer.echo(f"Found {len(data)} days of weight data for {label}.")
     plot_weight(
-        data, resolved_output, title=title, unit=unit,
+        data,
+        resolved_output,
+        title=title,
+        unit=unit,
         lean_data=lean_data,
         target_body_mass=target_body_mass,
         target_lean_body_mass=target_lean_body_mass,
@@ -725,8 +713,7 @@ def report_resting_heart_rate(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -783,7 +770,10 @@ def report_resting_heart_rate(
 
     typer.echo(f"Found {len(data)} days of resting heart rate data for {label}.")
     plot_resting_heart_rate(
-        data, resolved_output, title=title, unit=unit,
+        data,
+        resolved_output,
+        title=title,
+        unit=unit,
         target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
     )
     typer.echo(f"Saved: {resolved_output}")
@@ -804,8 +794,7 @@ def report_hrv(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -872,8 +861,7 @@ def report_sleep(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -941,8 +929,7 @@ def report_step_count(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -1008,8 +995,7 @@ def report_vo2max(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     output: Optional[Path] = typer.Option(
         None,
@@ -1066,8 +1052,7 @@ def report_all(
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
-        help="Directory containing journal entry Markdown files "
-             "(default: $EGON_JOURNAL_DIR)",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
     ),
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1082,8 +1067,7 @@ def report_all(
     for_period: Optional[str] = typer.Option(
         None,
         "--for",
-        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. "
-             "Overrides --period.",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
     ),
     full: bool = typer.Option(
         False,
@@ -1095,19 +1079,19 @@ def report_all(
     _kw = dict(period=period, for_period=for_period, output=None)
     _journal_reports = [
         ("word-count", lambda: report_word_count(journal_dir=journal_dir, **_kw)),
-        ("sentiment",  lambda: report_sentiment(journal_dir=journal_dir, **_kw)),
-        ("wordcloud",  lambda: report_wordcloud(journal_dir=journal_dir, **_kw)),
-        ("bigfive",    lambda: report_bigfive(journal_dir=journal_dir, **_kw)),
-        ("mbti",       lambda: report_mbti(journal_dir=journal_dir, **_kw)),
+        ("sentiment", lambda: report_sentiment(journal_dir=journal_dir, **_kw)),
+        ("wordcloud", lambda: report_wordcloud(journal_dir=journal_dir, **_kw)),
+        ("bigfive", lambda: report_bigfive(journal_dir=journal_dir, **_kw)),
+        ("mbti", lambda: report_mbti(journal_dir=journal_dir, **_kw)),
     ]
     _hkw = dict(period=period, for_period=for_period, output=None)
     _health_reports = [
-        ("weight",             lambda: report_weight(xml_path=xml_path, **_hkw)),
+        ("weight", lambda: report_weight(xml_path=xml_path, **_hkw)),
         ("resting-heart-rate", lambda: report_resting_heart_rate(xml_path=xml_path, **_hkw)),
-        ("hrv",                lambda: report_hrv(xml_path=xml_path, **_hkw)),
-        ("sleep",              lambda: report_sleep(xml_path=xml_path, **_hkw)),
-        ("step-count",         lambda: report_step_count(xml_path=xml_path, **_hkw)),
-        ("vo2max",             lambda: report_vo2max(xml_path=xml_path, **_hkw)),
+        ("hrv", lambda: report_hrv(xml_path=xml_path, **_hkw)),
+        ("sleep", lambda: report_sleep(xml_path=xml_path, **_hkw)),
+        ("step-count", lambda: report_step_count(xml_path=xml_path, **_hkw)),
+        ("vo2max", lambda: report_vo2max(xml_path=xml_path, **_hkw)),
     ]
 
     period_display = for_period or period
@@ -1164,6 +1148,7 @@ def report_all(
     entries: list = []
     if resolved_dir.is_dir():
         from egon.analytics.word_count import filter_entries
+
         all_entries = load_journal_entries(resolved_dir)
         entries = filter_entries(all_entries, start, end)
 
@@ -1202,6 +1187,7 @@ def report_all(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _find_program(programs_dir: Path, title: str) -> Optional[dict]:
     """Return the YAML source dict for the program whose title matches, or None."""

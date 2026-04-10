@@ -1,4 +1,5 @@
 """Tests for egon.linker."""
+
 from pathlib import Path
 
 from egon.linker import index_graph, inject_wikilinks, load_topics

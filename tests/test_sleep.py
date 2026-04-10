@@ -1,4 +1,5 @@
 """Tests for egon.health.sleep and egon.health.sleep_plot."""
+
 from datetime import date
 
 import pytest
@@ -40,23 +41,23 @@ _REM = "HKCategoryValueSleepAnalysisAsleepREM"
 # Plus an Awake record that should be excluded
 SIMPLE_NIGHT = [
     {"value": _ASLEEP, "start": "2026-04-03 23:00:00", "end": "2026-04-04 07:00:00"},
-    {"value": _INBED,  "start": "2026-04-03 22:30:00", "end": "2026-04-04 07:15:00"},  # excluded
-    {"value": _AWAKE,  "start": "2026-04-04 03:00:00", "end": "2026-04-04 03:30:00"},  # excluded
+    {"value": _INBED, "start": "2026-04-03 22:30:00", "end": "2026-04-04 07:15:00"},  # excluded
+    {"value": _AWAKE, "start": "2026-04-04 03:00:00", "end": "2026-04-04 03:30:00"},  # excluded
 ]
 
 MULTI_STAGE_NIGHT = [
     {"value": _CORE, "start": "2026-04-04 23:00:00", "end": "2026-04-05 01:00:00"},  # 2h
     {"value": _DEEP, "start": "2026-04-05 01:00:00", "end": "2026-04-05 02:30:00"},  # 1.5h
-    {"value": _REM,  "start": "2026-04-05 02:30:00", "end": "2026-04-05 07:00:00"},  # 4.5h
+    {"value": _REM, "start": "2026-04-05 02:30:00", "end": "2026-04-05 07:00:00"},  # 4.5h
 ]  # total = 8h, attributed to 2026-04-05
 
 # Overlapping records from two sources covering the same ~8h night.
 # Apple Watch segments (total 8h) + AutoSleep single block (7.5h, fully overlapping).
 # Merged union should still be 8h, not 15.5h.
 OVERLAPPING_SOURCES_NIGHT = [
-    {"value": _CORE,   "start": "2026-04-06 23:00:00", "end": "2026-04-07 01:00:00"},  # 2h
-    {"value": _REM,    "start": "2026-04-07 01:00:00", "end": "2026-04-07 05:00:00"},  # 4h
-    {"value": _DEEP,   "start": "2026-04-07 05:00:00", "end": "2026-04-07 07:00:00"},  # 2h
+    {"value": _CORE, "start": "2026-04-06 23:00:00", "end": "2026-04-07 01:00:00"},  # 2h
+    {"value": _REM, "start": "2026-04-07 01:00:00", "end": "2026-04-07 05:00:00"},  # 4h
+    {"value": _DEEP, "start": "2026-04-07 05:00:00", "end": "2026-04-07 07:00:00"},  # 2h
     {"value": _ASLEEP, "start": "2026-04-06 23:00:00", "end": "2026-04-07 06:30:00"},  # overlap
 ]  # merged union: 23:00–07:00 = 8h
 
@@ -93,19 +94,23 @@ class TestLoadSleepRecords:
 
     def test_attributed_to_wake_date(self, tmp_path):
         # Sleep crosses midnight — should be attributed to the wake-up date
-        xml = _make_sleep_xml([
-            {"value": _ASLEEP, "start": "2026-04-10 22:00:00", "end": "2026-04-11 06:00:00"},
-        ])
+        xml = _make_sleep_xml(
+            [
+                {"value": _ASLEEP, "start": "2026-04-10 22:00:00", "end": "2026-04-11 06:00:00"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         data = load_sleep_records(path)
         assert data[0][0] == date(2026, 4, 11)
 
     def test_returns_sorted_by_date(self, tmp_path):
-        xml = _make_sleep_xml([
-            {"value": _ASLEEP, "start": "2026-04-05 23:00:00", "end": "2026-04-06 07:00:00"},
-            {"value": _ASLEEP, "start": "2026-04-03 23:00:00", "end": "2026-04-04 07:00:00"},
-        ])
+        xml = _make_sleep_xml(
+            [
+                {"value": _ASLEEP, "start": "2026-04-05 23:00:00", "end": "2026-04-06 07:00:00"},
+                {"value": _ASLEEP, "start": "2026-04-03 23:00:00", "end": "2026-04-04 07:00:00"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         data = load_sleep_records(path)
@@ -150,9 +155,11 @@ class TestFilterSleepByDate:
 class TestLoadSleepOnset:
     def test_onset_after_midnight(self, tmp_path):
         # Sleep starts at 00:30, ends at 08:00 — onset = 6.5h after 18:00
-        xml = _make_sleep_xml([
-            {"value": _ASLEEP, "start": "2026-04-10 00:30:00", "end": "2026-04-10 08:00:00"},
-        ])
+        xml = _make_sleep_xml(
+            [
+                {"value": _ASLEEP, "start": "2026-04-10 00:30:00", "end": "2026-04-10 08:00:00"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         data = load_sleep_onset(path)
@@ -163,9 +170,11 @@ class TestLoadSleepOnset:
 
     def test_onset_before_midnight(self, tmp_path):
         # Sleep starts at 22:00 — onset = 4.0h after 18:00
-        xml = _make_sleep_xml([
-            {"value": _ASLEEP, "start": "2026-04-10 22:00:00", "end": "2026-04-11 06:00:00"},
-        ])
+        xml = _make_sleep_xml(
+            [
+                {"value": _ASLEEP, "start": "2026-04-10 22:00:00", "end": "2026-04-11 06:00:00"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         data = load_sleep_onset(path)
@@ -175,10 +184,12 @@ class TestLoadSleepOnset:
 
     def test_onset_uses_earliest_merged_interval(self, tmp_path):
         # Two overlapping sources: earliest start wins
-        xml = _make_sleep_xml([
-            {"value": _CORE,   "start": "2026-04-10 23:00:00", "end": "2026-04-11 03:00:00"},
-            {"value": _ASLEEP, "start": "2026-04-10 22:30:00", "end": "2026-04-11 06:00:00"},
-        ])
+        xml = _make_sleep_xml(
+            [
+                {"value": _CORE, "start": "2026-04-10 23:00:00", "end": "2026-04-11 03:00:00"},
+                {"value": _ASLEEP, "start": "2026-04-10 22:30:00", "end": "2026-04-11 06:00:00"},
+            ]
+        )
         path = tmp_path / "export.xml"
         path.write_text(xml)
         data = load_sleep_onset(path)

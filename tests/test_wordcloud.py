@@ -1,4 +1,5 @@
 """Tests for egon.analytics.wordcloud_plot."""
+
 from datetime import date
 from pathlib import Path
 

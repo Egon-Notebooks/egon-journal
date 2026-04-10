@@ -5,6 +5,7 @@ Five subplots stacked vertically (one per trait), sharing a common x-axis.
 Each subplot shows the daily trait score as a line+scatter chart.
 To the right of each subplot the trait letter and period average are annotated.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
@@ -50,7 +51,8 @@ def plot_bigfive(
     dates, scores = zip(*data)
 
     fig, axes = plt.subplots(
-        5, 1,
+        5,
+        1,
         figsize=(14, 14),
         sharex=True,
         layout="constrained",
@@ -65,8 +67,14 @@ def plot_bigfive(
         ax.axhline(avg, color=colour, linewidth=0.9, linestyle="--", alpha=0.5)
 
         pop_avg = _POP_AVG[letter]
-        ax.axhline(pop_avg, color="#888888", linewidth=0.9, linestyle=":", alpha=0.6,
-                   label=f"pop avg {pop_avg:.1f}")
+        ax.axhline(
+            pop_avg,
+            color="#888888",
+            linewidth=0.9,
+            linestyle=":",
+            alpha=0.6,
+            label=f"pop avg {pop_avg:.1f}",
+        )
 
         ax.set_ylabel(name)
         ax.spines["top"].set_visible(False)

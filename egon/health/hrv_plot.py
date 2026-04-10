@@ -5,6 +5,7 @@ Apple Health records HRV as HeartRateVariabilitySDNN — the standard deviation
 of beat-to-beat intervals, measured in milliseconds. Higher values generally
 indicate better cardiovascular recovery.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
@@ -35,8 +36,14 @@ def plot_hrv(
 
     ax.plot(dates, values, color="#55A868", linewidth=1.5, alpha=0.9)
     ax.scatter(dates, values, color="#55A868", s=18, zorder=3, alpha=0.7)
-    ax.axhline(avg, color="#55A868", linewidth=0.9, linestyle="--", alpha=0.5,
-               label=f"avg {avg:.0f} {unit}")
+    ax.axhline(
+        avg,
+        color="#55A868",
+        linewidth=0.9,
+        linestyle="--",
+        alpha=0.5,
+        label=f"avg {avg:.0f} {unit}",
+    )
     ax.legend(frameon=False)
 
     locator = mdates.AutoDateLocator(minticks=4, maxticks=12)

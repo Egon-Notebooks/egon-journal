@@ -4,16 +4,19 @@ Frontmatter field definitions and validation for all Egon node types.
 The validate() function accepts a frontmatter dict and returns a list of
 error strings. An empty list means the node is valid.
 """
+
 from datetime import date as date_type
 
-VALID_NODE_TYPES = frozenset({
-    "article",
-    "journal",
-    "prompt",
-    "program",
-    "program-day",
-    "summary",
-})
+VALID_NODE_TYPES = frozenset(
+    {
+        "article",
+        "journal",
+        "prompt",
+        "program",
+        "program-day",
+        "summary",
+    }
+)
 
 # Fields required on every node type
 _UNIVERSAL_REQUIRED = ["title", "date", "type", "tags", "egon_version"]
@@ -21,7 +24,7 @@ _UNIVERSAL_REQUIRED = ["title", "date", "type", "tags", "egon_version"]
 # Additional required fields per node type (beyond universal)
 _NODE_REQUIRED: dict[str, list[str]] = {
     "article": [],
-    "journal": [],          # mood and energy are optional
+    "journal": [],  # mood and energy are optional
     "prompt": ["related_article"],
     "program": ["duration_days"],
     "program-day": ["program", "day"],
@@ -37,9 +40,7 @@ def _check_universal(fm: dict) -> list[str]:
             errors.append(f"Missing required field: '{field}'")
 
     if "type" in fm and fm["type"] not in VALID_NODE_TYPES:
-        errors.append(
-            f"Invalid type: '{fm['type']}'. Must be one of: {sorted(VALID_NODE_TYPES)}"
-        )
+        errors.append(f"Invalid type: '{fm['type']}'. Must be one of: {sorted(VALID_NODE_TYPES)}")
 
     if "date" in fm:
         d = fm["date"]

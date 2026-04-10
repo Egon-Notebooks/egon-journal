@@ -1,4 +1,5 @@
 """Tests for egon.analytics.loader and egon.analytics.word_count."""
+
 from datetime import date
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from egon.analytics.word_count import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 def _write_journal(path: Path, entry_date: date, body: str) -> None:
     date_str = entry_date.strftime("%Y-%m-%d")
     path.write_text(
@@ -31,6 +33,7 @@ def _write_journal(path: Path, entry_date: date, body: str) -> None:
 # ---------------------------------------------------------------------------
 # loader
 # ---------------------------------------------------------------------------
+
 
 class TestLoadJournalEntries:
     def test_loads_entries_sorted_by_date(self, tmp_path):
@@ -77,6 +80,7 @@ class TestLoadJournalEntries:
 # ---------------------------------------------------------------------------
 # word_count
 # ---------------------------------------------------------------------------
+
 
 class TestCountWords:
     def test_simple_sentence(self):
@@ -130,13 +134,14 @@ class TestPlotWordCount:
 # period helpers
 # ---------------------------------------------------------------------------
 
+
 class TestPeriodBounds:
     REF = date(2026, 4, 4)  # Saturday, ISO week 14, Q2
 
     def test_week(self):
         start, end = period_bounds("week", self.REF)
-        assert start == date(2026, 3, 30)   # Monday
-        assert end == date(2026, 4, 5)      # Sunday
+        assert start == date(2026, 3, 30)  # Monday
+        assert end == date(2026, 4, 5)  # Sunday
 
     def test_month(self):
         start, end = period_bounds("month", self.REF)
@@ -212,7 +217,7 @@ class TestParsePeriodValue:
 
     def test_week(self):
         start, end, label = parse_period_value("2026-W14")
-        assert start == date(2026, 3, 30)   # Monday of W14 2026
+        assert start == date(2026, 3, 30)  # Monday of W14 2026
         assert end == date(2026, 4, 5)
         assert label == "2026-W14"
 

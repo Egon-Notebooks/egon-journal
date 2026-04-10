@@ -1,6 +1,7 @@
 """
 Step count report plot — daily total steps as indicator of physical activity.
 """
+
 from datetime import date as date_type
 from pathlib import Path
 

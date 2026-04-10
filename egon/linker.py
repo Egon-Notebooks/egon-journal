@@ -6,6 +6,7 @@ one title per line.  The linker scans a Markdown body and wraps the first
 occurrence of each topic title in [[double brackets]], skipping any that are
 already wrapped.
 """
+
 import re
 from pathlib import Path
 

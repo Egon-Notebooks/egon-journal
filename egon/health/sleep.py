@@ -23,6 +23,7 @@ sleeper woke up), so a night starting 2026-04-03 23:00 and ending
 Sleep onset is represented as hours after 18:00 (6 PM), so that 22:00 = 4.0
 and 00:30 = 6.5. This keeps values positive and monotonic across midnight.
 """
+
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date as date_type
