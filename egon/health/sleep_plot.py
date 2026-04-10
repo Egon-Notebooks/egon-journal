@@ -8,8 +8,8 @@ from datetime import date as date_type
 from pathlib import Path
 from statistics import mean, stdev
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 from egon.plot_style import apply_style
@@ -33,7 +33,7 @@ def _fmt_std(std_hours: float) -> str:
 
 def plot_sleep(
     data: list[tuple[date_type, float]],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Sleep",
     onset_data: list[tuple[date_type, float]] | None = None,
 ) -> None:
@@ -109,6 +109,9 @@ def plot_sleep(
     ax_bottom.xaxis.set_major_formatter(formatter)
     fig.autofmt_xdate(rotation=30)
 
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

@@ -25,7 +25,8 @@ and 00:30 = 6.5. This keeps values positive and monotonic across midnight.
 """
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from datetime import date as date_type, datetime
+from datetime import date as date_type
+from datetime import datetime
 from pathlib import Path
 
 _SLEEP_TYPE = "HKCategoryTypeIdentifierSleepAnalysis"

@@ -15,7 +15,8 @@ with journal entries.
 """
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from datetime import date as date_type, datetime
+from datetime import date as date_type
+from datetime import datetime
 from pathlib import Path
 from statistics import mean
 from typing import NamedTuple

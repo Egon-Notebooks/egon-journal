@@ -9,11 +9,11 @@ from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
-from egon.limbic.bigfive import BigFiveScores, TRAITS
-from egon.plot_style import apply_style, ANNOTATION_SIZE
+from egon.limbic.bigfive import TRAITS, BigFiveScores
+from egon.plot_style import ANNOTATION_SIZE, apply_style
 
 # One colour per trait: O, C, E, A, N
 _COLOURS = ["#4C72B0", "#55A868", "#DD8452", "#C44E52", "#8172B3"]

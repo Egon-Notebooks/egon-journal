@@ -5,11 +5,10 @@ import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud, STOPWORDS
-
-from egon.plot_style import apply_style
+from wordcloud import STOPWORDS, WordCloud
 
 from egon.analytics.loader import JournalEntry
+from egon.plot_style import apply_style
 
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
@@ -32,9 +31,9 @@ def _combined_text(entries: list[JournalEntry]) -> str:
 
 def plot_wordcloud(
     entries: list[JournalEntry],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Journal word cloud",
-) -> None:
+) -> "plt.Figure | None":
     """
     Generate a word cloud from all journal entry bodies and save to *output_path*.
     """
@@ -55,12 +54,15 @@ def plot_wordcloud(
         max_words=200,
     ).generate(text)
 
-    fig, ax = plt.subplots(figsize=(14, 7))
+    fig, ax = plt.subplots(figsize=(14, 10))
     ax.imshow(wc, interpolation="bilinear")
     ax.axis("off")
     ax.set_title(title, pad=12)
 
     fig.tight_layout()
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

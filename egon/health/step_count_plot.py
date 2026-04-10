@@ -4,8 +4,8 @@ Step count report plot — daily total steps as indicator of physical activity.
 from datetime import date as date_type
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 from egon.plot_style import apply_style
 
@@ -14,10 +14,10 @@ _STEPS_10K = 10_000
 
 def plot_step_count(
     data: list[tuple[date_type, float]],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Daily step count",
     unit: str = "count",
-) -> None:
+) -> "plt.Figure | None":
     """
     Plot daily total step count as a bar chart and save to *output_path*.
 
@@ -48,6 +48,9 @@ def plot_step_count(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

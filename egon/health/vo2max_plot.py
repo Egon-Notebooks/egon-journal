@@ -8,18 +8,18 @@ from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 from egon.plot_style import apply_style
 
 
 def plot_vo2max(
     data: list[tuple[date_type, float]],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "VO2 max",
     unit: str = "mL/min/kg",
-) -> None:
+) -> "plt.Figure | None":
     """
     Plot daily mean VO2 max over time and save to *output_path*.
     A dashed line shows the average over the plotted period.
@@ -51,6 +51,9 @@ def plot_vo2max(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

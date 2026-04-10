@@ -14,9 +14,9 @@ from egon.plot_style import apply_style
 
 def plot_sentiment(
     entries: list[JournalEntry],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Journal sentiment by day",
-) -> None:
+) -> "plt.Figure | None":
     """
     Generate a sentiment-by-day bar chart and save it to *output_path*.
 
@@ -56,6 +56,9 @@ def plot_sentiment(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

@@ -3,7 +3,8 @@ Word count by day — analytics and plot.
 """
 import math
 import re
-from datetime import date as date_type, timedelta
+from datetime import date as date_type
+from datetime import timedelta
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -67,7 +68,9 @@ def period_bounds(period: str, ref: date_type) -> tuple[date_type, date_type]:
         case "all-time":
             return date_type.min, date_type.max
         case _:
-            raise ValueError(f"Unknown period '{period}'. Use: week, month, quarter, year, all-time")
+            raise ValueError(
+                f"Unknown period '{period}'. Use: week, month, quarter, year, all-time"
+            )
 
 
 def period_label(period: str, ref: date_type) -> str:
@@ -154,9 +157,9 @@ def filter_entries(
 
 def plot_word_count(
     entries: list[JournalEntry],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Journal word count by day",
-) -> None:
+) -> "plt.Figure | None":
     """
     Generate a word-count-by-day bar chart and save it to *output_path*.
 
@@ -185,6 +188,9 @@ def plot_word_count(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path)
     plt.close(fig)
+    return None

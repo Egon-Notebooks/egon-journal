@@ -10,11 +10,11 @@ from datetime import date as date_type
 from pathlib import Path
 from statistics import mean
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 from egon.limbic.mbti import DIMENSIONS, MBTIScores
-from egon.plot_style import apply_style, ANNOTATION_SIZE
+from egon.plot_style import ANNOTATION_SIZE, apply_style
 
 # One colour per dimension: E/I, N/S, T/F, J/P
 _COLOURS = ["#4C72B0", "#55A868", "#DD8452", "#C44E52"]
@@ -22,7 +22,7 @@ _COLOURS = ["#4C72B0", "#55A868", "#DD8452", "#C44E52"]
 
 def plot_mbti(
     data: list[tuple[date_type, MBTIScores]],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "MBTI personality dimensions",
 ) -> None:
     """
@@ -87,6 +87,9 @@ def plot_mbti(
     axes[-1].xaxis.set_major_formatter(formatter)
     fig.autofmt_xdate(rotation=30)
 
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, bbox_inches="tight")
     plt.close(fig)
+    return None
