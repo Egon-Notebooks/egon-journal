@@ -18,10 +18,21 @@ from egon.plot_style import ANNOTATION_SIZE, apply_style
 # One colour per trait: O, C, E, A, N
 _COLOURS = ["#4C72B0", "#55A868", "#DD8452", "#C44E52", "#8172B3"]
 
+# Population norms (Schmitt et al. 2007 meta-analysis, 1–5 Likert scale).
+# The regression model was trained on 1–5 BFI data so these values are
+# directly comparable to its output range.
+_POP_AVG: dict[str, float] = {
+    "O": 3.9,
+    "C": 3.5,
+    "E": 3.2,
+    "A": 3.7,
+    "N": 3.1,
+}
+
 
 def plot_bigfive(
     data: list[tuple[date_type, BigFiveScores]],
-    output_path: Path,
+    output_path: Path | None,
     title: str = "Big Five personality traits",
 ) -> None:
     """
@@ -53,11 +64,15 @@ def plot_bigfive(
         ax.scatter(dates, values, color=colour, s=18, zorder=3, alpha=0.7)
         ax.axhline(avg, color=colour, linewidth=0.9, linestyle="--", alpha=0.5)
 
+        pop_avg = _POP_AVG[letter]
+        ax.axhline(pop_avg, color="#888888", linewidth=0.9, linestyle=":", alpha=0.6,
+                   label=f"pop avg {pop_avg:.1f}")
+
         ax.set_ylabel(name)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
-        # Trait letter + average annotated to the right of the axes
+        # Trait letter + period average + population average annotated to the right
         ax.annotate(
             f"{letter}\n{avg:.2f}",
             xy=(1.02, 0.5),
@@ -66,6 +81,17 @@ def plot_bigfive(
             fontweight="bold",
             color=colour,
             va="center",
+            ha="left",
+        )
+        ax.annotate(
+            f"pop {pop_avg:.1f}",
+            xy=(1.02, 0.5),
+            xycoords="axes fraction",
+            xytext=(0, -ANNOTATION_SIZE * 1.4),
+            textcoords="offset points",
+            fontsize=ANNOTATION_SIZE * 0.55,
+            color="#888888",
+            va="top",
             ha="left",
         )
 
@@ -78,6 +104,9 @@ def plot_bigfive(
     axes[-1].xaxis.set_major_formatter(formatter)
     fig.autofmt_xdate(rotation=30)
 
+    if output_path is None:
+        return fig
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, bbox_inches="tight")
     plt.close(fig)
+    return None
