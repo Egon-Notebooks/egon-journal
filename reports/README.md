@@ -4,9 +4,66 @@ All reports are generated as PDFs (or other matplotlib-supported formats) and sa
 
 ---
 
+## MBTI personality dimensions
+
+Classifies each journal entry as one of 16 MBTI types and decomposes the result
+into 4 binary dimensions (E/I, N/S, T/F, J/P).
+Produces four stacked subplots — one per dimension — with the dominant pole and proportion annotated to the right.
+Personality is fixed in most individuals, but maybe slowly change over the years.
+For example, older people tend to score lower on neuroticism.
+However, some mental health conditions cause individuals to see more variation in their personality traits.
+
+Requires the same `bigfive` setup as Big Five (same `.venv-bigfive`):
+
+```bash
+bash scripts/setup_bigfive.sh   # Intel Mac (once)
+uv sync --extra bigfive         # Linux / Apple Silicon / Windows
+```
+
+```bash
+uv run egon report-mbti
+
+uv run egon report-mbti --period month
+uv run egon report-mbti --for 2026-Q1
+uv run egon report-mbti --output ~/my-reports/mbti.pdf
+```
+
+Default output: `./reports/mbti/<period>.pdf`
+
+---
+
+## Big Five personality traits
+
+Scores each journal entry on the Big Five personality dimensions (O, C, E, A, N)
+using a DistilBERT regression model. Produces five stacked subplots — one per trait —
+with the period average annotated to the right of each panel.
+
+Requires the `bigfive` optional dependency group (downloads ~270 MB on first run):
+
+```bash
+uv sync --extra bigfive
+```
+
+> **Platform note:** PyTorch 2.3+ dropped Intel Mac (x86_64) support.
+> This command requires Linux, Apple Silicon, or Windows.
+> On Intel Mac, run via Docker or a Linux VM.
+
+```bash
+uv run egon report-bigfive
+
+uv run egon report-bigfive --period month
+uv run egon report-bigfive --for 2026-Q1
+uv run egon report-bigfive --output ~/my-reports/bigfive.pdf
+```
+
+Default output: `./reports/bigfive/<period>.pdf`
+
+---
+
 ## Word count
 
 Plots daily word count across all journal entries as a bar chart.
+This is an indication of when you're journaling more actively.
 
 ```bash
 # Uses EGON_JOURNAL_DIR from .env
