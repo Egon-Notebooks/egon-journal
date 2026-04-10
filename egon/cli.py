@@ -773,8 +773,19 @@ def report_resting_heart_rate(
     resolved_output = output or Path(f"reports/resting_heart_rate/{label}.pdf")
     title = f"Resting heart rate — {label}"
 
+    def _parse_target(env_key: str) -> float | None:
+        raw = os.getenv(env_key, "").strip()
+        try:
+            return float(raw) if raw else None
+        except ValueError:
+            typer.echo(f"Warning: {env_key}={raw!r} is not a valid number — ignoring.", err=True)
+            return None
+
     typer.echo(f"Found {len(data)} days of resting heart rate data for {label}.")
-    plot_resting_heart_rate(data, resolved_output, title=title, unit=unit)
+    plot_resting_heart_rate(
+        data, resolved_output, title=title, unit=unit,
+        target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
+    )
     typer.echo(f"Saved: {resolved_output}")
 
 
@@ -1180,6 +1191,7 @@ def report_all(
             label=label,
             target_body_mass=_parse_target("EGON_TARGET_BODY_MASS"),
             target_lean_body_mass=_parse_target("EGON_TARGET_LEAN_BODY_MASS"),
+            target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
             output_path=full_output,
         )
         typer.echo(f"  Saved: {full_output}")
