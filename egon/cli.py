@@ -30,6 +30,7 @@ from egon.health.apple_health import (
     infer_unit,
     load_records,
 )
+from egon.health.exercise_plot import plot_exercise
 from egon.health.hrv_plot import plot_hrv
 from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
@@ -39,6 +40,8 @@ from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
 from egon.limbic.bigfive import bigfive_by_day
 from egon.limbic.bigfive_plot import plot_bigfive
+from egon.limbic.emotion import emotion_by_day
+from egon.limbic.emotion_plot import plot_emotion
 from egon.limbic.mbti import mbti_by_day
 from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
@@ -1047,6 +1050,299 @@ def report_vo2max(
     typer.echo(f"Saved: {resolved_output}")
 
 
+@app.command(name="report-topics")
+def report_topics(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None,
+        "--output-dir",
+        help="Output directory (default: reports/topics)",
+    ),
+) -> None:
+    """Plot BERTopic topic summary and timeline from journal entries."""
+    from egon.analytics.topic_plot import plot_topic_summary, plot_topic_timeline
+
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(f"Error: journal directory not found: {resolved_dir}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    out_dir = output_dir or Path("reports/topics")
+
+    summary_out = out_dir / f"{label}_summary.pdf"
+    plot_topic_summary(entries, summary_out, title=f"Journal topic summary — {label}")
+    typer.echo(f"Saved: {summary_out}")
+
+    try:
+        timeline_out = out_dir / f"{label}_timeline.pdf"
+        plot_topic_timeline(entries, timeline_out, title=f"Journal topic timeline — {label}")
+        typer.echo(f"Saved: {timeline_out}")
+    except ValueError as exc:
+        typer.echo(f"Skipping timeline: {exc}")
+
+
+@app.command(name="report-exercise")
+def report_exercise(
+    xml_path: Optional[Path] = typer.Option(
+        None,
+        "--xml",
+        help="Path to Apple Health export.xml (default: $EGON_APPLE_HEALTH_XML)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/exercise/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot daily Apple Exercise Time from an Apple Health export."""
+    resolved_xml = _resolve_apple_health_xml(xml_path)
+    if not resolved_xml:
+        typer.echo(
+            "Error: no Apple Health export found.\n"
+            "Set EGON_APPLE_HEALTH_XML in .env or pass --xml.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if not resolved_xml.is_file():
+        typer.echo(f"Error: file not found: {resolved_xml}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    records = _load_and_report(resolved_xml)
+
+    exercise_recs = records.get("AppleExerciseTime", [])
+    if not exercise_recs:
+        typer.echo("Error: no AppleExerciseTime records found in export.", err=True)
+        raise typer.Exit(1)
+
+    data = filter_by_date(daily_sum(exercise_recs), start, end)
+    if not data:
+        typer.echo(f"No exercise data found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    def _parse_target(env_key: str) -> float | None:
+        raw = os.getenv(env_key, "").strip()
+        try:
+            return float(raw) if raw else None
+        except ValueError:
+            typer.echo(f"Warning: {env_key}={raw!r} is not a valid number — ignoring.", err=True)
+            return None
+
+    resolved_output = output or Path(f"reports/exercise/{label}.pdf")
+    title = f"Daily exercise time — {label}"
+
+    typer.echo(f"Found {len(data)} days of exercise data for {label}.")
+    plot_exercise(
+        data,
+        resolved_output,
+        title=title,
+        target_exercise_minutes=_parse_target("EGON_TARGET_EXERCISE_MINUTES"),
+    )
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-emotion")
+def report_emotion(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/emotion/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot daily emotion profile from journal entries (anger/fear/joy/sadness etc.)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(f"Error: journal directory not found: {resolved_dir}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Scoring emotions for {len(entries)} entries …")
+    data = emotion_by_day(entries)
+
+    resolved_output = output or Path(f"reports/emotion/{label}.pdf")
+    title = f"Daily emotion profile — {label}"
+
+    plot_emotion(data, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-correlations")
+def report_correlations(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    xml_path: Optional[Path] = typer.Option(
+        None,
+        "--xml",
+        help="Path to Apple Health export.xml (default: $EGON_APPLE_HEALTH_XML)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None,
+        "--output-dir",
+        help="Output directory (default: reports/correlations)",
+    ),
+) -> None:
+    """Plot cross-signal correlation matrix and highlighted pairs."""
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            start, end = period_bounds(period, date_type.today())
+            label = period_label(period, date_type.today())
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    out_dir = output_dir or Path("reports/correlations")
+
+    # --- Journal entries ---
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    entries: list = []
+    if resolved_dir.is_dir():
+        from egon.analytics.word_count import filter_entries
+
+        all_entries = load_journal_entries(resolved_dir)
+        entries = filter_entries(all_entries, start, end)
+
+    # --- Health records ---
+    resolved_xml = _resolve_apple_health_xml(xml_path)
+    health_records: dict = {}
+    if resolved_xml and resolved_xml.is_file():
+        health_records = _load_and_report(resolved_xml)
+
+    # --- Build signals ---
+    from egon.full_report import build_signals
+
+    signals = build_signals(
+        journal_entries=entries,
+        health_records=health_records,
+        xml_path=resolved_xml,
+        start=start,
+        end=end,
+    )
+
+    if len(signals) < 2:
+        typer.echo("Error: fewer than 2 signals available — nothing to correlate.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Computing correlations across {len(signals)} signals for {label}.")
+
+    from egon.analytics.correlation_plot import (
+        plot_correlation_matrix,
+        plot_highlighted_correlations,
+    )
+
+    matrix_out = out_dir / f"{label}_matrix.pdf"
+    plot_correlation_matrix(
+        signals,
+        matrix_out,
+        title=f"Cross-signal correlation matrix \u2014 {label}",
+    )
+    typer.echo(f"Saved: {matrix_out}")
+
+    try:
+        highlighted_out = out_dir / f"{label}_highlighted.pdf"
+        plot_highlighted_correlations(
+            signals,
+            highlighted_out,
+            title=f"Key cross-signal relationships \u2014 {label}",
+        )
+        typer.echo(f"Saved: {highlighted_out}")
+    except ValueError as exc:
+        typer.echo(f"Skipping highlighted pairs: {exc}")
+
+
 @app.command(name="report")
 def report_all(
     journal_dir: Optional[Path] = typer.Option(
@@ -1083,6 +1379,16 @@ def report_all(
         ("wordcloud", lambda: report_wordcloud(journal_dir=journal_dir, **_kw)),
         ("bigfive", lambda: report_bigfive(journal_dir=journal_dir, **_kw)),
         ("mbti", lambda: report_mbti(journal_dir=journal_dir, **_kw)),
+        ("emotion", lambda: report_emotion(journal_dir=journal_dir, **_kw)),
+        (
+            "topics",
+            lambda: report_topics(
+                journal_dir=journal_dir,
+                period=period,
+                for_period=for_period,
+                output_dir=None,
+            ),
+        ),
     ]
     _hkw = dict(period=period, for_period=for_period, output=None)
     _health_reports = [
@@ -1092,6 +1398,17 @@ def report_all(
         ("sleep", lambda: report_sleep(xml_path=xml_path, **_hkw)),
         ("step-count", lambda: report_step_count(xml_path=xml_path, **_hkw)),
         ("vo2max", lambda: report_vo2max(xml_path=xml_path, **_hkw)),
+        ("exercise", lambda: report_exercise(xml_path=xml_path, **_hkw)),
+        (
+            "correlations",
+            lambda: report_correlations(
+                journal_dir=journal_dir,
+                xml_path=xml_path,
+                period=period,
+                for_period=for_period,
+                output_dir=None,
+            ),
+        ),
     ]
 
     period_display = for_period or period
@@ -1163,8 +1480,10 @@ def report_all(
         except ValueError:
             return None
 
+    from egon.config import load_report_config
     from egon.full_report import generate_full_report
 
+    report_cfg = load_report_config()
     full_output = Path(f"reports/full-report/{label}.pdf")
     typer.echo(f"  Compiling full report → {full_output} …")
     try:
@@ -1177,7 +1496,9 @@ def report_all(
             target_body_mass=_parse_target("EGON_TARGET_BODY_MASS"),
             target_lean_body_mass=_parse_target("EGON_TARGET_LEAN_BODY_MASS"),
             target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
+            target_exercise_minutes=_parse_target("EGON_TARGET_EXERCISE_MINUTES"),
             output_path=full_output,
+            config=report_cfg,
         )
         typer.echo(f"  Saved: {full_output}")
     except Exception as exc:

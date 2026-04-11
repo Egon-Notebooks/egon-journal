@@ -25,12 +25,19 @@ import textwrap
 from datetime import date as date_type
 from pathlib import Path
 
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+from egon.analytics.correlation_plot import (
+    plot_correlation_matrix,
+    plot_highlighted_correlations,
+)
 from egon.analytics.loader import JournalEntry
+from egon.analytics.pronoun_ratio_plot import plot_pronoun_ratio
 from egon.analytics.word_count import plot_word_count
 from egon.analytics.wordcloud_plot import plot_wordcloud
+from egon.config import ReportConfig, load_report_config
 from egon.health.apple_health import (
     daily_mean,
     daily_sum,
@@ -38,6 +45,7 @@ from egon.health.apple_health import (
     infer_unit,
     load_records,
 )
+from egon.health.exercise_plot import plot_exercise
 from egon.health.hrv_plot import plot_hrv
 from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
@@ -47,10 +55,17 @@ from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
 from egon.limbic.bigfive import BigFiveScores, bigfive_by_day
 from egon.limbic.bigfive_plot import plot_bigfive
+from egon.limbic.emotion import EmotionScores, emotion_by_day
+from egon.limbic.emotion_plot import plot_emotion
 from egon.limbic.mbti import MBTIScores, mbti_by_day
 from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
 from egon.plot_style import apply_style
+
+_LOGO_PATH = Path(__file__).resolve().parents[1] / "content" / "egon_logo.png"
+
+# Type alias for a named daily time series
+Signals = dict[str, list[tuple[date_type, float]]]
 
 # ---------------------------------------------------------------------------
 # Page dimensions (A4) and layout constants
@@ -103,6 +118,40 @@ _FIG_COMMENTARY = {
         "veniam, quis nostrud exercitation ullamco laboris. [Replace with "
         "observations about recurring themes and topics.]"
     ),
+    "pronoun-ratio": (
+        "First-person pronouns (I, me, my, mine, myself) as a fraction of total "
+        "words per journal entry. Research by Pennebaker and colleagues links "
+        "elevated first-person singular pronoun use with self-focused attention, "
+        "depressive rumination, and emotional distress. Day-to-day variation is "
+        "normal; a sustained upward trend over weeks may be worth noting. "
+        "[Replace with observations about your own pronoun pattern and any "
+        "periods that stand out.]"
+    ),
+    "topic-summary": (
+        "BERTopic discovers latent themes in the journal corpus by clustering "
+        "semantically similar entries.  Each bar represents one discovered topic; "
+        "the label shows its most representative keywords.  Bar length reflects "
+        "how many entries belong to that topic.  Topic ids are assigned by size "
+        "(largest first); the exact keywords depend on the period analysed. "
+        "[Replace with observations about which themes dominate your writing.]"
+    ),
+    "topic-timeline": (
+        "The same topics as the summary chart, tracked month by month.  A growing "
+        "slice indicates a theme that is becoming more prominent in your writing; "
+        "a shrinking one has receded.  Abrupt shifts often coincide with life "
+        "events — a new project, a relationship change, a health episode. "
+        "[Replace with observations about how your recurring themes have evolved "
+        "over the period.]"
+    ),
+    "emotion": (
+        "Emotion probabilities are inferred from the language in your journal entries "
+        "using a DistilRoBERTa model trained on six emotion datasets "
+        "(Hartmann et al. 2022).  The stacked area chart shows all seven emotions; "
+        "the line chart below isolates joy and sadness for easier day-to-day reading.  "
+        "Sustained elevation of sadness or fear over multiple weeks may be worth "
+        "discussing with a therapist; transient spikes are normal. "
+        "[Replace with observations about dominant emotions and any notable shifts.]"
+    ),
     "bigfive": (
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
         "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
@@ -150,6 +199,34 @@ _FIG_COMMENTARY = {
         "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
         "veniam, quis nostrud exercitation ullamco laboris. [Replace with "
         "observations about aerobic fitness trajectory over the period.]"
+    ),
+    "exercise": (
+        "Apple Exercise Time measures minutes per day during which your heart rate "
+        "was elevated above a brisk-walk threshold, matching the Apple Watch Exercise "
+        "ring.  The WHO recommends at least 150 minutes of moderate-intensity activity "
+        "per week — equivalent to the 30-minute daily guideline shown here.  "
+        "[Replace with observations about exercise consistency and any weeks that "
+        "stand out above or below the guideline.]"
+    ),
+    "correlation-matrix": (
+        "Each cell shows the Pearson correlation coefficient between a pair of "
+        "daily time series. Values range from −1 (perfect inverse relationship) "
+        "to +1 (perfect positive relationship). Bold cells are statistically "
+        "significant (p < 0.05); faded cells are not. Only days on which both "
+        "signals were recorded are used per pair, so sample sizes vary. "
+        "[Replace with observations about the strongest or most surprising "
+        "associations in the matrix.]"
+    ),
+    "highlighted-correlations": (
+        "These four scatter plots examine relationships between physiological and "
+        "psychological signals that have well-documented links to mental health and "
+        "wellbeing. Sleep quality predicts next-day mood; HRV and resting heart rate "
+        "both reflect autonomic nervous system tone, which is closely tied to anxiety "
+        "and stress; step count is a proxy for the mood-lifting effect of physical "
+        "activity. The regression line shows the direction of the linear trend; the "
+        "r and p values indicate its strength and reliability. "
+        "[Replace with observations about which relationships are strongest for you "
+        "and what they might suggest about your recovery and energy patterns.]"
     ),
 }
 
@@ -273,41 +350,82 @@ def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> 
     apply_style()
     fig = plt.figure(figsize=(_W, _H), facecolor=_WHITE)
 
+    logo_img = mpimg.imread(_LOGO_PATH) if _LOGO_PATH.is_file() else None
+
+    # --- Navy header band with logo + "Egon Notebooks" ---
     top_h = 0.17
     ax_top = fig.add_axes([0, 1 - top_h, 1, top_h])
     ax_top.set_facecolor(_NAVY)
     ax_top.axis("off")
-    ax_top.text(
-        0.5,
-        0.62,
-        "EGON NOTEBOOKS",
-        ha="center",
-        va="center",
-        color=_WHITE,
-        fontsize=26,
-        fontweight="bold",
-        fontfamily="serif",
-        transform=ax_top.transAxes,
-    )
-    ax_top.text(
-        0.5,
-        0.24,
-        "Personal Journal & Health Report",
-        ha="center",
-        va="center",
-        color=_WHITE,
-        fontsize=11,
-        fontfamily="serif",
-        alpha=0.80,
-        transform=ax_top.transAxes,
-    )
 
+    if logo_img is not None:
+        logo_size = 0.13  # fraction of figure height
+        logo_left = 0.30
+        ax_logo = fig.add_axes(
+            [logo_left, 1 - top_h + (top_h - logo_size) / 2, logo_size, logo_size]
+        )
+        ax_logo.imshow(logo_img)
+        ax_logo.axis("off")
+        text_x = logo_left + logo_size + 0.02
+        # convert figure x to axes fraction
+        text_x_frac = text_x
+        ax_top.text(
+            text_x_frac,
+            0.60,
+            "Egon Notebooks",
+            ha="left",
+            va="center",
+            color=_WHITE,
+            fontsize=26,
+            fontweight="bold",
+            fontfamily="serif",
+            transform=fig.transFigure,
+        )
+        ax_top.text(
+            text_x_frac,
+            1 - top_h + top_h * 0.22,
+            "Personal Journal & Health Report",
+            ha="left",
+            va="center",
+            color=_WHITE,
+            fontsize=10,
+            fontfamily="serif",
+            alpha=0.80,
+            transform=fig.transFigure,
+        )
+    else:
+        ax_top.text(
+            0.5,
+            0.60,
+            "Egon Notebooks",
+            ha="center",
+            va="center",
+            color=_WHITE,
+            fontsize=26,
+            fontweight="bold",
+            fontfamily="serif",
+            transform=ax_top.transAxes,
+        )
+        ax_top.text(
+            0.5,
+            0.22,
+            "Personal Journal & Health Report",
+            ha="center",
+            va="center",
+            color=_WHITE,
+            fontsize=11,
+            fontfamily="serif",
+            alpha=0.80,
+            transform=ax_top.transAxes,
+        )
+
+    # --- Body: period label, date range, generated date ---
     ax = fig.add_axes([0.12, 0.10, 0.76, 0.71])
     ax.set_facecolor(_WHITE)
     ax.axis("off")
     ax.text(
         0.5,
-        0.86,
+        0.78,
         label,
         ha="center",
         va="top",
@@ -319,7 +437,7 @@ def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> 
     )
     ax.text(
         0.5,
-        0.71,
+        0.62,
         f"{start.strftime('%B %-d')} \u2013 {end.strftime('%B %-d, %Y')}",
         ha="center",
         va="top",
@@ -330,7 +448,7 @@ def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> 
     )
     ax.plot(
         [0.10, 0.90],
-        [0.60, 0.60],
+        [0.50, 0.50],
         color=_RULE,
         linewidth=0.9,
         transform=ax.transAxes,
@@ -338,7 +456,7 @@ def _cover_page(pdf: PdfPages, label: str, start: date_type, end: date_type) -> 
     )
     ax.text(
         0.5,
-        0.52,
+        0.42,
         f"Generated {date_type.today().strftime('%B %-d, %Y')}",
         ha="center",
         va="top",
@@ -567,6 +685,91 @@ def _figure_page(
 
 
 # ---------------------------------------------------------------------------
+# Signal assembly (shared by full report and standalone correlation command)
+# ---------------------------------------------------------------------------
+
+
+def build_signals(
+    *,
+    journal_entries: list[JournalEntry],
+    health_records: dict,
+    xml_path: Path | None,
+    start: date_type,
+    end: date_type,
+    bigfive_data: list | None = None,
+    mbti_data: list | None = None,
+    emotion_data: list | None = None,
+) -> Signals:
+    """
+    Collect all available daily time series into a name→data dict.
+
+    Each value is a ``list[tuple[date, float]]`` suitable for the correlation
+    plot functions.  Only signals that have data for the given period are
+    included.
+    """
+    from egon.analytics.word_count import word_counts_by_day
+    from egon.limbic.sentiment import sentiment_by_day
+
+    signals: Signals = {}
+
+    if journal_entries:
+        try:
+            signals["word count"] = [(d, float(v)) for d, v in word_counts_by_day(journal_entries)]
+        except Exception:
+            pass
+        try:
+            signals["sentiment"] = sentiment_by_day(journal_entries)
+        except Exception:
+            pass
+
+    if bigfive_data:
+        for i, name in enumerate(["B5-O", "B5-C", "B5-E", "B5-A", "B5-N"]):
+            signals[name] = [(d, s[i]) for d, s in bigfive_data]
+
+    if mbti_data:
+        for i, name in enumerate(["MBTI E/I", "MBTI N/S", "MBTI T/F", "MBTI J/P"]):
+            signals[name] = [(d, float(s[i])) for d, s in mbti_data]
+
+    if emotion_data:
+        from egon.limbic.emotion import EMOTIONS
+
+        for i, name in enumerate(EMOTIONS):
+            signals[f"emo-{name}"] = [(d, s[i]) for d, s in emotion_data]
+
+    if weight_recs := health_records.get("BodyMass"):
+        if wd := filter_by_date(daily_mean(weight_recs), start, end):
+            signals["weight"] = wd
+    if lean_recs := health_records.get("LeanBodyMass"):
+        if ld := filter_by_date(daily_mean(lean_recs), start, end):
+            signals["lean mass"] = ld
+    if rhr_recs := health_records.get("RestingHeartRate"):
+        if rd := filter_by_date(daily_mean(rhr_recs), start, end):
+            signals["resting HR"] = rd
+    if hrv_recs := health_records.get("HeartRateVariabilitySDNN"):
+        if hd := filter_by_date(daily_mean(hrv_recs), start, end):
+            signals["HRV"] = hd
+    if step_recs := health_records.get("StepCount"):
+        if sd := filter_by_date(daily_sum(step_recs), start, end):
+            signals["steps"] = sd
+    if ex_recs := health_records.get("AppleExerciseTime"):
+        if ed := filter_by_date(daily_sum(ex_recs), start, end):
+            signals["exercise (min)"] = ed
+    if vo2_recs := health_records.get("VO2Max"):
+        if vd := filter_by_date(daily_mean(vo2_recs), start, end):
+            signals["VO\u2082 max"] = vd
+    if xml_path and xml_path.is_file():
+        try:
+            if sleep_sig := filter_sleep_by_date(load_sleep_records(xml_path), start, end):
+                signals["sleep (h)"] = sleep_sig
+            if onset_sig := filter_sleep_by_date(load_sleep_onset(xml_path), start, end):
+                signals["sleep onset"] = onset_sig
+        except Exception:
+            pass
+
+    return signals
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -581,7 +784,9 @@ def generate_full_report(
     target_body_mass: float | None = None,
     target_lean_body_mass: float | None = None,
     target_resting_heart_rate: float | None = None,
+    target_exercise_minutes: float | None = None,
     output_path: Path,
+    config: ReportConfig | None = None,
 ) -> None:
     """
     Compile all report figures into a single A4 PDF and save to *output_path*.
@@ -590,6 +795,7 @@ def generate_full_report(
     ``<output_dir>/.cache/<label>/`` to avoid re-running the model.
     Delete those files to force a full re-score.
     """
+    cfg = config if config is not None else load_report_config()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     cache_dir = output_path.parent / ".cache" / label
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -599,8 +805,10 @@ def generate_full_report(
     # -----------------------------------------------------------------------
     bf_cache = cache_dir / "bigfive_data.json"
     mbti_cache = cache_dir / "mbti_data.json"
+    emotion_cache = cache_dir / "emotion_data.json"
     bigfive_data = None
     mbti_data = None
+    emotion_data: list | None = None
 
     if journal_entries:
         if bf_cache.exists():
@@ -629,6 +837,23 @@ def generate_full_report(
             except Exception as exc:
                 print(f"  [full report] MBTI scoring unavailable: {exc}")
 
+        if cfg.enabled("emotion"):
+            if emotion_cache.exists():
+                print("  [full report] Emotion: loading cached scores")
+                try:
+                    raw = json.loads(emotion_cache.read_text())
+                    emotion_data = [(date_type.fromisoformat(d), EmotionScores(*s)) for d, s in raw]
+                except Exception as exc:
+                    print(f"  [full report] Emotion cache corrupt, re-scoring: {exc}")
+            if emotion_data is None:
+                try:
+                    emotion_data = emotion_by_day(journal_entries)
+                    emotion_cache.write_text(
+                        json.dumps([[d.isoformat(), list(s)] for d, s in emotion_data])
+                    )
+                except Exception as exc:
+                    print(f"  [full report] Emotion scoring unavailable: {exc}")
+
     # -----------------------------------------------------------------------
     # Health records
     # -----------------------------------------------------------------------
@@ -638,6 +863,20 @@ def generate_full_report(
             health_records = load_records(xml_path)
         except Exception as exc:
             print(f"  [full report] Failed to load Apple Health data: {exc}")
+
+    # -----------------------------------------------------------------------
+    # Collect all daily time series for cross-signal correlation analysis
+    # -----------------------------------------------------------------------
+    signals = build_signals(
+        journal_entries=journal_entries,
+        health_records=health_records,
+        xml_path=xml_path,
+        start=start,
+        end=end,
+        bigfive_data=bigfive_data,
+        mbti_data=mbti_data,
+        emotion_data=emotion_data,
+    )
 
     def _capture(fn, name: str, *args, **kwargs) -> plt.Figure | None:
         try:
@@ -659,35 +898,93 @@ def generate_full_report(
         # --- Section 1: Journal Insights ---
         _text_page(pdf, "Journal Insights", _JOURNAL_INTRO, section_num=1)
 
-        fig = _capture(
-            plot_word_count,
-            "word-count",
-            journal_entries,
-            title=f"Journal word count \u2014 {label}",
-        )
-        if fig:
-            _fp(fig, "Figure 1.1 \u2014 Daily journal word count", "word-count")
-
-        fig = _capture(
-            plot_sentiment, "sentiment", journal_entries, title=f"Journal sentiment \u2014 {label}"
-        )
-        if fig:
-            _fp(
-                fig,
-                "Figure 1.2 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
-                "sentiment",
+        if cfg.enabled("word_count"):
+            fig = _capture(
+                plot_word_count,
+                "word-count",
+                journal_entries,
+                title=f"Journal word count \u2014 {label}",
             )
+            if fig:
+                _fp(fig, "Figure 1.1 \u2014 Daily journal word count", "word-count")
 
-        fig = _capture(
-            plot_wordcloud, "wordcloud", journal_entries, title=f"Journal word cloud \u2014 {label}"
-        )
-        if fig:
-            _fp(fig, "Figure 1.3 \u2014 Word cloud of most frequent themes", "wordcloud")
+        if cfg.enabled("sentiment"):
+            fig = _capture(
+                plot_sentiment,
+                "sentiment",
+                journal_entries,
+                title=f"Journal sentiment \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 1.2 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
+                    "sentiment",
+                )
+
+        if cfg.enabled("wordcloud"):
+            fig = _capture(
+                plot_wordcloud,
+                "wordcloud",
+                journal_entries,
+                title=f"Journal word cloud \u2014 {label}",
+            )
+            if fig:
+                _fp(fig, "Figure 1.3 \u2014 Word cloud of most frequent themes", "wordcloud")
+
+        if cfg.enabled("pronoun_ratio"):
+            fig = _capture(
+                plot_pronoun_ratio,
+                "pronoun-ratio",
+                journal_entries,
+                title=f"First-person pronoun ratio \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 1.4 \u2014 First-person pronoun ratio (I / me / my / mine / myself)",
+                    "pronoun-ratio",
+                )
+
+        if cfg.enabled("topics"):
+            try:
+                from egon.analytics.topic_plot import plot_topic_summary, plot_topic_timeline
+
+                fig = _capture(
+                    plot_topic_summary,
+                    "topic-summary",
+                    journal_entries,
+                    title=f"Journal topic summary \u2014 {label}",
+                )
+                if fig:
+                    _fp(
+                        fig,
+                        "Figure 1.5 \u2014 Discovered topics and their representative keywords",
+                        "topic-summary",
+                    )
+
+                fig = _capture(
+                    plot_topic_timeline,
+                    "topic-timeline",
+                    journal_entries,
+                    title=f"Journal topic timeline \u2014 {label}",
+                )
+                if fig:
+                    _fp(
+                        fig,
+                        "Figure 1.6 \u2014 Topic prevalence by month",
+                        "topic-timeline",
+                    )
+            except ImportError:
+                print(
+                    "  [full report] skipping 'topics': BERTopic not installed "
+                    "(run: uv sync --extra topics)"
+                )
 
         # --- Section 2: Personality & Affective Patterns ---
         _text_page(pdf, "Personality & Affective Patterns", _PERSONALITY_INTRO, section_num=2)
 
-        if bigfive_data:
+        if bigfive_data and cfg.enabled("bigfive"):
             fig = _capture(
                 plot_bigfive,
                 "bigfive",
@@ -699,7 +996,7 @@ def generate_full_report(
                     fig, "Figure 2.1 \u2014 Big Five trait scores by day (O, C, E, A, N)", "bigfive"
                 )
 
-        if mbti_data:
+        if mbti_data and cfg.enabled("mbti"):
             fig = _capture(
                 plot_mbti, "mbti", mbti_data, title=f"MBTI personality dimensions \u2014 {label}"
             )
@@ -710,10 +1007,25 @@ def generate_full_report(
                     "mbti",
                 )
 
+        if emotion_data and cfg.enabled("emotion"):
+            fig = _capture(
+                plot_emotion,
+                "emotion",
+                emotion_data,
+                title=f"Daily emotion profile \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 2.3 \u2014 Daily emotion probabilities "
+                    "(anger / fear / joy / sadness \u2026)",
+                    "emotion",
+                )
+
         # --- Section 3: Physiological Measures ---
         _text_page(pdf, "Physiological Measures", _PHYSIO_INTRO, section_num=3)
 
-        if weight_recs := health_records.get("BodyMass"):
+        if cfg.enabled("weight") and (weight_recs := health_records.get("BodyMass")):
             unit = infer_unit(weight_recs)
             weight_data = filter_by_date(daily_mean(weight_recs), start, end)
             lean_recs = health_records.get("LeanBodyMass", [])
@@ -738,7 +1050,9 @@ def generate_full_report(
                         "weight",
                     )
 
-        if rhr_recs := health_records.get("RestingHeartRate"):
+        if cfg.enabled("resting_heart_rate") and (
+            rhr_recs := health_records.get("RestingHeartRate")
+        ):
             rhr_unit = infer_unit(rhr_recs)
             rhr_data = filter_by_date(daily_mean(rhr_recs), start, end)
             if rhr_data:
@@ -753,7 +1067,7 @@ def generate_full_report(
                 if fig:
                     _fp(fig, "Figure 3.2 \u2014 Daily resting heart rate", "resting-heart-rate")
 
-        if hrv_recs := health_records.get("HeartRateVariabilitySDNN"):
+        if cfg.enabled("hrv") and (hrv_recs := health_records.get("HeartRateVariabilitySDNN")):
             hrv_unit = infer_unit(hrv_recs)
             hrv_data = filter_by_date(daily_mean(hrv_recs), start, end)
             if hrv_data:
@@ -767,7 +1081,7 @@ def generate_full_report(
                 if fig:
                     _fp(fig, "Figure 3.3 \u2014 Daily heart rate variability (HRV SDNN)", "hrv")
 
-        if xml_path and xml_path.is_file():
+        if cfg.enabled("sleep") and xml_path and xml_path.is_file():
             try:
                 sleep_data = filter_sleep_by_date(load_sleep_records(xml_path), start, end)
                 onset_data = filter_sleep_by_date(load_sleep_onset(xml_path), start, end) or None
@@ -788,7 +1102,7 @@ def generate_full_report(
             except Exception as exc:
                 print(f"  [full report] skipping 'sleep': {exc}")
 
-        if step_recs := health_records.get("StepCount"):
+        if cfg.enabled("step_count") and (step_recs := health_records.get("StepCount")):
             steps_data = filter_by_date(daily_sum(step_recs), start, end)
             if steps_data:
                 fig = _capture(
@@ -800,7 +1114,20 @@ def generate_full_report(
                 if fig:
                     _fp(fig, "Figure 3.5 \u2014 Daily step count", "step-count")
 
-        if vo2_recs := health_records.get("VO2Max"):
+        if cfg.enabled("exercise") and (ex_recs := health_records.get("AppleExerciseTime")):
+            exercise_data = filter_by_date(daily_sum(ex_recs), start, end)
+            if exercise_data:
+                fig = _capture(
+                    plot_exercise,
+                    "exercise",
+                    exercise_data,
+                    title=f"Daily exercise time \u2014 {label}",
+                    target_exercise_minutes=target_exercise_minutes,
+                )
+                if fig:
+                    _fp(fig, "Figure 3.6 \u2014 Daily Apple Exercise Time (min)", "exercise")
+
+        if cfg.enabled("vo2max") and (vo2_recs := health_records.get("VO2Max")):
             vo2_unit = infer_unit(vo2_recs)
             vo2_data = filter_by_date(daily_mean(vo2_recs), start, end)
             if vo2_data:
@@ -812,4 +1139,59 @@ def generate_full_report(
                     unit=vo2_unit,
                 )
                 if fig:
-                    _fp(fig, "Figure 3.6 \u2014 Daily VO\u2082 max (mL/min/kg)", "vo2max")
+                    _fp(fig, "Figure 3.7 \u2014 Daily VO\u2082 max (mL/min/kg)", "vo2max")
+
+        # --- Section 4: Cross-Signal Analysis ---
+        _CROSS_SIGNAL_INTRO = (
+            "This section examines relationships between the time series collected "
+            "across the other three sections. Rather than looking at each signal in "
+            "isolation, the correlation matrix below asks: on days when one metric "
+            "was higher than usual, were other metrics systematically higher or lower "
+            "too? Strong correlations do not prove causation, but they can surface "
+            "patterns worth exploring — for example, whether poor sleep reliably "
+            "precedes lower mood the following day, or whether physical activity "
+            "aligns with higher extraversion scores in your writing."
+            "\n\n"
+            "Only days on which both signals in a pair were recorded contribute to "
+            "that pair\u2019s correlation, so cells involving infrequently recorded "
+            "metrics (e.g. VO\u2082 max, lean body mass) may rest on fewer data "
+            "points. The highlighted scatter plots on the following page focus on "
+            "four pairs with well-documented links to mental health and wellbeing."
+        )
+        _text_page(pdf, "Cross-Signal Analysis", _CROSS_SIGNAL_INTRO, section_num=4)
+
+        corr_dir = output_path.parent.parent / "correlations"
+
+        if len(signals) >= 2 and cfg.enabled("correlation_matrix"):
+            fig = _capture(
+                plot_correlation_matrix,
+                "correlation-matrix",
+                signals,
+                title=f"Cross-signal correlation matrix \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 4.1 \u2014 Pairwise Pearson correlations across all daily signals",
+                    "correlation-matrix",
+                )
+                corr_dir.mkdir(parents=True, exist_ok=True)
+                fig.savefig(corr_dir / f"{label}_matrix.pdf")
+                plt.close(fig)
+
+        if len(signals) >= 2 and cfg.enabled("highlighted_correlations"):
+            fig = _capture(
+                plot_highlighted_correlations,
+                "highlighted-correlations",
+                signals,
+                title=f"Key cross-signal relationships \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 4.2 \u2014 Mental-health-relevant signal pairs",
+                    "highlighted-correlations",
+                )
+                corr_dir.mkdir(parents=True, exist_ok=True)
+                fig.savefig(corr_dir / f"{label}_highlighted.pdf")
+                plt.close(fig)
