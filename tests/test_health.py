@@ -1,4 +1,4 @@
-"""Tests for egon.health.apple_health, weight_plot, and step_count_plot."""
+"""Tests for egon.health.apple_health, weight_plot, step_count_plot, and exercise_plot."""
 
 from datetime import date
 from pathlib import Path
@@ -12,6 +12,7 @@ from egon.health.apple_health import (
     infer_unit,
     load_records,
 )
+from egon.health.exercise_plot import plot_exercise
 from egon.health.hrv_plot import plot_hrv
 from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
 from egon.health.step_count_plot import plot_step_count
@@ -293,3 +294,46 @@ class TestPlotVo2Max:
     def test_raises_on_empty_data(self, tmp_path):
         with pytest.raises(ValueError, match="No VO2 max data"):
             plot_vo2max([], tmp_path / "out.pdf")
+
+
+class TestPlotExercise:
+    DATA = [(date(2026, 4, d), float(20 + d * 2)) for d in range(1, 8)]
+
+    def test_saves_pdf(self, tmp_path):
+        out = tmp_path / "exercise.pdf"
+        plot_exercise(self.DATA, out)
+        assert out.exists()
+        assert out.stat().st_size > 0
+
+    def test_creates_parent_directory(self, tmp_path):
+        out = tmp_path / "nested" / "exercise.pdf"
+        plot_exercise(self.DATA, out)
+        assert out.exists()
+
+    def test_returns_figure_when_no_output_path(self):
+        import matplotlib.pyplot as plt
+
+        fig = plot_exercise(self.DATA, None)
+        assert fig is not None
+        plt.close(fig)
+
+    def test_who_guideline_label(self, tmp_path):
+        # No custom target → label should mention "WHO guideline"
+        fig = plot_exercise(self.DATA, None)
+        import matplotlib.pyplot as plt
+
+        legend_texts = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
+        assert any("WHO guideline" in t for t in legend_texts)
+        plt.close(fig)
+
+    def test_custom_target_label(self, tmp_path):
+        fig = plot_exercise(self.DATA, None, target_exercise_minutes=45.0)
+        import matplotlib.pyplot as plt
+
+        legend_texts = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
+        assert any("goal" in t for t in legend_texts)
+        plt.close(fig)
+
+    def test_raises_on_empty_data(self, tmp_path):
+        with pytest.raises(ValueError, match="No exercise time data"):
+            plot_exercise([], tmp_path / "out.pdf")
