@@ -1,0 +1,12 @@
+# Egon Notebooks — report configuration
+#
+# This file controls which analyses are included when running:
+#   uv run egon report --full
+#
+# All keys default to `true` unless listed here.
+# Omit a key entirely to accept the default.
+
+[report.analyses]
+wordcloud     = false   # decorative; opt in if you want it
+topics        = true    # BERTopic topic modelling (requires `uv sync --extra topics`)
+pronoun_ratio = true
