@@ -1,10 +1,8 @@
 """Tests for egon.config — ReportConfig and load_report_config."""
 
-from pathlib import Path
 
-import pytest
 
-from egon.config import ReportConfig, _DEFAULTS, load_report_config
+from egon.config import _DEFAULTS, ReportConfig, load_report_config
 
 
 class TestReportConfigEnabled:

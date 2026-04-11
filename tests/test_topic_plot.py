@@ -7,7 +7,12 @@ from unittest.mock import patch
 import pytest
 
 from egon.analytics.loader import JournalEntry
-from egon.analytics.topic_plot import _TopicModel, fit_topics, plot_topic_summary, plot_topic_timeline
+from egon.analytics.topic_plot import (
+    _TopicModel,
+    fit_topics,
+    plot_topic_summary,
+    plot_topic_timeline,
+)
 
 
 def _entry(d: date, body: str) -> JournalEntry:

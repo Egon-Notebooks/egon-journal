@@ -1,7 +1,6 @@
 """Tests for egon.analytics.correlation_plot."""
 
 from datetime import date, timedelta
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -13,7 +12,6 @@ from egon.analytics.correlation_plot import (
     plot_correlation_matrix,
     plot_highlighted_correlations,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
