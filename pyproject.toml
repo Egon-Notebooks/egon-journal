@@ -22,7 +22,7 @@ dependencies = [
 egon = "egon.cli:app"
 
 [project.optional-dependencies]
-bigfive = [
+limbic = [
     "transformers>=4.40",
     "torch>=2.0",
     "sentencepiece",
