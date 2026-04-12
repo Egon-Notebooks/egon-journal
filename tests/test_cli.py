@@ -106,7 +106,13 @@ class TestReportWordCount:
     def test_missing_journal_dir(self, tmp_path):
         result = runner.invoke(
             app,
-            ["report-word-count", "--journal-dir", str(tmp_path / "missing"), "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-word-count",
+                "--journal-dir",
+                str(tmp_path / "missing"),
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -115,7 +121,13 @@ class TestReportWordCount:
         empty.mkdir()
         result = runner.invoke(
             app,
-            ["report-word-count", "--journal-dir", str(empty), "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-word-count",
+                "--journal-dir",
+                str(empty),
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -125,9 +137,12 @@ class TestReportWordCount:
             app,
             [
                 "report-word-count",
-                "--journal-dir", str(journal_dir),
-                "--period", "month",
-                "--output", str(out),
+                "--journal-dir",
+                str(journal_dir),
+                "--period",
+                "month",
+                "--output",
+                str(out),
             ],
         )
         # All 7 entries are in April 2026; today is likely not April 2026,
@@ -140,9 +155,12 @@ class TestReportWordCount:
             app,
             [
                 "report-word-count",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-Q2",
-                "--output", str(out),
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(out),
             ],
         )
         assert result.exit_code == 0
@@ -153,9 +171,12 @@ class TestReportWordCount:
             app,
             [
                 "report-word-count",
-                "--journal-dir", str(journal_dir),
-                "--for", "not-a-period",
-                "--output", str(tmp_path / "out.pdf"),
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "not-a-period",
+                "--output",
+                str(tmp_path / "out.pdf"),
             ],
         )
         assert result.exit_code == 1
@@ -179,7 +200,13 @@ class TestReportSentiment:
     def test_missing_journal_dir(self, tmp_path):
         result = runner.invoke(
             app,
-            ["report-sentiment", "--journal-dir", str(tmp_path / "gone"), "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-sentiment",
+                "--journal-dir",
+                str(tmp_path / "gone"),
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -209,7 +236,8 @@ class TestReportWeight:
     def test_success(self, health_xml, tmp_path):
         out = tmp_path / "weight.pdf"
         result = runner.invoke(
-            app, ["report-weight", "--xml", str(health_xml), "--for", "2026-Q2", "--output", str(out)]
+            app,
+            ["report-weight", "--xml", str(health_xml), "--for", "2026-Q2", "--output", str(out)],
         )
         assert result.exit_code == 0
         assert out.exists()
@@ -217,7 +245,13 @@ class TestReportWeight:
     def test_missing_xml(self, tmp_path):
         result = runner.invoke(
             app,
-            ["report-weight", "--xml", str(tmp_path / "missing.xml"), "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-weight",
+                "--xml",
+                str(tmp_path / "missing.xml"),
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -239,9 +273,12 @@ class TestReportExercise:
             app,
             [
                 "report-exercise",
-                "--xml", str(exercise_xml),
-                "--for", "2026-Q2",
-                "--output", str(out),
+                "--xml",
+                str(exercise_xml),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(out),
             ],
         )
         assert result.exit_code == 0
@@ -254,9 +291,12 @@ class TestReportExercise:
             app,
             [
                 "report-exercise",
-                "--xml", str(exercise_xml),
-                "--for", "2026-Q2",
-                "--output", str(out),
+                "--xml",
+                str(exercise_xml),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(out),
             ],
         )
         assert result.exit_code == 0
@@ -269,9 +309,12 @@ class TestReportExercise:
             app,
             [
                 "report-exercise",
-                "--xml", str(exercise_xml),
-                "--for", "2026-Q2",
-                "--output", str(out),
+                "--xml",
+                str(exercise_xml),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(out),
             ],
         )
         # Warning printed, but command succeeds with WHO default
@@ -280,7 +323,13 @@ class TestReportExercise:
     def test_missing_xml(self, tmp_path):
         result = runner.invoke(
             app,
-            ["report-exercise", "--xml", str(tmp_path / "missing.xml"), "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-exercise",
+                "--xml",
+                str(tmp_path / "missing.xml"),
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -288,7 +337,15 @@ class TestReportExercise:
         # health_xml only has BodyMass, no AppleExerciseTime
         result = runner.invoke(
             app,
-            ["report-exercise", "--xml", str(health_xml), "--for", "2026-Q2", "--output", str(tmp_path / "out.pdf")],
+            [
+                "report-exercise",
+                "--xml",
+                str(health_xml),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(tmp_path / "out.pdf"),
+            ],
         )
         assert result.exit_code == 1
 
@@ -302,7 +359,13 @@ class TestReportTopics:
     def test_missing_journal_dir(self, tmp_path):
         result = runner.invoke(
             app,
-            ["report-topics", "--journal-dir", str(tmp_path / "gone"), "--output-dir", str(tmp_path)],
+            [
+                "report-topics",
+                "--journal-dir",
+                str(tmp_path / "gone"),
+                "--output-dir",
+                str(tmp_path),
+            ],
         )
         assert result.exit_code == 1
 
@@ -338,9 +401,12 @@ class TestReportTopics:
                 app,
                 [
                     "report-topics",
-                    "--journal-dir", str(jdir),
-                    "--for", "2026-04",
-                    "--output-dir", str(out_dir),
+                    "--journal-dir",
+                    str(jdir),
+                    "--for",
+                    "2026-04",
+                    "--output-dir",
+                    str(out_dir),
                 ],
             )
         assert result.exit_code == 0
@@ -359,9 +425,12 @@ class TestReportCorrelations:
             app,
             [
                 "report-correlations",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-Q2",
-                "--output-dir", str(out_dir),
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-Q2",
+                "--output-dir",
+                str(out_dir),
             ],
         )
         assert result.exit_code == 0
@@ -375,14 +444,20 @@ class TestReportCorrelations:
         jdir.mkdir()
         _write_journal(jdir / "2026-04-01.md", date(2026, 4, 1), "Just one entry.")
         out_dir = tmp_path / "corr"
-        with patch("egon.full_report.build_signals", return_value={"only-signal": [(date(2026, 4, 1), 1.0)]}):
+        with patch(
+            "egon.full_report.build_signals",
+            return_value={"only-signal": [(date(2026, 4, 1), 1.0)]},
+        ):
             result = runner.invoke(
                 app,
                 [
                     "report-correlations",
-                    "--journal-dir", str(jdir),
-                    "--for", "2026-Q2",
-                    "--output-dir", str(out_dir),
+                    "--journal-dir",
+                    str(jdir),
+                    "--for",
+                    "2026-Q2",
+                    "--output-dir",
+                    str(out_dir),
                 ],
             )
         assert result.exit_code == 1
@@ -393,8 +468,10 @@ class TestReportCorrelations:
             app,
             [
                 "report-correlations",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-Q2",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-Q2",
             ],
         )
         assert result.exit_code == 0
@@ -414,8 +491,10 @@ class TestReportAll:
             app,
             [
                 "report",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-Q2",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-Q2",
             ],
         )
         # Health reports will be skipped (no XML), journal reports should run.
@@ -428,8 +507,10 @@ class TestReportAll:
             app,
             [
                 "report",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-Q2",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-Q2",
             ],
         )
         output = result.output
@@ -442,8 +523,10 @@ class TestReportAll:
             app,
             [
                 "report",
-                "--journal-dir", str(journal_dir),
-                "--for", "2026-04",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-04",
             ],
         )
         assert result.exit_code == 0

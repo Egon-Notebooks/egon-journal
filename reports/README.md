@@ -53,22 +53,6 @@ Default output: `./reports/word_count/<period>.pdf`
 
 ---
 
-### Sentiment
-
-Plots daily sentiment score (VADER, range −1 to +1) as a scatter/line chart with a neutral band.
-
-```bash
-uv run egon report-sentiment
-
-uv run egon report-sentiment --period month
-uv run egon report-sentiment --for 2026-Q1
-uv run egon report-sentiment --output ~/my-reports/sentiment.pdf
-```
-
-Default output: `./reports/sentiment/<period>.pdf`
-
----
-
 ### Word cloud
 
 Generates a word cloud image from all journal entries in the selected period.
@@ -98,7 +82,7 @@ On Linux / Apple Silicon / Windows, uses BERTopic with sentence-transformers emb
 uv sync --extra topics
 ```
 
-On Intel Mac, uses pure-sklearn NMF automatically via `.venv-bigfive` (no extra step needed beyond `bash scripts/setup_bigfive.sh`).
+On Intel Mac, uses pure-sklearn NMF automatically via `.venv-limbic` (no extra step needed beyond `bash scripts/setup_limbic.sh`).
 
 ```bash
 uv run egon report-topics
@@ -112,7 +96,81 @@ Default output: `./reports/topics/<period>_summary.pdf` and `<period>_timeline.p
 
 ---
 
+### Cognitive distortions
+
+Detects cognitive distortions in journal text using
+`amedvedev/bert-tiny-cognitive-bias` — a BERT-tiny classifier trained on eight
+categories: no distortion · personalization · emotional reasoning · overgeneralizing ·
+labeling · should statements · catastrophizing · reward fallacy.
+
+Produces a two-panel figure: a daily distortion signal line (1 − no-distortion
+probability) and a stacked area chart showing the composition of distorted writing
+by type over the period.
+
+Requires the `limbic` setup (same model runtime):
+
+```bash
+bash scripts/setup_limbic.sh   # Intel Mac (once)
+uv sync --extra limbic         # Linux / Apple Silicon / Windows
+```
+
+```bash
+uv run egon report-cognitive-bias
+
+uv run egon report-cognitive-bias --period month
+uv run egon report-cognitive-bias --for 2026-Q1
+uv run egon report-cognitive-bias --output ~/my-reports/cognitive-bias.pdf
+```
+
+Default output: `./reports/cognitive_bias/<period>.pdf`
+
+---
+
 ## Section 2 — Personality & affective patterns
+
+### Sentiment
+
+Plots daily sentiment score (VADER, range −1 to +1) as a scatter/line chart with a neutral band.
+
+```bash
+uv run egon report-sentiment
+
+uv run egon report-sentiment --period month
+uv run egon report-sentiment --for 2026-Q1
+uv run egon report-sentiment --output ~/my-reports/sentiment.pdf
+```
+
+Default output: `./reports/sentiment/<period>.pdf`
+
+---
+
+### Emotion
+
+Plots daily emotion profile derived from journal text using
+`j-hartmann/emotion-english-distilroberta-base` — a DistilRoBERTa model fine-tuned
+on six emotion datasets. Produces a two-panel figure: a stacked area chart of all
+seven emotion probabilities and a joy-vs-sadness overlay.
+
+Seven emotions: anger · disgust · fear · joy · neutral · sadness · surprise.
+
+Requires the same `limbic` setup (same model runtime):
+
+```bash
+bash scripts/setup_limbic.sh   # Intel Mac (once)
+uv sync --extra limbic         # Linux / Apple Silicon / Windows
+```
+
+```bash
+uv run egon report-emotion
+
+uv run egon report-emotion --period month
+uv run egon report-emotion --for 2026-Q1
+uv run egon report-emotion --output ~/my-reports/emotion.pdf
+```
+
+Default output: `./reports/emotion/<period>.pdf`
+
+---
 
 ### Big Five personality traits
 
@@ -120,11 +178,11 @@ Scores each journal entry on the Big Five personality dimensions (O, C, E, A, N)
 using a DistilBERT regression model. Produces five stacked subplots — one per trait —
 with the period average annotated to the right of each panel.
 
-Requires the `bigfive` optional dependency group (downloads ~270 MB on first run):
+Requires the `limbic` optional dependency group (downloads ~270 MB on first run):
 
 ```bash
-bash scripts/setup_bigfive.sh   # Intel Mac (once)
-uv sync --extra bigfive         # Linux / Apple Silicon / Windows
+bash scripts/setup_limbic.sh   # Intel Mac (once)
+uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
@@ -145,7 +203,7 @@ Classifies each journal entry as one of 16 MBTI types and decomposes the result
 into 4 binary dimensions (E/I, N/S, T/F, J/P).
 Produces four stacked subplots — one per dimension — with the dominant pole and proportion annotated to the right.
 
-Requires the same `bigfive` setup as Big Five (same `.venv-bigfive`).
+Requires the same `limbic` setup as Big Five (same `.venv-limbic`).
 
 ```bash
 uv run egon report-mbti
@@ -156,34 +214,6 @@ uv run egon report-mbti --output ~/my-reports/mbti.pdf
 ```
 
 Default output: `./reports/mbti/<period>.pdf`
-
----
-
-### Emotion
-
-Plots daily emotion profile derived from journal text using
-`j-hartmann/emotion-english-distilroberta-base` — a DistilRoBERTa model fine-tuned
-on six emotion datasets. Produces a two-panel figure: a stacked area chart of all
-seven emotion probabilities and a joy-vs-sadness overlay.
-
-Seven emotions: anger · disgust · fear · joy · neutral · sadness · surprise.
-
-Requires the same `bigfive` setup (same model runtime):
-
-```bash
-bash scripts/setup_bigfive.sh   # Intel Mac (once)
-uv sync --extra bigfive         # Linux / Apple Silicon / Windows
-```
-
-```bash
-uv run egon report-emotion
-
-uv run egon report-emotion --period month
-uv run egon report-emotion --for 2026-Q1
-uv run egon report-emotion --output ~/my-reports/emotion.pdf
-```
-
-Default output: `./reports/emotion/<period>.pdf`
 
 ---
 

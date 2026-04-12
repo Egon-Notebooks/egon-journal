@@ -55,6 +55,8 @@ from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
 from egon.limbic.bigfive import BigFiveScores, bigfive_by_day
 from egon.limbic.bigfive_plot import plot_bigfive
+from egon.limbic.cognitive_bias import CognitiveBiasScores, cognitive_bias_by_day
+from egon.limbic.cognitive_bias_plot import plot_cognitive_bias
 from egon.limbic.emotion import EmotionScores, emotion_by_day
 from egon.limbic.emotion_plot import plot_emotion
 from egon.limbic.mbti import MBTIScores, mbti_by_day
@@ -216,6 +218,19 @@ _FIG_COMMENTARY = {
         "signals were recorded are used per pair, so sample sizes vary. "
         "[Replace with observations about the strongest or most surprising "
         "associations in the matrix.]"
+    ),
+    "cognitive-bias": (
+        "Cognitive distortion scores are inferred using a BERT-tiny model trained to "
+        "classify journal text into eight categories: No Distortion, Personalization, "
+        "Emotional Reasoning, Overgeneralizing, Labeling, Should Statements, "
+        "Catastrophizing, and Reward Fallacy (Beck 1979; Amedvedev 2023). The upper "
+        "panel shows the daily distortion signal — 1 minus the no-distortion probability "
+        "— as a proxy for how much distorted thinking appears in your writing on each day. "
+        "The lower panel shows how that distorted writing breaks down by type. These scores "
+        "reflect linguistic patterns, not a clinical diagnosis. A sustained elevation in "
+        "Catastrophizing or Emotional Reasoning over several weeks may be worth discussing "
+        "with a therapist. "
+        "[Replace with observations about which distortions appear most and any trends.]"
     ),
     "highlighted-correlations": (
         "These four scatter plots examine relationships between physiological and "
@@ -806,9 +821,11 @@ def generate_full_report(
     bf_cache = cache_dir / "bigfive_data.json"
     mbti_cache = cache_dir / "mbti_data.json"
     emotion_cache = cache_dir / "emotion_data.json"
+    cog_bias_cache = cache_dir / "cognitive_bias_data.json"
     bigfive_data = None
     mbti_data = None
     emotion_data: list | None = None
+    cog_bias_data: list | None = None
 
     if journal_entries:
         if bf_cache.exists():
@@ -853,6 +870,25 @@ def generate_full_report(
                     )
                 except Exception as exc:
                     print(f"  [full report] Emotion scoring unavailable: {exc}")
+
+        if cfg.enabled("cognitive_bias"):
+            if cog_bias_cache.exists():
+                print("  [full report] Cognitive bias: loading cached scores")
+                try:
+                    raw = json.loads(cog_bias_cache.read_text())
+                    cog_bias_data = [
+                        (date_type.fromisoformat(d), CognitiveBiasScores(*s)) for d, s in raw
+                    ]
+                except Exception as exc:
+                    print(f"  [full report] Cognitive bias cache corrupt, re-scoring: {exc}")
+            if cog_bias_data is None:
+                try:
+                    cog_bias_data = cognitive_bias_by_day(journal_entries)
+                    cog_bias_cache.write_text(
+                        json.dumps([[d.isoformat(), list(s)] for d, s in cog_bias_data])
+                    )
+                except Exception as exc:
+                    print(f"  [full report] Cognitive bias scoring unavailable: {exc}")
 
     # -----------------------------------------------------------------------
     # Health records
@@ -908,20 +944,6 @@ def generate_full_report(
             if fig:
                 _fp(fig, "Figure 1.1 \u2014 Daily journal word count", "word-count")
 
-        if cfg.enabled("sentiment"):
-            fig = _capture(
-                plot_sentiment,
-                "sentiment",
-                journal_entries,
-                title=f"Journal sentiment \u2014 {label}",
-            )
-            if fig:
-                _fp(
-                    fig,
-                    "Figure 1.2 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
-                    "sentiment",
-                )
-
         if cfg.enabled("wordcloud"):
             fig = _capture(
                 plot_wordcloud,
@@ -930,7 +952,7 @@ def generate_full_report(
                 title=f"Journal word cloud \u2014 {label}",
             )
             if fig:
-                _fp(fig, "Figure 1.3 \u2014 Word cloud of most frequent themes", "wordcloud")
+                _fp(fig, "Figure 1.2 \u2014 Word cloud of most frequent themes", "wordcloud")
 
         if cfg.enabled("pronoun_ratio"):
             fig = _capture(
@@ -942,7 +964,7 @@ def generate_full_report(
             if fig:
                 _fp(
                     fig,
-                    "Figure 1.4 \u2014 First-person pronoun ratio (I / me / my / mine / myself)",
+                    "Figure 1.3 \u2014 First-person pronoun ratio (I / me / my / mine / myself)",
                     "pronoun-ratio",
                 )
 
@@ -959,7 +981,7 @@ def generate_full_report(
                 if fig:
                     _fp(
                         fig,
-                        "Figure 1.5 \u2014 Discovered topics and their representative keywords",
+                        "Figure 1.4 \u2014 Discovered topics and their representative keywords",
                         "topic-summary",
                     )
 
@@ -972,7 +994,7 @@ def generate_full_report(
                 if fig:
                     _fp(
                         fig,
-                        "Figure 1.6 \u2014 Topic prevalence by month",
+                        "Figure 1.5 \u2014 Topic prevalence by month",
                         "topic-timeline",
                     )
             except ImportError:
@@ -984,6 +1006,20 @@ def generate_full_report(
         # --- Section 2: Personality & Affective Patterns ---
         _text_page(pdf, "Personality & Affective Patterns", _PERSONALITY_INTRO, section_num=2)
 
+        if cfg.enabled("sentiment"):
+            fig = _capture(
+                plot_sentiment,
+                "sentiment",
+                journal_entries,
+                title=f"Journal sentiment \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 2.1 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
+                    "sentiment",
+                )
+
         if bigfive_data and cfg.enabled("bigfive"):
             fig = _capture(
                 plot_bigfive,
@@ -993,7 +1029,7 @@ def generate_full_report(
             )
             if fig:
                 _fp(
-                    fig, "Figure 2.1 \u2014 Big Five trait scores by day (O, C, E, A, N)", "bigfive"
+                    fig, "Figure 2.2 \u2014 Big Five trait scores by day (O, C, E, A, N)", "bigfive"
                 )
 
         if mbti_data and cfg.enabled("mbti"):
@@ -1003,7 +1039,7 @@ def generate_full_report(
             if fig:
                 _fp(
                     fig,
-                    "Figure 2.2 \u2014 MBTI dimension scores by day (E/I, N/S, T/F, J/P)",
+                    "Figure 2.3 \u2014 MBTI dimension scores by day (E/I, N/S, T/F, J/P)",
                     "mbti",
                 )
 
@@ -1017,9 +1053,23 @@ def generate_full_report(
             if fig:
                 _fp(
                     fig,
-                    "Figure 2.3 \u2014 Daily emotion probabilities "
+                    "Figure 2.4 \u2014 Daily emotion probabilities "
                     "(anger / fear / joy / sadness \u2026)",
                     "emotion",
+                )
+
+        if cog_bias_data and cfg.enabled("cognitive_bias"):
+            fig = _capture(
+                plot_cognitive_bias,
+                "cognitive-bias",
+                cog_bias_data,
+                title=f"Cognitive bias profile \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 2.5 \u2014 Cognitive bias signal and distortion type breakdown",
+                    "cognitive-bias",
                 )
 
         # --- Section 3: Physiological Measures ---

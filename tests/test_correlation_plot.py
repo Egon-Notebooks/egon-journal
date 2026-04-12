@@ -103,8 +103,8 @@ class TestBuildMatrix:
     def test_insufficient_overlap_gives_nan(self):
         # Both signals have >= min_overlap points so they pass the length filter,
         # but their dates don't overlap → pairwise cell should be NaN.
-        a = [(date(2026, 1, i), float(i)) for i in range(1, 11)]   # Jan 1–10
-        b = [(date(2026, 2, i), float(i)) for i in range(1, 11)]   # Feb 1–10, no overlap
+        a = [(date(2026, 1, i), float(i)) for i in range(1, 11)]  # Jan 1–10
+        b = [(date(2026, 2, i), float(i)) for i in range(1, 11)]  # Feb 1–10, no overlap
         signals = {"a": a, "b": b}
         _, r_mat, _ = _build_matrix(signals, min_overlap=5)
         assert np.isnan(r_mat[0, 1])
@@ -143,6 +143,7 @@ class TestPlotCorrelationMatrix:
         fig = plot_correlation_matrix(two_signals, None, min_overlap=5)
         assert fig is not None
         import matplotlib.pyplot as plt
+
         plt.close(fig)
 
     def test_raises_with_fewer_than_two_signals(self, tmp_path):
@@ -174,6 +175,7 @@ class TestPlotHighlightedCorrelations:
         fig = plot_highlighted_correlations(health_pair_signals, None, min_overlap=5)
         assert fig is not None
         import matplotlib.pyplot as plt
+
         plt.close(fig)
 
     def test_raises_when_no_matching_pairs(self, two_signals, tmp_path):

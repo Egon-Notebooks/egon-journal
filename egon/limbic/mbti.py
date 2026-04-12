@@ -10,9 +10,9 @@ The predicted type is decomposed into 4 binary dimensions for analysis:
   T/F — Thinking (1) / Feeling (0)
   J/P — Judging (1) / Perceiving (0)
 
-Requires the `bigfive` optional dependency group (same venv as Big Five):
-  bash scripts/setup_bigfive.sh   # Intel Mac
-  uv sync --extra bigfive         # Linux, Apple Silicon, Windows
+Requires the `limbic` optional dependency group (same venv as Big Five):
+  bash scripts/setup_limbic.sh   # Intel Mac
+  uv sync --extra limbic         # Linux, Apple Silicon, Windows
 """
 
 import json
@@ -27,7 +27,7 @@ from typing import NamedTuple
 from egon.analytics.loader import JournalEntry
 
 _MODEL_ID = "JanSt/albert-base-v2_mbti-classification"
-_BIGFIVE_VENV = Path(__file__).resolve().parents[2] / ".venv-bigfive"
+_LIMBIC_VENV = Path(__file__).resolve().parents[2] / ".venv-limbic"
 
 # 4 MBTI dimensions: (positive_letter, negative_letter, display_label)
 DIMENSIONS: list[tuple[str, str, str]] = [
@@ -73,19 +73,19 @@ def _type_to_scores(mbti_type: str) -> MBTIScores:
 
 def _use_subprocess_venv() -> bool:
     return (
-        _BIGFIVE_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
+        _LIMBIC_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
     )
 
 
 def _score_batch_via_subprocess(texts: list[str]) -> list[MBTIScores]:
     """
-    Score a batch of texts inside the .venv-bigfive Python 3.12 interpreter.
+    Score a batch of texts inside the .venv-limbic Python 3.12 interpreter.
 
     The pipeline is loaded **once** per call; the transformers pipeline accepts
     a list of texts natively for efficient batch inference.  Texts are passed
     as a JSON array via stdin; a JSON array of MBTI type strings is returned.
     """
-    python = _BIGFIVE_VENV / "bin" / "python"
+    python = _LIMBIC_VENV / "bin" / "python"
     script = (
         "import json, sys\n"
         "from transformers import pipeline\n"
@@ -116,8 +116,8 @@ def _load_pipeline() -> None:
     except ImportError as exc:
         raise ImportError(
             "The 'transformers' package is required for MBTI scoring.\n"
-            "On Linux/Apple Silicon/Windows: uv sync --extra bigfive\n"
-            "On Intel Mac: bash scripts/setup_bigfive.sh"
+            "On Linux/Apple Silicon/Windows: uv sync --extra limbic\n"
+            "On Intel Mac: bash scripts/setup_limbic.sh"
         ) from exc
 
     print(f"Loading MBTI model '{_MODEL_ID}' (first run downloads ~45 MB) …", file=sys.stderr)

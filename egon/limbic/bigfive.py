@@ -12,12 +12,12 @@ trained on the Essays Big5 dataset. Outputs 5 continuous scores in [0, 1] for:
 Requires torch + transformers.  Two installation paths:
 
   Standard (Linux x86_64, Apple Silicon, Windows):
-    uv sync --extra bigfive
+    uv sync --extra limbic
 
   Intel Mac (PyTorch ≥2.3 dropped x86_64 Mac; torch 2.2 requires Python ≤3.12):
-    bash scripts/setup_bigfive.sh   # creates .venv-bigfive/ with Python 3.12 + torch 2.2
+    bash scripts/setup_limbic.sh   # creates .venv-limbic/ with Python 3.12 + torch 2.2
 
-When .venv-bigfive/ exists in the project root, scoring automatically delegates
+When .venv-limbic/ exists in the project root, scoring automatically delegates
 to it via subprocess so the main project venv is unaffected.
 
 The model is downloaded on first use (~270 MB) and cached at ~/.cache/huggingface/.
@@ -37,7 +37,7 @@ from egon.analytics.loader import JournalEntry
 _MODEL_ID = "vladinc/bigfive-regression-model"
 
 # Path to the optional Python 3.12 venv used on Intel Mac
-_BIGFIVE_VENV = Path(__file__).resolve().parents[2] / ".venv-bigfive"
+_LIMBIC_VENV = Path(__file__).resolve().parents[2] / ".venv-limbic"
 
 # Trait order as returned by the model
 TRAITS: list[tuple[str, str]] = [
@@ -65,21 +65,21 @@ class BigFiveScores(NamedTuple):
 
 
 def _use_subprocess_venv() -> bool:
-    """True when we should delegate to the .venv-bigfive subprocess venv."""
+    """True when we should delegate to the .venv-limbic subprocess venv."""
     return (
-        _BIGFIVE_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
+        _LIMBIC_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
     )
 
 
 def _score_batch_via_subprocess(texts: list[str]) -> list[BigFiveScores]:
     """
-    Score a batch of texts inside the .venv-bigfive Python 3.12 interpreter.
+    Score a batch of texts inside the .venv-limbic Python 3.12 interpreter.
 
     The model is loaded **once** per call; all texts are scored in a single
     subprocess invocation.  Texts are passed as a JSON array via stdin;
     a JSON array of score lists is returned on stdout.
     """
-    python = _BIGFIVE_VENV / "bin" / "python"
+    python = _LIMBIC_VENV / "bin" / "python"
     script = (
         "import json, sys\n"
         "from transformers import AutoTokenizer, AutoModelForSequenceClassification\n"
@@ -118,8 +118,8 @@ def _load_model() -> None:
     except ImportError as exc:
         raise ImportError(
             "The 'transformers' package is required for Big Five scoring.\n"
-            "On Linux/Apple Silicon/Windows: uv sync --extra bigfive\n"
-            "On Intel Mac: bash scripts/setup_bigfive.sh"
+            "On Linux/Apple Silicon/Windows: uv sync --extra limbic\n"
+            "On Intel Mac: bash scripts/setup_limbic.sh"
         ) from exc
 
     import torch  # noqa: F401 — verify torch is available too

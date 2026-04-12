@@ -70,10 +70,7 @@ class TestPronounRatioByDay:
 
 class TestPlotPronounRatio:
     def test_saves_pdf(self, tmp_path):
-        entries = [
-            _entry(date(2026, 4, d), f"I went for a walk on day {d}.")
-            for d in range(1, 5)
-        ]
+        entries = [_entry(date(2026, 4, d), f"I went for a walk on day {d}.") for d in range(1, 5)]
         out = tmp_path / "pronoun.pdf"
         plot_pronoun_ratio(entries, out)
         assert out.exists()
@@ -88,6 +85,7 @@ class TestPlotPronounRatio:
     def test_returns_figure_when_no_output_path(self, tmp_path):
         entries = [_entry(date(2026, 4, 1), "I feel good.")]
         import matplotlib.pyplot as plt
+
         fig = plot_pronoun_ratio(entries, None)
         assert fig is not None
         plt.close(fig)

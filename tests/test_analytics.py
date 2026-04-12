@@ -9,6 +9,7 @@ from egon.analytics.loader import JournalEntry, load_journal_entries
 from egon.analytics.word_count import (
     count_words,
     filter_entries,
+    last_complete_period,
     parse_period_value,
     period_bounds,
     period_label,
@@ -195,6 +196,65 @@ class TestPeriodLabel:
 
     def test_all_time(self):
         assert period_label("all-time", self.REF) == "all-time"
+
+
+class TestLastCompletePeriod:
+    # Mid-April: week 16, Q2, in-progress month/year
+    REF = date(2026, 4, 12)  # Sunday
+
+    def test_week(self):
+        # April 12 is a Sunday; last complete week is Mon Apr 6 – Sun Apr 12... wait,
+        # April 12 is itself a Sunday so start_of_this_week = Apr 6, result = Apr 5 (last Sun)
+        result = last_complete_period("week", self.REF)
+        start, end = period_bounds("week", result)
+        assert start == date(2026, 3, 30)
+        assert end == date(2026, 4, 5)
+
+    def test_week_mid_week(self):
+        # Wednesday Apr 15: last complete week is Mon Apr 6 – Sun Apr 12
+        result = last_complete_period("week", date(2026, 4, 15))
+        start, end = period_bounds("week", result)
+        assert start == date(2026, 4, 6)
+        assert end == date(2026, 4, 12)
+
+    def test_month(self):
+        # Mid-April → last complete month is March
+        result = last_complete_period("month", self.REF)
+        start, end = period_bounds("month", result)
+        assert start == date(2026, 3, 1)
+        assert end == date(2026, 3, 31)
+
+    def test_month_january(self):
+        # Mid-January → last complete month is December of previous year
+        result = last_complete_period("month", date(2026, 1, 15))
+        start, end = period_bounds("month", result)
+        assert start == date(2025, 12, 1)
+        assert end == date(2025, 12, 31)
+
+    def test_quarter(self):
+        # Mid-Q2 (April) → last complete quarter is Q1
+        result = last_complete_period("quarter", self.REF)
+        start, end = period_bounds("quarter", result)
+        assert start == date(2026, 1, 1)
+        assert end == date(2026, 3, 31)
+
+    def test_quarter_q1(self):
+        # Mid-Q1 (February) → last complete quarter is Q4 of previous year
+        result = last_complete_period("quarter", date(2026, 2, 1))
+        start, end = period_bounds("quarter", result)
+        assert start == date(2025, 10, 1)
+        assert end == date(2025, 12, 31)
+
+    def test_year(self):
+        # Mid-2026 → last complete year is 2025
+        result = last_complete_period("year", self.REF)
+        start, end = period_bounds("year", result)
+        assert start == date(2025, 1, 1)
+        assert end == date(2025, 12, 31)
+
+    def test_all_time(self):
+        # all-time returns ref unchanged
+        assert last_complete_period("all-time", self.REF) == self.REF
 
 
 class TestParsePeriodValue:

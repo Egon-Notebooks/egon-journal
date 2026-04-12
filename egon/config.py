@@ -25,11 +25,11 @@ from pathlib import Path
 _DEFAULTS: dict[str, bool] = {
     # Section 1 — Journal Insights
     "word_count": True,
-    "sentiment": True,
     "wordcloud": False,  # slow and space-heavy; opt-in
     "pronoun_ratio": True,
     "topics": True,
     # Section 2 — Personality & Affective Patterns
+    "sentiment": True,
     "bigfive": True,
     "mbti": True,
     # Section 3 — Physiological Measures
@@ -42,6 +42,7 @@ _DEFAULTS: dict[str, bool] = {
     "vo2max": True,
     # Section 2 additions
     "emotion": True,
+    "cognitive_bias": True,
     # Section 4 — Cross-Signal Analysis
     "correlation_matrix": True,
     "highlighted_correlations": True,

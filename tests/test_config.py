@@ -1,7 +1,5 @@
 """Tests for egon.config — ReportConfig and load_report_config."""
 
-
-
 from egon.config import _DEFAULTS, ReportConfig, load_report_config
 
 

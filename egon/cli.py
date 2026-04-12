@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from egon.analytics.loader import load_journal_entries
 from egon.analytics.word_count import (
     filter_entries,
+    last_complete_period,
     parse_period_value,
     period_bounds,
     period_label,
@@ -40,6 +41,8 @@ from egon.health.vo2max_plot import plot_vo2max
 from egon.health.weight_plot import plot_weight
 from egon.limbic.bigfive import bigfive_by_day
 from egon.limbic.bigfive_plot import plot_bigfive
+from egon.limbic.cognitive_bias import cognitive_bias_by_day
+from egon.limbic.cognitive_bias_plot import plot_cognitive_bias
 from egon.limbic.emotion import emotion_by_day
 from egon.limbic.emotion_plot import plot_emotion
 from egon.limbic.mbti import mbti_by_day
@@ -315,8 +318,9 @@ def report_word_count(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -376,8 +380,9 @@ def report_sentiment(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -437,8 +442,9 @@ def report_wordcloud(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -484,7 +490,7 @@ def report_bigfive(
         help="Output path (default: reports/bigfive/<period-label>.pdf)",
     ),
 ) -> None:
-    """Plot Big Five personality trait scores from journal entries (requires --extra bigfive)."""
+    """Plot Big Five personality trait scores from journal entries (requires --extra limbic)."""
     resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
     if not resolved_dir.is_dir():
         typer.echo(
@@ -498,8 +504,9 @@ def report_bigfive(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -548,7 +555,7 @@ def report_mbti(
         help="Output path (default: reports/mbti/<period-label>.pdf)",
     ),
 ) -> None:
-    """Plot MBTI personality dimension scores from journal entries (requires --extra bigfive)."""
+    """Plot MBTI personality dimension scores from journal entries (requires --extra limbic)."""
     resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
     if not resolved_dir.is_dir():
         typer.echo(
@@ -562,8 +569,9 @@ def report_mbti(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -650,8 +658,9 @@ def report_weight(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -741,8 +750,9 @@ def report_resting_heart_rate(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -822,8 +832,9 @@ def report_hrv(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -889,8 +900,9 @@ def report_sleep(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -957,8 +969,9 @@ def report_step_count(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1023,8 +1036,9 @@ def report_vo2max(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1085,8 +1099,9 @@ def report_topics(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1151,8 +1166,9 @@ def report_exercise(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1223,8 +1239,9 @@ def report_emotion(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1242,6 +1259,66 @@ def report_emotion(
     title = f"Daily emotion profile — {label}"
 
     plot_emotion(data, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-cognitive-bias")
+def report_cognitive_bias(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/cognitive_bias/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot cognitive bias profile from journal entries (requires --extra limbic)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Scoring cognitive biases for {len(entries)} entries …")
+    data = cognitive_bias_by_day(entries)
+
+    resolved_output = output or Path(f"reports/cognitive_bias/{label}.pdf")
+    title = f"Cognitive bias profile — {label}"
+
+    plot_cognitive_bias(data, resolved_output, title=title)
     typer.echo(f"Saved: {resolved_output}")
 
 
@@ -1278,8 +1355,9 @@ def report_correlations(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
@@ -1380,6 +1458,7 @@ def report_all(
         ("bigfive", lambda: report_bigfive(journal_dir=journal_dir, **_kw)),
         ("mbti", lambda: report_mbti(journal_dir=journal_dir, **_kw)),
         ("emotion", lambda: report_emotion(journal_dir=journal_dir, **_kw)),
+        ("cognitive-bias", lambda: report_cognitive_bias(journal_dir=journal_dir, **_kw)),
         (
             "topics",
             lambda: report_topics(
@@ -1454,8 +1533,9 @@ def report_all(
         if for_period:
             start, end, label = parse_period_value(for_period)
         else:
-            start, end = period_bounds(period, date_type.today())
-            label = period_label(period, date_type.today())
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
     except ValueError as exc:
         typer.echo(f"  Error resolving period: {exc}", err=True)
         return

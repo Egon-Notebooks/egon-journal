@@ -90,7 +90,9 @@ class TestFitTopics:
 
 class TestPlotTopicSummary:
     def _make_entries(self, n: int = 11) -> list[JournalEntry]:
-        return [_entry(date(2026, 4, i), f"Entry {i} about walks and nature.") for i in range(1, n + 1)]
+        return [
+            _entry(date(2026, 4, i), f"Entry {i} about walks and nature.") for i in range(1, n + 1)
+        ]
 
     def _mock_fit(self, n: int = 11):
         mock_model = _TopicModel(

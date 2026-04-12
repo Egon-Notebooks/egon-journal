@@ -13,7 +13,7 @@ Two plots are produced:
 Requires the ``topics`` optional dependency group:
 
     uv sync --extra topics          # Linux / Apple Silicon / Windows
-    bash scripts/setup_bigfive.sh   # Intel Mac (uses .venv-bigfive)
+    bash scripts/setup_limbic.sh   # Intel Mac (uses .venv-limbic)
 """
 
 import json
@@ -31,12 +31,12 @@ from egon.plot_style import apply_style
 
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _MIN_DOCS = 10  # minimum entries needed for meaningful topic modelling
-_BIGFIVE_VENV = Path(__file__).resolve().parents[2] / ".venv-bigfive"
+_LIMBIC_VENV = Path(__file__).resolve().parents[2] / ".venv-limbic"
 
 
 def _use_subprocess_venv() -> bool:
     return (
-        _BIGFIVE_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
+        _LIMBIC_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"
     )
 
 
@@ -119,7 +119,7 @@ def _fit_via_subprocess(
     nr_topics: int | str,
     min_topic_size: int,
 ) -> tuple[list[int], _TopicModel]:
-    python = _BIGFIVE_VENV / "bin" / "python"
+    python = _LIMBIC_VENV / "bin" / "python"
     payload = json.dumps({"docs": docs, "nr_topics": nr_topics, "min_topic_size": min_topic_size})
     try:
         proc = subprocess.run(
@@ -146,7 +146,7 @@ def _fit_locally(
         raise ImportError(
             "BERTopic is not installed.\n"
             "On Linux/Apple Silicon/Windows: uv sync --extra topics\n"
-            "On Intel Mac: bash scripts/setup_bigfive.sh"
+            "On Intel Mac: bash scripts/setup_limbic.sh"
         ) from exc
 
     model = BERTopic(
@@ -181,7 +181,7 @@ def fit_topics(
     Fit BERTopic on *entries* and return (topic_ids, docs, model).
 
     Topic id −1 means 'outlier / noise'.
-    Uses .venv-bigfive via subprocess on Intel Mac; fits in-process elsewhere.
+    Uses .venv-limbic via subprocess on Intel Mac; fits in-process elsewhere.
     """
     if len(entries) < _MIN_DOCS:
         raise ValueError(
