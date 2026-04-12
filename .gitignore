@@ -24,6 +24,7 @@ build/
 # Test artefacts
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 
 # macOS
