@@ -21,15 +21,7 @@ dependencies = [
 [project.scripts]
 egon = "egon.cli:app"
 
-[tool.hatch.build.targets.wheel]
-packages = ["egon"]
-
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=5.0",
-    "ruff>=0.4",
-]
 bigfive = [
     "transformers>=4.40",
     "torch>=2.0",
@@ -41,8 +33,26 @@ topics = [
     "sentence-transformers>=3.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["egon"]
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+]
+
 [tool.pytest.ini_options]
+addopts = "--cov=egon --cov-report=term-missing --cov-report=xml"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["egon"]
+omit = ["tests/*", ".venv/*"]
 
 [tool.ruff]
 line-length = 100
