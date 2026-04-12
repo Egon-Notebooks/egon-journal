@@ -145,6 +145,37 @@ def parse_period_value(value: str) -> tuple[date_type, date_type, str]:
     )
 
 
+def last_complete_period(period: str, ref: date_type) -> date_type:
+    """
+    Return a reference date that falls within the last fully completed period.
+
+    Used as the default when no --for is specified, so reports cover the most
+    recent complete data rather than the current in-progress period.
+
+    Examples (ref = 2026-04-12):
+      "week"     → 2026-04-05  (last Sunday, i.e. last complete ISO week)
+      "month"    → 2026-03-31  (last day of March)
+      "quarter"  → 2025-12-31  (last day of Q4 2025)
+      "year"     → 2025-12-31  (last day of 2025)
+      "all-time" → ref         (no concept of last complete)
+    """
+    match period:
+        case "week":
+            start_of_this_week = ref - timedelta(days=ref.weekday())
+            return start_of_this_week - timedelta(days=1)
+        case "month":
+            return ref.replace(day=1) - timedelta(days=1)
+        case "quarter":
+            q_start_month = ((ref.month - 1) // 3) * 3 + 1
+            return date_type(ref.year, q_start_month, 1) - timedelta(days=1)
+        case "year":
+            return date_type(ref.year, 1, 1) - timedelta(days=1)
+        case "all-time":
+            return ref
+        case _:
+            raise ValueError(f"Unknown period '{period}'")
+
+
 def filter_entries(
     entries: list[JournalEntry], start: date_type, end: date_type
 ) -> list[JournalEntry]:
