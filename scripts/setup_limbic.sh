@@ -4,14 +4,14 @@
 # and torch 2.2 only ships wheels for Python ≤ 3.12.
 #
 # Run once:
-#   bash scripts/setup_bigfive.sh
+#   bash scripts/setup_limbic.sh
 #
-# After setup the bigfive venv lives at .venv-bigfive/ and all ML report
+# After setup the limbic venv lives at .venv-limbic/ and all ML report
 # commands will use it automatically.
 
 set -euo pipefail
 
-VENV=".venv-bigfive"
+VENV=".venv-limbic"
 PYTHON="$(uv python find 3.12 2>/dev/null || echo "")"
 
 if [ -z "$PYTHON" ]; then
