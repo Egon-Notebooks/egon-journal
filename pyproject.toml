@@ -32,6 +32,9 @@ topics = [
     "bertopic>=0.16",
     "sentence-transformers>=3.0",
 ]
+local-llm = [
+    "ollama>=0.4",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["egon"]
@@ -60,3 +63,4 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+ignore = ["E501"]

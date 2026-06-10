@@ -10,3 +10,16 @@
 wordcloud     = false   # decorative; opt in if you want it
 topics        = true    # BERTopic topic modelling (requires `uv sync --extra topics`)
 pronoun_ratio = true
+
+# ---------------------------------------------------------------------------
+# Local LLM (requires `uv sync --extra local-llm` and `ollama serve`)
+# ---------------------------------------------------------------------------
+# Uncomment and set to any model available in the Ollama library.
+# Smaller models (1b–3b) are fast; larger models (7b–12b) give richer questions.
+# See https://ollama.com/library for available models.
+#
+# [local_llm]
+# model = "qwen2.5:7b"     # default — strong instruction-following
+# model = "llama3.2:3b"    # faster, less RAM, weaker at following instructions
+# model = "llama3.2:1b"    # fastest, minimal RAM (~1 GB)
+# model = "gemma3:12b"     # best quality if you have the RAM (~9 GB)

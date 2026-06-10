@@ -77,4 +77,35 @@ def load_report_config(config_path: Path | None = None) -> ReportConfig:
     analyses_raw: dict = raw.get("report", {}).get("analyses", {})
     # Only accept keys we know about; cast to bool for safety.
     analyses = {k: bool(v) for k, v in analyses_raw.items() if k in _DEFAULTS}
-    return ReportConfig(analyses=analyses)
+
+    corr_raw: dict = raw.get("report", {}).get("correlations", {})
+    raw_pairs = corr_raw.get("exclude_pairs", None)
+    if raw_pairs is not None:
+        excluded_pairs = [(str(p[0]), str(p[1])) for p in raw_pairs if len(p) == 2]
+    else:
+        excluded_pairs = list(_DEFAULT_EXCLUDED_CORRELATION_PAIRS)
+
+    return ReportConfig(analyses=analyses, excluded_correlation_pairs=excluded_pairs)
+
+
+# ---------------------------------------------------------------------------
+# Local LLM config
+# ---------------------------------------------------------------------------
+
+_DEFAULT_LOCAL_LLM_MODEL = "qwen2.5:7b"
+
+
+@dataclass
+class LocalLlmConfig:
+    model: str = _DEFAULT_LOCAL_LLM_MODEL
+
+
+def load_local_llm_config(config_path: Path | None = None) -> LocalLlmConfig:
+    """Load ``[local_llm]`` section from ``egon.toml``, falling back to defaults."""
+    path = config_path or (Path.cwd() / "egon.toml")
+    if not path.is_file():
+        return LocalLlmConfig()
+    with path.open("rb") as fh:
+        raw = tomllib.load(fh)
+    model = raw.get("local_llm", {}).get("model", _DEFAULT_LOCAL_LLM_MODEL)
+    return LocalLlmConfig(model=str(model))

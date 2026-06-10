@@ -479,6 +479,91 @@ class TestReportCorrelations:
 
 
 # ---------------------------------------------------------------------------
+# suggest-prompt
+# ---------------------------------------------------------------------------
+
+
+class TestSuggestPrompt:
+    def test_success(self, journal_dir, tmp_path):
+        with (
+            patch("egon.cli.ensure_model"),
+            patch(
+                "egon.cli.generate_journal_prompt",
+                return_value="What would it mean to fully let go of this?",
+            ),
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "suggest-prompt",
+                    "--journal-dir",
+                    str(journal_dir),
+                    "--model",
+                    "llama3.2:3b",
+                ],
+            )
+        assert result.exit_code == 0
+        assert "What would it mean to fully let go of this?" in result.output
+
+    def test_model_from_config(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "egon.toml").write_text('[local_llm]\nmodel = "qwen2.5:7b"\n')
+        with (
+            patch("egon.cli.ensure_model"),
+            patch(
+                "egon.cli.generate_journal_prompt",
+                return_value="Test question?",
+            ) as mock_gen,
+        ):
+            runner.invoke(
+                app,
+                ["suggest-prompt", "--journal-dir", str(journal_dir)],
+            )
+        _, kwargs = mock_gen.call_args
+        assert kwargs.get("model", mock_gen.call_args[0][1]) == "qwen2.5:7b"
+
+    def test_missing_journal_dir(self, tmp_path):
+        result = runner.invoke(
+            app,
+            ["suggest-prompt", "--journal-dir", str(tmp_path / "gone")],
+        )
+        assert result.exit_code == 1
+
+    def test_no_entries_in_range(self, tmp_path):
+        empty = tmp_path / "journal"
+        empty.mkdir()
+        result = runner.invoke(
+            app,
+            ["suggest-prompt", "--journal-dir", str(empty), "--months", "1"],
+        )
+        assert result.exit_code == 1
+
+    def test_ollama_not_installed(self, journal_dir):
+        with patch(
+            "egon.cli.ensure_model",
+            side_effect=ImportError("ollama package not installed"),
+        ):
+            result = runner.invoke(
+                app,
+                ["suggest-prompt", "--journal-dir", str(journal_dir), "--model", "llama3.2:3b"],
+            )
+        assert result.exit_code == 1
+        assert "ollama" in result.output.lower()
+
+    def test_ollama_not_running(self, journal_dir):
+        with patch(
+            "egon.cli.ensure_model",
+            side_effect=RuntimeError("Cannot connect to Ollama. Is it running?"),
+        ):
+            result = runner.invoke(
+                app,
+                ["suggest-prompt", "--journal-dir", str(journal_dir), "--model", "llama3.2:3b"],
+            )
+        assert result.exit_code == 1
+        assert "ollama" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
 # report (batch)
 # ---------------------------------------------------------------------------
 
