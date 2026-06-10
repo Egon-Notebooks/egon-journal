@@ -59,9 +59,13 @@ from egon.limbic.cognitive_bias import CognitiveBiasScores, cognitive_bias_by_da
 from egon.limbic.cognitive_bias_plot import plot_cognitive_bias
 from egon.limbic.emotion import EmotionScores, emotion_by_day
 from egon.limbic.emotion_plot import plot_emotion
+from egon.limbic.loneliness import LonelinessScore, loneliness_by_day
+from egon.limbic.loneliness_plot import plot_loneliness
 from egon.limbic.mbti import MBTIScores, mbti_by_day
 from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
+from egon.limbic.stress import StressScore, stress_by_day
+from egon.limbic.stress_plot import plot_stress
 from egon.plot_style import apply_style
 
 _LOGO_PATH = Path(__file__).resolve().parents[1] / "content" / "egon_logo.png"
@@ -154,6 +158,15 @@ _FIG_COMMENTARY = {
         "discussing with a therapist; transient spikes are normal. "
         "[Replace with observations about dominant emotions and any notable shifts.]"
     ),
+    "stress": (
+        "Psychological stress probability is inferred from journal text using a "
+        "DistilBERT model fine-tuned on the Dreaddit dataset (Turcan & McKeown, 2019) "
+        "— a corpus of Reddit posts labelled for psychological stress.  A score near 1 "
+        "indicates language consistent with stress; near 0 indicates low-stress writing.  "
+        "The dashed line marks the period mean.  Days consistently above 0.6 may be "
+        "worth reflecting on; occasional spikes are normal. "
+        "[Replace with observations about your stress pattern and any notable periods.]"
+    ),
     "bigfive": (
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
         "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
@@ -231,6 +244,26 @@ _FIG_COMMENTARY = {
         "Catastrophizing or Emotional Reasoning over several weeks may be worth discussing "
         "with a therapist. "
         "[Replace with observations about which distortions appear most and any trends.]"
+    ),
+    "loneliness": (
+        "This chart shows daily loneliness probability (0–1) inferred from the "
+        "emotional and social tone of your writing. The model (MentalBERT fine-tuned "
+        "on a loneliness classification dataset) detects linguistic markers associated "
+        "with social isolation and disconnection. A high score on a given day suggests "
+        "that the writing reflects themes of loneliness rather than a clinical state. "
+        "Sustained elevation — particularly when correlated with low sentiment or high "
+        "stress — may be worth reflecting on. "
+        "[Replace with observations about any patterns or notable periods.]"
+    ),
+    "top-correlations": (
+        "This chart ranks the signal pairs with the strongest linear relationships — "
+        "measured by absolute Pearson r — across the period. Pairs excluded from the "
+        "chart (e.g. weight ↔ lean mass) are near-identity relationships that offer "
+        "little interpretive value. Blue bars are positive correlations; red bars are "
+        "negative. Faded bars are not statistically significant (p ≥ 0.05). Use this "
+        "chart to surface the most striking co-movements in your data before diving "
+        "into the full matrix. "
+        "[Replace with observations about which pairs stand out and what they might mean.]"
     ),
     "highlighted-correlations": (
         "These four scatter plots examine relationships between physiological and "
@@ -714,6 +747,8 @@ def build_signals(
     bigfive_data: list | None = None,
     mbti_data: list | None = None,
     emotion_data: list | None = None,
+    stress_data: list | None = None,
+    loneliness_data: list | None = None,
 ) -> Signals:
     """
     Collect all available daily time series into a name→data dict.
@@ -736,6 +771,12 @@ def build_signals(
             signals["sentiment"] = sentiment_by_day(journal_entries)
         except Exception:
             pass
+
+    if stress_data:
+        signals["stress"] = [(d, s.stress) for d, s in stress_data]
+
+    if loneliness_data:
+        signals["loneliness"] = [(d, s.lonely) for d, s in loneliness_data]
 
     if bigfive_data:
         for i, name in enumerate(["B5-O", "B5-C", "B5-E", "B5-A", "B5-N"]):
@@ -822,10 +863,14 @@ def generate_full_report(
     mbti_cache = cache_dir / "mbti_data.json"
     emotion_cache = cache_dir / "emotion_data.json"
     cog_bias_cache = cache_dir / "cognitive_bias_data.json"
+    stress_cache = cache_dir / "stress_data.json"
+    loneliness_cache = cache_dir / "loneliness_data.json"
     bigfive_data = None
     mbti_data = None
     emotion_data: list | None = None
     cog_bias_data: list | None = None
+    stress_data: list | None = None
+    loneliness_data: list | None = None
 
     if journal_entries:
         if bf_cache.exists():
@@ -890,6 +935,42 @@ def generate_full_report(
                 except Exception as exc:
                     print(f"  [full report] Cognitive bias scoring unavailable: {exc}")
 
+        if cfg.enabled("stress"):
+            if stress_cache.exists():
+                print("  [full report] Stress: loading cached scores")
+                try:
+                    raw = json.loads(stress_cache.read_text())
+                    stress_data = [(date_type.fromisoformat(d), StressScore(*s)) for d, s in raw]
+                except Exception as exc:
+                    print(f"  [full report] Stress cache corrupt, re-scoring: {exc}")
+            if stress_data is None:
+                try:
+                    stress_data = stress_by_day(journal_entries)
+                    stress_cache.write_text(
+                        json.dumps([[d.isoformat(), list(s)] for d, s in stress_data])
+                    )
+                except Exception as exc:
+                    print(f"  [full report] Stress scoring unavailable: {exc}")
+
+        if cfg.enabled("loneliness"):
+            if loneliness_cache.exists():
+                print("  [full report] Loneliness: loading cached scores")
+                try:
+                    raw = json.loads(loneliness_cache.read_text())
+                    loneliness_data = [
+                        (date_type.fromisoformat(d), LonelinessScore(*s)) for d, s in raw
+                    ]
+                except Exception as exc:
+                    print(f"  [full report] Loneliness cache corrupt, re-scoring: {exc}")
+            if loneliness_data is None:
+                try:
+                    loneliness_data = loneliness_by_day(journal_entries)
+                    loneliness_cache.write_text(
+                        json.dumps([[d.isoformat(), list(s)] for d, s in loneliness_data])
+                    )
+                except Exception as exc:
+                    print(f"  [full report] Loneliness scoring unavailable: {exc}")
+
     # -----------------------------------------------------------------------
     # Health records
     # -----------------------------------------------------------------------
@@ -912,6 +993,8 @@ def generate_full_report(
         bigfive_data=bigfive_data,
         mbti_data=mbti_data,
         emotion_data=emotion_data,
+        stress_data=stress_data,
+        loneliness_data=loneliness_data,
     )
 
     def _capture(fn, name: str, *args, **kwargs) -> plt.Figure | None:
@@ -1018,6 +1101,34 @@ def generate_full_report(
                     fig,
                     "Figure 2.1 \u2014 Daily sentiment score (VADER compound, \u22121 to +1)",
                     "sentiment",
+                )
+
+        if stress_data and cfg.enabled("stress"):
+            fig = _capture(
+                plot_stress,
+                "stress",
+                stress_data,
+                title=f"Psychological stress \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 2.2 \u2014 Daily stress probability (DistilBERT, Dreaddit)",
+                    "stress",
+                )
+
+        if loneliness_data and cfg.enabled("loneliness"):
+            fig = _capture(
+                plot_loneliness,
+                "loneliness",
+                loneliness_data,
+                title=f"Loneliness signal \u2014 {label}",
+            )
+            if fig:
+                _fp(
+                    fig,
+                    "Figure 2.3 \u2014 Daily loneliness probability (MentalBERT)",
+                    "loneliness",
                 )
 
         if bigfive_data and cfg.enabled("bigfive"):

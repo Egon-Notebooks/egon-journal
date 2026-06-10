@@ -45,9 +45,13 @@ from egon.limbic.cognitive_bias import cognitive_bias_by_day
 from egon.limbic.cognitive_bias_plot import plot_cognitive_bias
 from egon.limbic.emotion import emotion_by_day
 from egon.limbic.emotion_plot import plot_emotion
+from egon.limbic.loneliness import loneliness_by_day
+from egon.limbic.loneliness_plot import plot_loneliness
 from egon.limbic.mbti import mbti_by_day
 from egon.limbic.mbti_plot import plot_mbti
 from egon.limbic.sentiment_plot import plot_sentiment
+from egon.limbic.stress import stress_by_day
+from egon.limbic.stress_plot import plot_stress
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.node_types.journal_entry import generate_journal_entry
 from egon.node_types.program import (
@@ -1259,6 +1263,126 @@ def report_emotion(
     title = f"Daily emotion profile — {label}"
 
     plot_emotion(data, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-stress")
+def report_stress(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/stress/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot psychological stress signal from journal entries (requires --extra limbic)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Scoring stress for {len(entries)} entries …")
+    data = stress_by_day(entries)
+
+    resolved_output = output or Path(f"reports/stress/{label}.pdf")
+    title = f"Psychological stress — {label}"
+
+    plot_stress(data, resolved_output, title=title)
+    typer.echo(f"Saved: {resolved_output}")
+
+
+@app.command(name="report-loneliness")
+def report_loneliness(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output path (default: reports/loneliness/<period-label>.pdf)",
+    ),
+) -> None:
+    """Plot loneliness signal from journal entries (requires --extra limbic)."""
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    all_entries = load_journal_entries(resolved_dir)
+    entries = filter_entries(all_entries, start, end)
+    if not entries:
+        typer.echo(f"No journal entries found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Scoring loneliness for {len(entries)} entries …")
+    data = loneliness_by_day(entries)
+
+    resolved_output = output or Path(f"reports/loneliness/{label}.pdf")
+    title = f"Loneliness signal — {label}"
+
+    plot_loneliness(data, resolved_output, title=title)
     typer.echo(f"Saved: {resolved_output}")
 
 
