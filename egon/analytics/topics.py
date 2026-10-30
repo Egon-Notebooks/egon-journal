@@ -137,8 +137,7 @@ def _fit_locally(
     except ImportError as exc:
         raise ImportError(
             "BERTopic is not installed.\n"
-            "On Linux/Apple Silicon/Windows: uv sync --extra topics\n"
-            "On Intel Mac: bash scripts/setup_limbic.sh"
+            "Install it with: uv sync --extra topics (Intel Mac: bash scripts/setup_limbic.sh)"
         ) from exc
 
     model = BERTopic(

@@ -793,6 +793,12 @@ _FOUND_RE = re.compile(r"Found (\d[\d,]*) (journal entries|days|nights)")
 _SIGNALS_RE = re.compile(r"across (\d+) signals")
 
 
+def _one_line(exc: BaseException) -> str:
+    """The message of *exc* plus its follow-up hint line, on one line."""
+    lines = [ln.strip() for ln in str(exc).strip().splitlines() if ln.strip()]
+    return " ".join(lines[:2]) if lines else type(exc).__name__
+
+
 def _fmt_duration(seconds: float) -> str:
     m, s = divmod(round(seconds), 60)
     return f"{m}m {s:02d}s" if m else f"{s}s"
@@ -833,9 +839,12 @@ def _run_report_step(name: str, fn) -> _StepResult:
             fn()
     except typer.Exit:
         status = "skipped"
+    except ImportError as exc:  # an optional extra isn't installed: skip, don't fail
+        status = "skipped"
+        err.write(f"Error: {_one_line(exc)}\n")
     except Exception as exc:
         status = "failed"
-        err.write(f"{exc}\n")
+        err.write(f"Error: {_one_line(exc)}\n")
     elapsed = time.monotonic() - started
 
     cr = "\r" if live else ""
@@ -1414,8 +1423,12 @@ def report_topics(
 
     out_dir = output_dir or Path("reports/topics")
 
-    topic_ids, _docs, model = fit_topics(entries)
-    summary = topic_summary(model)
+    try:
+        topic_ids, _docs, model = fit_topics(entries)
+        summary = topic_summary(model)
+    except (ImportError, ValueError) as exc:
+        typer.echo(f"Error: {_one_line(exc)}", err=True)
+        raise typer.Exit(1)
     section_figures = [figures.topic_summary_figure(summary)]
     try:
         timeline = topic_timeline(entries, topic_ids, model)
