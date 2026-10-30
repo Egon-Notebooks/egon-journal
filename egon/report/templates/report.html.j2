@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="egon-journal">
+<meta name="egon:data-source" content="{{ 'synthetic' if report.synthetic else 'personal' }}">
+{% if not report.synthetic %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>{{ report.kind }} · {{ report.title }} — Egon Notebooks</title>
+<style>
+{{ font_css | safe }}
+{{ css | safe }}
+</style>
+</head>
+<body{% if report.synthetic %} class="is-synthetic"{% endif %}>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Egon Notebooks · {{ report.kind }}</p>
+    <h1>{{ report.title }}</h1>
+    <p class="period">
+      {{ report.start.strftime('%-d %B %Y') }} — {{ report.end.strftime('%-d %B %Y') }}
+      <span class="sep">·</span>
+      generated {{ report.generated.strftime('%-d %B %Y') }}
+    </p>
+    {% if report.synthetic %}
+    <p class="synthetic-banner" role="note">
+      <strong>Demo report.</strong>
+      Everything here is synthetic data generated for the
+      {% if report.persona %}<em>{{ report.persona }}</em> persona{% else %}demo{% endif %}.
+      No real person's journal or health data is shown.
+    </p>
+    {% else %}
+    <p class="private-note">Generated on your device. This file contains your personal data — share it only if you mean to.</p>
+    {% endif %}
+  </div>
+</header>
+
+{% if report.sections | length > 1 %}
+<nav class="toc" aria-label="Sections">
+  <div class="wrap toc-inner">
+    <ol>
+      {% for sec in report.sections %}
+      <li><a href="#{{ sec.anchor }}">{% if sec.number %}<span class="num">{{ '%02d' % sec.number }}</span>{% endif %}{{ sec.title }}</a></li>
+      {% endfor %}
+    </ol>
+    <button class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+  </div>
+</nav>
+{% else %}
+<button class="theme-toggle floating" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+{% endif %}
+
+<main class="wrap">
+{% for sec in report.sections %}
+  <section class="section" id="{{ sec.anchor }}">
+    {% if report.sections | length > 1 %}
+    <header class="section-head">
+      {% if sec.number %}<span class="section-num">{{ '%02d' % sec.number }}</span>{% endif %}
+      <h2>{{ sec.title }}</h2>
+    </header>
+    {% endif %}
+    {% for p in sec.intro | paragraphs %}
+    <p class="lede">{{ p }}</p>
+    {% endfor %}
+
+    {% if sec.stats %}
+    <dl class="stats">
+      {% for s in sec.stats %}
+      <div class="stat">
+        <dt>{{ s.label }}</dt>
+        <dd><span class="stat-value">{{ s.value }}</span>{% if s.unit %}<span class="stat-unit">{{ s.unit }}</span>{% endif %}</dd>
+        {% if s.note %}<dd class="stat-note">{{ s.note }}</dd>{% endif %}
+      </div>
+      {% endfor %}
+    </dl>
+    {% endif %}
+
+    {% for heading, text in sec.notes %}
+    <article class="note">
+      <h3>{{ heading }}</h3>
+      {% for p in text | paragraphs %}<p>{{ p }}</p>{% endfor %}
+    </article>
+    {% endfor %}
+
+    {% for fig in sec.figures %}
+    <figure class="card" id="fig-{{ fig.key }}">
+      <header class="card-head">
+        {% if fig.number %}<span class="fig-num">Fig. {{ fig.number }}</span>{% endif %}
+        <h3>{{ fig.title }}</h3>
+        {% if fig.caption %}<p class="caption">{{ fig.caption }}</p>{% endif %}
+      </header>
+      <div class="chart" data-chart="{{ fig.key }}" role="img" aria-label="{{ fig.title }}{% if fig.caption %}: {{ fig.caption }}{% endif %}"></div>
+      {% if fig.why %}
+      <aside class="why">
+        <h4>Why it matters for wellbeing</h4>
+        {% for p in fig.why | paragraphs %}<p>{{ p }}</p>{% endfor %}
+      </aside>
+      {% endif %}
+      {% if fig.how_to_read or fig.commentary %}
+      <figcaption class="card-text">
+        {% if fig.how_to_read %}
+        <div class="how">
+          <h4>How to read this</h4>
+          {% for p in fig.how_to_read | paragraphs %}<p>{{ p }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        {% if fig.commentary %}
+        <div class="commentary">
+          <h4>This period</h4>
+          {% for p in fig.commentary | paragraphs %}<p>{{ p }}</p>{% endfor %}
+        </div>
+        {% endif %}
+      </figcaption>
+      {% endif %}
+      {% if fig.table %}
+      <details class="data">
+        <summary>Show data <span class="muted">({{ fig.table.rows | length }} rows)</span></summary>
+        <div class="table-scroll">
+          <table>
+            <thead><tr>{% for c in fig.table.columns %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>
+            {% for row in fig.table.rows %}
+              <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      {% endif %}
+    </figure>
+    {% endfor %}
+  </section>
+{% endfor %}
+</main>
+
+<footer class="colophon">
+  <div class="wrap">
+    <p>Egon Notebooks · egon-journal. Charts are descriptive, not diagnostic. Model-derived signals
+    (emotion, stress, personality) are estimates from language and can be wrong. If something here
+    worries you, talk to someone you trust or a professional.</p>
+    <p class="muted">Print or “Save as PDF” from your browser for a paper copy.</p>
+  </div>
+</footer>
+
+<script>{{ vendor_js | safe }}</script>
+<script id="egon-specs" type="application/json">{{ specs_json | safe }}</script>
+<script id="egon-dark-map" type="application/json">{{ dark_map_json | safe }}</script>
+<script>{{ js | safe }}</script>
+</body>
+</html>
