@@ -24,7 +24,7 @@ from egon.limbic.bigfive import TRAITS, BigFiveScores
 from egon.limbic.cognitive_bias import BIASES, DISTORTION_TYPES, CognitiveBiasScores
 from egon.limbic.emotion import EMOTIONS, EmotionScores
 from egon.limbic.loneliness import LonelinessScore
-from egon.limbic.mbti import DIMENSIONS, MBTIScores
+from egon.limbic.mbti import DIMENSIONS, MBTIScores, period_type
 from egon.limbic.stress import StressScore
 from egon.report import theme
 from egon.report.charts.affect import cognitive_bias_chart, mbti_chart, sentiment_chart
@@ -322,8 +322,13 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
                 },
             )
         )
+    headline = []
+    for i, (_, name) in enumerate(TRAITS):
+        s = series_summary([(d, sc[i]) for d, sc in data], decimals=2)
+        headline.append(Stat(name, s["mean"], "", f"{s['delta']} last vs first fortnight"))
     return Figure(
         key="bigfive",
+        headline=headline,
         title="Personality in your writing (Big Five)",
         caption=(
             "Daily scores (0–1) for Openness, Conscientiousness, Extraversion, Agreeableness "
@@ -339,9 +344,10 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
             "mirror how you have been rather than who you are."
         ),
         how_to_read=(
-            "One panel per trait. Grey dots are single days, the line the 7-day average, "
-            "the dotted line and margin label the period average. Compare a trait with "
-            "itself over time, not across traits."
+            "The numbers above are period averages (0–1) with the change from the first to "
+            "the last fortnight. One panel per trait below: grey dots are single days, the "
+            "line the 7-day average, the dotted line and margin label the period average. "
+            "Compare a trait with itself over time, not across traits."
         ),
         commentary=commentary,
         table=Table(
@@ -352,8 +358,14 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
 
 
 def mbti_figure(data: list[tuple[date_type, MBTIScores]], commentary: str = "") -> Figure:
+    mbti, letters = period_type(data)
+    headline = [Stat("Type this period", mbti, "", "dominant pole per dimension")] + [
+        Stat(label, letter, "", f"on {share:.0%} of days")
+        for (_, _, label), (letter, share) in zip(DIMENSIONS, letters, strict=True)
+    ]
     return Figure(
         key="mbti",
+        headline=headline,
         title="Personality type lean (MBTI)",
         caption="Daily lean between the poles of four MBTI dimensions, inferred from your entries",
         spec=mbti_chart(data),
@@ -365,9 +377,10 @@ def mbti_figure(data: list[tuple[date_type, MBTIScores]], commentary: str = "") 
             "during a stressful stretch."
         ),
         how_to_read=(
-            "Each panel runs from one pole (bottom) to the other (top); the dotted midline "
-            "is a perfect balance. The margin label shows which pole dominated the period "
-            "and how often."
+            "The type above combines the pole that dominated each dimension over the "
+            "period. Each panel runs from one pole (bottom) to the other (top); the dotted "
+            "midline is a perfect balance, and the margin label shows how often the "
+            "dominant pole won."
         ),
         commentary=commentary,
         table=Table(

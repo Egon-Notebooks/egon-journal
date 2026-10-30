@@ -97,3 +97,33 @@ class TestMbtiByDay:
         )
         dates = [d for d, _ in mbti_by_day(entries)]
         assert dates == sorted(dates)
+
+
+class TestPeriodType:
+    def test_dominant_pole_per_dimension(self):
+        from egon.limbic.mbti import period_type
+
+        data = [
+            (date(2026, 4, 1), MBTIScores(0.0, 1.0, 0.0, 1.0)),
+            (date(2026, 4, 2), MBTIScores(0.0, 1.0, 0.0, 0.0)),
+            (date(2026, 4, 3), MBTIScores(1.0, 1.0, 0.0, 1.0)),
+        ]
+        mbti, letters = period_type(data)
+        assert mbti == "INFJ"
+        assert letters[0] == ("I", pytest.approx(2 / 3))
+        assert letters[1] == ("N", pytest.approx(1.0))
+
+    def test_tie_goes_to_first_pole(self):
+        from egon.limbic.mbti import period_type
+
+        data = [
+            (date(2026, 4, 1), MBTIScores(1.0, 1.0, 1.0, 1.0)),
+            (date(2026, 4, 2), MBTIScores(0.0, 0.0, 0.0, 0.0)),
+        ]
+        assert period_type(data)[0] == "ENTJ"
+
+    def test_empty_raises(self):
+        from egon.limbic.mbti import period_type
+
+        with pytest.raises(ValueError):
+            period_type([])

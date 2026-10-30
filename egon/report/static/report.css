@@ -122,6 +122,10 @@ a:hover { text-decoration: underline; }
 .stat-unit { color: var(--muted); font-size: 0.9rem; margin-left: 0.3em; }
 .stat-note { color: var(--muted); font-size: 0.8rem; }
 
+.stats-compact { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); margin: 0 0 1.4rem; }
+.stats-compact .stat { padding: 12px 16px 10px; }
+.stats-compact .stat-value { font-size: 1.9rem; }
+
 /* --- Notes (text blocks, e.g. AI health summary) ------------------------------- */
 
 .note { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 28px 32px; margin: 2rem 0; }

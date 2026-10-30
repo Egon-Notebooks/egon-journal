@@ -144,3 +144,8 @@ def test_spec_json_cannot_close_script_tag():
     html = render_report(single_figure_report(fig, label="x", start=START, end=START))
     assert "</script><b>x</b>" not in html
     assert _embedded_specs(html)["hrv"]["description"] == "</script><b>x</b>"
+
+
+def test_series_summary_rounds_tiny_change_to_plus_minus_zero():
+    flat = [(START + timedelta(days=i), 0.5 - 0.0001 * i) for i in range(40)]
+    assert series_summary(flat, decimals=2)["delta"] == "±0.00"

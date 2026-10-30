@@ -64,6 +64,7 @@ class Figure:
     how_to_read: str = ""  # how to read the chart
     commentary: str = ""  # observations for this period (LLM or placeholder)
     table: Table | None = None  # accessible data view
+    headline: list[Stat] = field(default_factory=list)  # key estimates shown above the chart
 
 
 @dataclass

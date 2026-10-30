@@ -212,5 +212,8 @@ def series_summary(data: Series, decimals: int = 0, percent: bool = False) -> di
     fmt = number_format(decimals, percent)
     k = min(14, len(values))
     delta = mean(values[-k:]) - mean(values[:k])
-    sign = "+" if delta > 0 else "−" if delta < 0 else "±"
-    return {"mean": f"{mean(values):{fmt}}", "delta": f"{sign}{abs(delta):{fmt}}"}
+    magnitude = f"{abs(delta):{fmt}}"
+    if magnitude == f"{0:{fmt}}":  # rounds to zero: no direction to show
+        return {"mean": f"{mean(values):{fmt}}", "delta": f"±{magnitude}"}
+    sign = "+" if delta > 0 else "−"
+    return {"mean": f"{mean(values):{fmt}}", "delta": f"{sign}{magnitude}"}

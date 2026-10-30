@@ -316,3 +316,28 @@ def test_unavailable_model_is_skipped(tmp_path, monkeypatch):
     )
     assert data.scores == {}
     assert "word count" in data.signals
+
+
+def test_mbti_figure_shows_period_type():
+    fig = F.mbti_figure(_scores()["mbti"])
+    labels = [s.label for s in fig.headline]
+    assert labels[0] == "Type this period"
+    assert len(fig.headline[0].value) == 4 and set(fig.headline[0].value) <= set("EINSTFJP")
+    assert len(fig.headline) == 5
+    assert "Type this period" in render_report(
+        __import__("egon.report.html", fromlist=["x"]).single_figure_report(
+            fig, label="x", start=START, end=START
+        )
+    )
+
+
+def test_bigfive_figure_shows_trait_estimates():
+    fig = F.bigfive_figure(_scores()["bigfive"])
+    assert [s.label for s in fig.headline] == [
+        "Openness",
+        "Conscientiousness",
+        "Extraversion",
+        "Agreeableness",
+        "Neuroticism",
+    ]
+    assert fig.headline[0].value == "0.60"

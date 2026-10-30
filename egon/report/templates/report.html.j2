@@ -92,6 +92,17 @@
         <h3>{{ fig.title }}</h3>
         {% if fig.caption %}<p class="caption">{{ fig.caption }}</p>{% endif %}
       </header>
+      {% if fig.headline %}
+      <dl class="stats stats-compact">
+        {% for s in fig.headline %}
+        <div class="stat">
+          <dt>{{ s.label }}</dt>
+          <dd><span class="stat-value">{{ s.value }}</span>{% if s.unit %}<span class="stat-unit">{{ s.unit }}</span>{% endif %}</dd>
+          {% if s.note %}<dd class="stat-note">{{ s.note }}</dd>{% endif %}
+        </div>
+        {% endfor %}
+      </dl>
+      {% endif %}
       <div class="chart" data-chart="{{ fig.key }}" role="img" aria-label="{{ fig.title }}{% if fig.caption %}: {{ fig.caption }}{% endif %}"></div>
       {% if fig.why %}
       <aside class="why">
