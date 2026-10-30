@@ -1,9 +1,9 @@
 """
 Charts for what the journal is about: topics and frequent words.
 
-Ranked bars use a single colour (the categories have no order of their own);
+Ranked bars use a single color (the categories have no order of their own);
 the topic timeline uses the categorical palette in slot order, with
-"other" folded into neutral grey.
+"other" folded into neutral gray.
 """
 
 from typing import Any
@@ -23,7 +23,7 @@ def ranked_bars_chart(
     label_limit: int = 420,
     value_format: str = ",.0f",
 ) -> dict[str, Any]:
-    """Horizontal bars, largest first, value labelled at the tip."""
+    """Horizontal bars, largest first, value labeled at the tip."""
     if not items:
         raise ValueError("Nothing to rank.")
     rows = [{"label": label, "value": value} for label, value in items]

@@ -48,7 +48,7 @@ TRAITS: list[tuple[str, str]] = [
     ("N", "Neuroticism"),
 ]
 
-# Lazy-loaded globals — initialised on first call to score_text()
+# Lazy-loaded globals — initialized on first call to score_text()
 _tokenizer = None
 _model = None
 

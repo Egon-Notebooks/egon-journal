@@ -8,7 +8,7 @@
 
 [report.analyses]
 wordcloud     = false   # most frequent words (formerly a word cloud); opt in
-topics        = true    # BERTopic topic modelling (requires `uv sync --extra topics`)
+topics        = true    # BERTopic topic modeling (requires `uv sync --extra topics`)
 pronoun_ratio = true
 
 # LLM-generated Apple Health narrative (requires `uv sync --extra local-llm`

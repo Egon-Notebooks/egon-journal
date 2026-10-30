@@ -10,7 +10,7 @@ from egon.report import theme
 
 Series = list[tuple[date_type, float]]
 
-# Dates are serialised as ISO strings, which Vega parses as UTC midnight.  A
+# Dates are serialized as ISO strings, which Vega parses as UTC midnight.  A
 # UTC scale keeps every day on its own calendar date whatever the reader's time
 # zone.  Two Vega-Lite 6 quirks shape the definitions below:
 #   - formatType="utc" on the axis makes it ignore the format string, so the
@@ -62,7 +62,7 @@ def rolling_mean(data: Series, window_days: int = 7) -> list[float]:
 
 
 def mean_rule(value: float, label: str, color: str = theme.INK_MUTED) -> alt.LayerChart:
-    """A dotted hairline reference rule, labelled in the right-hand margin.
+    """A dotted hairline reference rule, labeled in the right-hand margin.
 
     The label sits outside the plot so it never collides with the data.
     """

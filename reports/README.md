@@ -222,7 +222,7 @@ Default output: `./reports/loneliness/<period>.html`
 
 Plots daily emotion profile derived from journal text using
 `j-hartmann/emotion-english-distilroberta-base` — a DistilRoBERTa model fine-tuned
-on six emotion datasets. Produces a 100 % stacked area of the seven emotions (7-day
+on six emotion datasets. Produces a 100% stacked area of the seven emotions (7-day
 mean; positive affect above the neutral band, negative below) and a period profile.
 Click a legend entry to isolate one emotion.
 

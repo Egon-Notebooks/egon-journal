@@ -113,7 +113,7 @@ def _assert_figure(fig: Figure, key: str) -> None:
     assert fig.how_to_read
     assert fig.spec["config"]["font"] == theme.FONT_BODY
     assert fig.table is not None and fig.table.rows
-    # every colour in the spec must have a dark-mode counterpart
+    # every color in the spec must have a dark-mode counterpart
     hexes = {h.lower() for h in __import__("re").findall(r"#[0-9a-fA-F]{6}", json.dumps(fig.spec))}
     assert hexes <= {h.lower() for h in theme.DARK_MAP}, hexes - {h.lower() for h in theme.DARK_MAP}
 

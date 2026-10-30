@@ -114,7 +114,7 @@ uv run egon validate --path ~/my-egon-graph/journal/Journal\ —\ 2026-04-03.md
 
 ## Local LLM journal prompts
 
-Generate a personalised journaling question from your recent entries using a local LLM via [Ollama](https://ollama.com).
+Generate a personalized journaling question from your recent entries using a local LLM via [Ollama](https://ollama.com).
 
 ### Prerequisites
 
@@ -169,7 +169,7 @@ Generate a narrative summary of your Apple Health data for a time period using a
 Prerequisites are the same as for journal prompts above (Ollama running, `uv sync --extra local-llm`), plus `EGON_APPLE_HEALTH_XML` set in `.env` (or pass `--xml`).
 
 ```bash
-# Summarise the last complete month (default)
+# Summarize the last complete month (default)
 uv run egon health-summary
 
 # A specific quarter, saved as Markdown
@@ -183,7 +183,7 @@ uv run egon health-summary --for 2026-Q1 --stats-only
 uv run egon health-summary --model gemma3:12b
 ```
 
-The full report (`uv run egon report --full`) also uses this: it adds an AI-generated "Health summary" to the Physiological Measures section and writes "This period" commentary under each health chart. If Ollama is not running, these are simply left out. Both behaviours can be toggled in `egon.toml`:
+The full report (`uv run egon report --full`) also uses this: it adds an AI-generated "Health summary" to the Physiological Measures section and writes "This period" commentary under each health chart. If Ollama is not running, these are simply left out. Both behaviors can be toggled in `egon.toml`:
 
 ```toml
 [report.analyses]
@@ -255,7 +255,7 @@ correlations.
 See [reports/README.md](reports/README.md) for full usage instructions. Charts are
 built with [Vega-Lite](https://vega.github.io/vega-lite/) via
 [Altair](https://altair-viz.github.io/); the visual language is described in the
-product docs (`docs/DESIGN_LANGUAGE.md` → *Data visualisation*).
+product docs (`docs/DESIGN_LANGUAGE.md` → *Data visualization*).
 
 ---
 
@@ -286,7 +286,7 @@ uv sync --extra limbic
 
 Requires `transformers`, `torch`, `sentencepiece`, and `protobuf`. The model runs locally; no data leaves the device.
 
-**Topic modelling** — uses BERTopic to cluster journal entries into recurring themes:
+**Topic modeling** — uses BERTopic to cluster journal entries into recurring themes:
 
 ```bash
 uv sync --extra topics

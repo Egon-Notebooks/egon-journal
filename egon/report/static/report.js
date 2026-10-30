@@ -38,7 +38,7 @@
     });
   }
 
-  // Charts are authored in light colours; dark mode swaps each hex for its pair.
+  // Charts are authored in light colors; dark mode swaps each hex for its pair.
   const darkPattern = new RegExp(Object.keys(darkMap).join("|"), "gi");
   function themed(spec) {
     let json = JSON.stringify(spec);

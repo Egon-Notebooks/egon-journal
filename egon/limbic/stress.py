@@ -2,7 +2,7 @@
 Psychological stress detection from journal text.
 
 Uses ``jnyx74/stress-prediction`` — a DistilBERT model fine-tuned on the
-Dreaddit dataset (Reddit posts labelled for psychological stress).  Outputs
+Dreaddit dataset (Reddit posts labeled for psychological stress).  Outputs
 two softmax probabilities summing to 1:
 
     no stress · stress

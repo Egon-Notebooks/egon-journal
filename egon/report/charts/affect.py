@@ -30,7 +30,7 @@ from egon.report.charts._common import (
 )
 from egon.report.charts.timeseries import series_layers, with_label_gutter
 
-# Tone classes: negative (terracotta) · neutral (grey) · positive (ink blue).
+# Tone classes: negative (terracotta) · neutral (gray) · positive (ink blue).
 TONE_DOMAIN = ["negative", "neutral", "positive"]
 TONE_RANGE = [theme.TERRACOTTA, theme.NEUTRAL, theme.BLUE]
 NEUTRAL_BAND = 0.05  # VADER's conventional neutral threshold
@@ -123,7 +123,7 @@ def mbti_chart(data: list[tuple[date_type, MBTIScores]]) -> dict[str, Any]:
             zoom=False,
             show_x_axis=i == len(DIMENSIONS) - 1,
         )
-        # Label the two ends of the axis with the poles instead of 0 % / 100 %.
+        # Label the two ends of the axis with the poles instead of 0% / 100%.
         layer.layer[0].encoding.y.axis = alt.Axis(
             values=[0, 1],
             labelExpr=f"datum.value == 1 ? '{pos}' : '{neg}'",

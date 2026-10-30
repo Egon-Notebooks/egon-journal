@@ -1,12 +1,12 @@
 """
 Egon visual language for report charts (Vega-Lite via Altair).
 
-Every chart is specified with the *light* colours below.  The HTML shell swaps
+Every chart is specified with the *light* colors below.  The HTML shell swaps
 each light hex for its dark counterpart when the reader is in dark mode, so
 chart code never has to know about themes — it only ever names a role.
 
 The categorical palette was validated with the dataviz palette checker
-(lightness band, chroma floor, colour-vision-deficiency separation and
+(lightness band, chroma floor, color-vision-deficiency separation and
 contrast) against both surfaces.  The slot ORDER is part of that validation:
 when several series sit next to each other, assign them in slot order, never
 cycled or re-shuffled.  Re-run the validator if you change a hex value.
@@ -151,7 +151,7 @@ def config() -> dict[str, Any]:
 
 
 def to_spec(chart: alt.TopLevelMixin) -> dict[str, Any]:
-    """Serialise an Altair chart to a Vega-Lite dict with the Egon config applied."""
+    """Serialize an Altair chart to a Vega-Lite dict with the Egon config applied."""
     spec = chart.to_dict()
     spec["config"] = config()
     # Single views stretch to their card ("fit-x" + width="container").  The

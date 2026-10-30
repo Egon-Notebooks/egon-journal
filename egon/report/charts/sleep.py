@@ -86,7 +86,7 @@ def sleep_chart(hours: Series, onset: Series | None = None) -> dict[str, Any]:
         alt.Chart(alt.Data(values=rows))
         .mark_circle(size=theme.DOT_SIZE, color=theme.PLUM, stroke=theme.SURFACE, strokeWidth=1.5)
         .encode(
-            # Day-centred, to line up with the middle of the sleep bars above.
+            # Day-centered, to line up with the middle of the sleep bars above.
             x=X_MID,
             y=y,
             tooltip=[TOOLTIP_DAY, alt.Tooltip("clock:N", title="Fell asleep")],

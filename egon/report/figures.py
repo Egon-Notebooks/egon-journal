@@ -6,7 +6,7 @@ wellbeing" note, a "how to read this" explainer and an accessible data table,
 so the single-chart ``report-*`` commands and the full report present every
 chart identically.  Figure numbers are assigned by the report that uses them.
 
-The "why it matters" notes summarise well-replicated findings and name a key
+The "why it matters" notes summarize well-replicated findings and name a key
 source.  They describe associations at population level — they are context
 for reflection, not a diagnosis.
 """
@@ -71,12 +71,12 @@ def word_count_figure(data: list[tuple[date_type, int]], commentary: str = "") -
             "Writing about thoughts and feelings is itself good for wellbeing: expressive-"
             "writing studies find small but consistent benefits for mood and stress "
             "(Pennebaker, 1997; Frattaroli, 2006). How much you write is also a quiet "
-            "behavioural signal — withdrawing from routines you value is a common early "
+            "behavioral signal — withdrawing from routines you value is a common early "
             "sign of low mood, while bursts of writing often accompany periods with a lot to "
             "process."
         ),
         how_to_read=(
-            "Each grey bar is one entry; the line is the 7-day average. Gaps are days without "
+            "Each gray bar is one entry; the line is the 7-day average. Gaps are days without "
             "an entry. Look for changes in rhythm rather than the absolute number. " + _DRAG_TO_ZOOM
         ),
         commentary=commentary,
@@ -97,7 +97,7 @@ def sentiment_figure(data: Series, commentary: str = "") -> Figure:
             "small changes (sleep, contact with people, activity) are easiest to make."
         ),
         how_to_read=(
-            "Blue bars lean positive, terracotta bars negative; the grey band around zero is "
+            "Blue bars lean positive, terracotta bars negative; the gray band around zero is "
             "neutral. The line is the 7-day average. VADER is a word-list method: it "
             "reads tone, not meaning, so it can miss sarcasm or context. " + _DRAG_TO_ZOOM
         ),
@@ -122,7 +122,7 @@ def pronoun_ratio_figure(data: Series, commentary: str = "") -> Figure:
             "more than any comparison with others."
         ),
         how_to_read=(
-            "Grey dots are single entries; the line is the 7-day average. A sustained rise "
+            "Gray dots are single entries; the line is the 7-day average. A sustained rise "
             "can mean your writing turned inward — sometimes healthy reflection, sometimes "
             "rumination. " + _DRAG_TO_ZOOM
         ),
@@ -154,7 +154,7 @@ def topic_summary_figure(topics: TopicSummary, commentary: str = "") -> Figure:
     return Figure(
         key="topic-summary",
         title="Recurring themes",
-        caption="Topics discovered in your entries (BERTopic), labelled by their top keywords",
+        caption="Topics discovered in your entries (BERTopic), labeled by their top keywords",
         spec=ranked_bars_chart(
             [(label, float(c)) for label, c in topics], value_title="Entries", color=theme.SAGE
         ),
@@ -231,7 +231,7 @@ def stress_figure(data: list[tuple[date_type, StressScore]], commentary: str = "
             "to recover, set limits or ask for support before it becomes exhausting."
         ),
         how_to_read=(
-            "Grey dots are single entries; the line is the 7-day average. Values near 100 % "
+            "Gray dots are single entries; the line is the 7-day average. Values near 100% "
             "mean the language strongly resembles stressed writing. Model scores are "
             "estimates from wording and can be wrong. " + _DRAG_TO_ZOOM
         ),
@@ -265,7 +265,7 @@ def loneliness_figure(
             "of connection, not the number of people around you."
         ),
         how_to_read=(
-            "Grey dots are single entries; the line is the 7-day average. Watch for "
+            "Gray dots are single entries; the line is the 7-day average. Watch for "
             "stretches where the line stays high, especially together with lower mood or "
             "higher stress. " + _DRAG_TO_ZOOM
         ),
@@ -292,7 +292,7 @@ def emotion_figure(data: list[tuple[date_type, EmotionScores]], commentary: str 
         ),
         how_to_read=(
             "Each band is one emotion's share of the tone of your writing that week. "
-            "Positive affect (joy, surprise) sits above the grey neutral band, negative "
+            "Positive affect (joy, surprise) sits above the gray neutral band, negative "
             "affect below it, so a widening lower half means heavier weeks. Click a legend "
             "entry to isolate one emotion; hover for exact values."
         ),
@@ -345,7 +345,7 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
         ),
         how_to_read=(
             "The numbers above are period averages (0–1) with the change from the first to "
-            "the last fortnight. One panel per trait below: grey dots are single days, the "
+            "the last fortnight. One panel per trait below: gray dots are single days, the "
             "line the 7-day average, the dotted line and margin label the period average. "
             "Compare a trait with itself over time, not across traits."
         ),
@@ -402,9 +402,9 @@ def cognitive_bias_figure(
         ),
         spec=cognitive_bias_chart(data),
         why=(
-            "Cognitive distortions — catastrophizing, “should” statements, labelling "
+            "Cognitive distortions — catastrophizing, “should” statements, labeling "
             "yourself — are habitual ways of thinking that keep anxiety and low mood going. "
-            "They are the core target of cognitive behavioural therapy (Beck, 1979), one of "
+            "They are the core target of cognitive behavioral therapy (Beck, 1979), one of "
             "the best-evidenced treatments for depression and anxiety. Noticing which traps "
             "you fall into most is the first step of challenging them."
         ),
@@ -478,12 +478,12 @@ def weight_figure(
         spec=spec,
         why=(
             "Weight is shaped by mood as much as by diet. A noticeable change in weight or "
-            "appetite without trying is one of the recognised signs of depression, and "
+            "appetite without trying is one of the recognized signs of depression, and "
             "chronic stress and poor sleep both shift appetite and how the body stores "
             "energy. Sudden changes over a few weeks are more informative than slow drift."
         ),
         how_to_read=(
-            "Grey dots are single weigh-ins; the line is the 7-day average, which smooths out "
+            "Gray dots are single weigh-ins; the line is the 7-day average, which smooths out "
             "day-to-day water fluctuations." + ("" if lean_data else " " + _DRAG_TO_ZOOM)
         ),
         commentary=commentary,
@@ -508,7 +508,7 @@ def resting_heart_rate_figure(
             "a simple, early sign that you may need more recovery."
         ),
         how_to_read=(
-            "Grey dots are single days; the line is the 7-day average. Lower is generally "
+            "Gray dots are single days; the line is the 7-day average. Lower is generally "
             "better; compare against your own baseline. " + _DRAG_TO_ZOOM
         ),
         commentary=commentary,
@@ -530,7 +530,7 @@ def hrv_figure(data: Series, *, unit: str = "ms", commentary: str = "") -> Figur
             "makes it a useful mirror of recovery."
         ),
         how_to_read=(
-            "Grey dots are single days; the line is the 7-day average. Higher generally "
+            "Gray dots are single days; the line is the 7-day average. Higher generally "
             "means better recovery, but HRV varies a lot between people — compare yourself "
             "with yourself. " + _DRAG_TO_ZOOM
         ),
@@ -569,7 +569,7 @@ def sleep_figure(hours: Series, onset: Series | None = None, commentary: str = "
             "(Phillips et al., 2017). Most adults need 7–9 hours."
         ),
         how_to_read=(
-            "Top: grey bars are nights, the line the 7-day average; dotted lines mark 7 and "
+            "Top: gray bars are nights, the line the 7-day average; dotted lines mark 7 and "
             "9 hours. "
             + (
                 "Bottom: each dot is when you fell asleep (earlier at the top). The shaded "
@@ -604,7 +604,7 @@ def step_count_figure(data: Series, commentary: str = "") -> Figure:
             "threshold — any increase from your own baseline counts."
         ),
         how_to_read=(
-            "Grey bars are days; the line is the 7-day average. The dotted line marks 7,000 "
+            "Gray bars are days; the line is the 7-day average. The dotted line marks 7,000 "
             "steps. " + _DRAG_TO_ZOOM
         ),
         commentary=commentary,
@@ -636,7 +636,7 @@ def exercise_figure(data: Series, *, target: float | None = None, commentary: st
             "about 30 minutes on most days."
         ),
         how_to_read=(
-            "Grey bars are days; the line is the 7-day average. The dotted line marks "
+            "Gray bars are days; the line is the 7-day average. The dotted line marks "
             + ("your target." if is_custom else "the WHO guideline of 30 minutes a day.")
             + " "
             + _DRAG_TO_ZOOM

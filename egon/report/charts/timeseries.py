@@ -1,10 +1,10 @@
 """
 Daily time-series chart — the workhorse for most report signals.
 
-Raw daily observations are drawn quietly (small grey dots, or grey bars for
+Raw daily observations are drawn quietly (small gray dots, or gray bars for
 daily totals); the story is told by a 2 px trailing 7-day mean in the series
-colour.  Dotted hairlines mark the period average and any reference values
-(a personal target, a guideline), each labelled in the right-hand margin.
+color.  Dotted hairlines mark the period average and any reference values
+(a personal target, a guideline), each labeled in the right-hand margin.
 Hovering anywhere shows a crosshair and a tooltip for the nearest day;
 dragging across the plot zooms in, and double-click resets.
 """

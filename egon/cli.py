@@ -1722,7 +1722,7 @@ def health_summary(
         help="Print the computed statistics block and exit without calling the LLM",
     ),
 ) -> None:
-    """Summarise Apple Health data for a period using a local LLM via Ollama."""
+    """Summarize Apple Health data for a period using a local LLM via Ollama."""
     from egon.health.llm_summary import (
         build_health_stats,
         format_health_stats,

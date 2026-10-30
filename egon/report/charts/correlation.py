@@ -17,7 +17,7 @@ import altair as alt
 from egon.analytics.correlation import PairStat, Signals, align_pairwise, usable_signals
 from egon.report import theme
 
-# Lab interpolation keeps the arms on their own hue (no purple drift through the grey midpoint).
+# Lab interpolation keeps the arms on their own hue (no purple drift through the gray midpoint).
 _R_SCALE = alt.Scale(
     domain=[-1, 0, 1], range=[theme.TERRACOTTA, theme.NEUTRAL, theme.BLUE], interpolate="lab"
 )

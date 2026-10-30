@@ -1,14 +1,14 @@
 """
 Emotion profile — how the balance of seven emotions shifts across the period.
 
-Left: a 100 % stacked area of the trailing 7-day mean of each emotion's
+Left: a 100% stacked area of the trailing 7-day mean of each emotion's
 probability.  Daily classifier output is too jittery to read stacked, so the
 smoothing is what makes the shape legible.  Right: the period profile — each
 emotion's average share, sorted.
 
 Stack order groups positive affect (joy, surprise) above the neutral band and
 negative affect below it, so the neutral band reads as the horizon line.  That
-order is also the colour-vision-validated adjacency order for these hues, so
+order is also the color-vision-validated adjacency order for these hues, so
 do not reorder without re-running the palette validator.
 
 Clicking a legend entry or a bar isolates one emotion across both panels.
@@ -25,7 +25,7 @@ from egon.report.charts._common import TOOLTIP_DAY, X_DATE, rolling_mean
 
 STACK_ORDER: list[str] = ["joy", "surprise", "neutral", "sadness", "disgust", "fear", "anger"]
 
-COLOURS: dict[str, str] = {
+COLORS: dict[str, str] = {
     "joy": theme.SAGE,
     "surprise": theme.OCHRE,
     "neutral": theme.NEUTRAL,
@@ -56,8 +56,8 @@ def emotion_chart(data: list[tuple[date_type, EmotionScores]]) -> dict[str, Any]
                 }
             )
 
-    scale = alt.Scale(domain=STACK_ORDER, range=[COLOURS[e] for e in STACK_ORDER])
-    colour = alt.Color(
+    scale = alt.Scale(domain=STACK_ORDER, range=[COLORS[e] for e in STACK_ORDER])
+    color = alt.Color(
         "emotion:N",
         title=None,
         scale=scale,
@@ -78,7 +78,7 @@ def emotion_chart(data: list[tuple[date_type, EmotionScores]]) -> dict[str, Any]
                 title=None,
                 axis=alt.Axis(format="%", tickCount=4),
             ),
-            color=colour,
+            color=color,
             order=alt.Order("order:Q"),
             opacity=faded,
             tooltip=[
@@ -92,7 +92,7 @@ def emotion_chart(data: list[tuple[date_type, EmotionScores]]) -> dict[str, Any]
         .properties(width="container", height=theme.CHART_HEIGHT)
     )
 
-    # Period profile: each emotion's mean daily probability, renormalised to 100 %.
+    # Period profile: each emotion's mean daily probability, renormalized to 100%.
     means = {e: sum(s[i] for _, s in data) / len(data) for i, e in enumerate(EMOTIONS)}
     total = sum(means.values()) or 1.0
     shares = sorted(((e, m / total) for e, m in means.items()), key=lambda kv: -kv[1])

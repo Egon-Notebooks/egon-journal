@@ -1,5 +1,5 @@
 """
-BERTopic topic modelling for journal entries.
+BERTopic topic modeling for journal entries.
 
 Discovers latent themes in the journal corpus using BERTopic (Grootendorst 2022).
 ``topic_summary`` gives each topic's size and keywords; ``topic_timeline``
@@ -22,7 +22,7 @@ from pathlib import Path
 from egon.analytics.loader import JournalEntry
 
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
-_MIN_DOCS = 10  # minimum entries needed for meaningful topic modelling
+_MIN_DOCS = 10  # minimum entries needed for meaningful topic modeling
 _LIMBIC_VENV = Path(__file__).resolve().parents[2] / ".venv-limbic"
 
 
@@ -72,7 +72,7 @@ class _TopicModel:
 # ---------------------------------------------------------------------------
 
 _SUBPROCESS_SCRIPT = """\
-# Pure-sklearn NMF topic modelling — no umap-learn, numba, llvmlite, or BERTopic needed.
+# Pure-sklearn NMF topic modeling — no umap-learn, numba, llvmlite, or BERTopic needed.
 import json, sys
 from collections import Counter
 from sklearn.decomposition import NMF
@@ -177,7 +177,7 @@ def fit_topics(
     """
     if len(entries) < _MIN_DOCS:
         raise ValueError(
-            f"Need at least {_MIN_DOCS} journal entries for topic modelling (got {len(entries)})."
+            f"Need at least {_MIN_DOCS} journal entries for topic modeling (got {len(entries)})."
         )
     docs = [_clean(e.body) for e in entries]
     if _use_subprocess_venv():
@@ -196,7 +196,7 @@ def topic_label(model: _TopicModel, tid: int, n_words: int = 5) -> str:
 
 
 def topic_summary(model: _TopicModel, top_n: int = 12) -> TopicSummary:
-    """Topics by size (outlier topic −1 excluded), labelled with their top keywords."""
+    """Topics by size (outlier topic −1 excluded), labeled with their top keywords."""
     rows = [r for r in model.get_topic_info() if r["Topic"] != -1][:top_n]
     if not rows:
         raise ValueError("BERTopic found no coherent topics in the corpus.")
