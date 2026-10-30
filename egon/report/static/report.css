@@ -68,6 +68,7 @@ a:hover { text-decoration: underline; }
 
 .masthead { padding: 72px 0 40px; border-bottom: 1px solid var(--rule); }
 .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.1rem; }
+.confidential { border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; margin-left: 2px; }
 .masthead h1 { font-size: clamp(3rem, 8vw, 5.2rem); font-weight: 700; }
 .period { color: var(--muted); margin: 0.9rem 0 0; font-size: 0.95rem; }
 .period .sep { margin: 0 0.4em; }

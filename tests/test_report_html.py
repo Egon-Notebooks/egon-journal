@@ -149,3 +149,11 @@ def test_spec_json_cannot_close_script_tag():
 def test_series_summary_rounds_tiny_change_to_plus_minus_zero():
     flat = [(START + timedelta(days=i), 0.5 - 0.0001 * i) for i in range(40)]
     assert series_summary(flat, decimals=2)["delta"] == "±0.00"
+
+
+def test_personal_report_is_marked_confidential_demo_is_not():
+    fig = hrv_figure(_series())
+    personal = render_report(single_figure_report(fig, label="x", start=START, end=START))
+    assert ">Confidential<" in personal
+    demo = Report(title="x", start=START, end=START, sections=[], synthetic=True)
+    assert ">Confidential<" not in render_report(demo)

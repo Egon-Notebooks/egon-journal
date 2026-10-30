@@ -18,7 +18,7 @@
 
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">Egon Notebooks · {{ report.kind }}</p>
+    <p class="eyebrow">Egon Notebooks · {{ report.kind }}{% if not report.synthetic %} · <span class="confidential">Confidential</span>{% endif %}</p>
     <h1>{{ report.title }}</h1>
     <p class="period">
       {{ report.start.strftime('%-d %B %Y') }} — {{ report.end.strftime('%-d %B %Y') }}
