@@ -159,3 +159,26 @@ class TestInferUnit:
 
     def test_empty_records_returns_empty_string(self):
         assert infer_unit([]) == ""
+
+
+class TestLoadRecordsCache:
+    def test_parsed_once_and_reparsed_when_file_changes(self, tmp_path):
+        import os
+
+        xml = tmp_path / "export.xml"
+        xml.write_text(
+            '<HealthData><Record type="HKQuantityTypeIdentifierStepCount" value="100" '
+            'unit="count" endDate="2026-04-01 08:00:00 +0100"/></HealthData>'
+        )
+        first = load_records(xml)
+        assert load_records(xml) is first  # cached
+        xml.write_text(
+            '<HealthData><Record type="HKQuantityTypeIdentifierStepCount" value="250" '
+            'unit="count" endDate="2026-04-01 08:00:00 +0100"/>'
+            '<Record type="HKQuantityTypeIdentifierStepCount" value="5" '
+            'unit="count" endDate="2026-04-02 08:00:00 +0100"/></HealthData>'
+        )
+        os.utime(xml, ns=(1, 2))  # force a different mtime
+        second = load_records(xml)
+        assert second is not first
+        assert [r.value for r in second["StepCount"]] == [250.0, 5.0]

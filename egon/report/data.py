@@ -9,6 +9,7 @@ how demo reports are built without running any model.
 """
 
 import json
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date as date_type
@@ -30,13 +31,22 @@ from egon.limbic.stress import StressScore
 Series = list[tuple[date_type, float]]
 
 
-def _log(msg: str) -> None:
-    print(f"  [report] {msg}")
+def _log(msg: str, end: str = "\n") -> None:
+    print(f"    · {msg}", end=end, flush=True)
+
+
+def _duration(seconds: float) -> str:
+    m, s = divmod(round(seconds), 60)
+    return f"{m}m {s:02d}s" if m else f"{s}s"
 
 
 # ---------------------------------------------------------------------------
 # Model scores (cached)
 # ---------------------------------------------------------------------------
+
+# Where model scores are cached, per period label.  Shared by the full report
+# and the single-chart commands, so each model runs at most once per period.
+SCORE_CACHE_ROOT = Path("reports/full_report/.cache")
 
 # Cache file per model score — also written directly by the demo-data generator.
 
@@ -57,7 +67,7 @@ class Scorer(NamedTuple):
     config_key: str | None  # None: always scored (feeds correlations)
 
 
-def _scorers() -> dict[str, Scorer]:
+def scorers() -> dict[str, Scorer]:
     # Imported lazily so that importing this module never loads model code.
     from egon.limbic.bigfive import bigfive_by_day
     from egon.limbic.cognitive_bias import cognitive_bias_by_day
@@ -94,26 +104,36 @@ def load_scores(path: Path, score_type: type) -> list[tuple[date_type, Any]]:
 
 def cached_scores(
     name: str, scorer: Scorer, entries: list[JournalEntry], cache_dir: Path
-) -> list | None:
+) -> tuple[list | None, str]:
     """Load *name* scores from cache, or run the model and cache the result.
 
-    Returns None (and logs why) when the model is unavailable.
+    Returns ``(scores, status)`` where status is "cached", "scored" or
+    "unavailable: <reason>".  Model runs (which can take minutes) are announced as they
+    happen; cache hits are left to the caller to summarize.
     """
     path = cache_dir / scorer.cache_file
     if path.exists():
         try:
-            data = load_scores(path, scorer.score_type)
-            _log(f"{name}: loaded cached scores")
-            return data
+            return load_scores(path, scorer.score_type), "cached"
         except Exception as exc:
-            _log(f"{name}: cache unreadable, re-scoring ({exc})")
+            _log(f"{name}: cache file unreadable, re-scoring ({exc})")
+    _log(f"{name}: scoring {len(entries)} entries with the local model …", end="")
+    started = time.monotonic()
     try:
         data = scorer.run(entries)
     except Exception as exc:
-        _log(f"{name}: scoring unavailable ({exc})")
-        return None
+        reason = _first_line(exc)
+        print(f" unavailable ({reason})")
+        return None, f"unavailable: {reason}"
+    print(f" done in {_duration(time.monotonic() - started)}")
     save_scores(data, path)
-    return data
+    return data, "scored"
+
+
+def _first_line(exc: BaseException) -> str:
+    """A short, single-line reason: the message plus a follow-up hint line if any."""
+    lines = [ln.strip() for ln in str(exc).strip().splitlines() if ln.strip()]
+    return " ".join(lines[:2]) if lines else type(exc).__name__
 
 
 # ---------------------------------------------------------------------------
@@ -235,10 +255,10 @@ def _llm_health_text(
     if cache.exists():
         try:
             cached = json.loads(cache.read_text())
-            _log("LLM health text: loaded from cache")
+            _log("AI health summary: loaded from cache")
             return cached.get("summary"), cached.get("commentary", {})
         except Exception as exc:
-            _log(f"LLM cache unreadable, regenerating ({exc})")
+            _log(f"AI health summary cache unreadable, regenerating ({_first_line(exc)})")
     try:
         from egon.config import load_local_llm_config
         from egon.health.llm_summary import (
@@ -257,16 +277,16 @@ def _llm_health_text(
         summary = None
         commentary: dict[str, str] = {}
         if want_summary:
-            _log(f"LLM health summary: generating with {model} …")
+            _log(f"AI health summary: writing with {model} …")
             summary = generate_health_summary(format_health_stats(stats, label, start, end), model)
         if want_commentary:
             for s in stats:
-                _log(f"LLM commentary: {s.name} …")
+                _log(f"AI commentary: {s.name} …")
                 commentary[s.key] = generate_metric_commentary(s, label, model)
         cache.write_text(json.dumps({"summary": summary, "commentary": commentary}))
         return summary, commentary
     except (ImportError, RuntimeError) as exc:
-        _log(f"LLM health text unavailable, using placeholders ({exc})")
+        _log(f"AI health summary skipped: {_first_line(exc)}")
         return None, {}
 
 
@@ -284,22 +304,28 @@ def collect_report_data(
     data = ReportData(label=label, start=start, end=end, entries=journal_entries)
 
     if journal_entries:
-        for name, scorer in _scorers().items():
+        cached = []
+        for name, scorer in scorers().items():
             if scorer.config_key is None or config.enabled(scorer.config_key):
-                if (scores := cached_scores(name, scorer, journal_entries, cache_dir)) is not None:
+                scores, status = cached_scores(name, scorer, journal_entries, cache_dir)
+                if scores is not None:
                     data.scores[name] = scores
+                if status == "cached":
+                    cached.append(name)
+        if cached:
+            _log(f"model scores loaded from cache: {', '.join(cached)}")
 
     records: dict = {}
     if xml_path and xml_path.is_file():
         try:
             records = load_records(xml_path)
         except Exception as exc:
-            _log(f"failed to load Apple Health data ({exc})")
+            _log(f"Apple Health export could not be read ({_first_line(exc)})")
         try:
             data.sleep_hours = filter_sleep_by_date(load_sleep_records(xml_path), start, end)
             data.sleep_onset = filter_sleep_by_date(load_sleep_onset(xml_path), start, end)
         except Exception as exc:
-            _log(f"sleep data unavailable ({exc})")
+            _log(f"sleep data unavailable ({_first_line(exc)})")
     data.health = health_series(records, start, end)
 
     data.llm_summary, data.llm_commentary = _llm_health_text(

@@ -91,6 +91,7 @@ class Report:
     synthetic: bool = False  # demo data: shows a banner and marks the file
     persona: str | None = None
     generated: datetime = field(default_factory=datetime.now)
+    skipped: list[tuple[str, str]] = field(default_factory=list)  # (figure, reason); not rendered
 
 
 @cache

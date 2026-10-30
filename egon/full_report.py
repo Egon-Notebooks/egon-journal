@@ -127,9 +127,17 @@ _LLM_NOTE = (
 class _SectionBuilder:
     """Collects figures for one section, numbering them and skipping failures."""
 
-    def __init__(self, number: int, title: str, intro: str, commentary: dict[str, str]):
+    def __init__(
+        self,
+        number: int,
+        title: str,
+        intro: str,
+        commentary: dict[str, str],
+        skipped: list[tuple[str, str]],
+    ):
         self.section = Section(number=number, title=title, intro=intro)
         self._commentary = commentary
+        self.skipped = skipped  # shared across sections
 
     def add(self, enabled: bool, name: str, build: Callable[[], Figure]) -> None:
         if not enabled:
@@ -137,7 +145,8 @@ class _SectionBuilder:
         try:
             fig = build()
         except Exception as exc:  # missing data, too few points, optional extra absent …
-            print(f"  [full report] skipping '{name}': {exc}")
+            reason = (str(exc).strip().splitlines() or [type(exc).__name__])[0]
+            self.skipped.append((name, reason))
             return
         fig.number = f"{self.section.number}.{len(self.section.figures) + 1}"
         if not fig.commentary:
@@ -253,12 +262,13 @@ def build_full_report(
 ) -> Report:
     cfg = config
     note = data.llm_commentary
+    skipped: list[tuple[str, str]] = []
     entries = data.entries
     sc = data.scores
     hl = data.health
 
     # --- Section 1: Journal insights ------------------------------------------
-    s1 = _SectionBuilder(1, "Journal Insights", _JOURNAL_INTRO, note)
+    s1 = _SectionBuilder(1, "Journal Insights", _JOURNAL_INTRO, note, skipped)
     s1.section.stats = _journal_stats(data)
     s1.add(
         cfg.enabled("word_count"), "word-count", lambda: F.word_count_figure(_word_counts(entries))
@@ -284,14 +294,12 @@ def build_full_report(
                 lambda: F.topic_timeline_figure(topic_timeline(entries, topic_ids, model), summary),
             )
         except ImportError:
-            print(
-                "  [full report] skipping 'topics': BERTopic not installed (uv sync --extra topics)"
-            )
+            skipped.append(("topics", "BERTopic not installed (uv sync --extra topics)"))
         except Exception as exc:
-            print(f"  [full report] skipping 'topics': {exc}")
+            skipped.append(("topics", (str(exc).strip().splitlines() or ["error"])[0]))
 
     # --- Section 2: Personality & affective patterns ----------------------------
-    s2 = _SectionBuilder(2, "Personality & Affective Patterns", _PERSONALITY_INTRO, note)
+    s2 = _SectionBuilder(2, "Personality & Affective Patterns", _PERSONALITY_INTRO, note, skipped)
     s2.section.stats = _affect_stats(data)
     s2.add(
         cfg.enabled("sentiment") and "sentiment" in data.signals,
@@ -324,7 +332,7 @@ def build_full_report(
     s2.add(cfg.enabled("mbti") and "mbti" in sc, "mbti", lambda: F.mbti_figure(sc["mbti"]))
 
     # --- Section 3: Physiological measures -------------------------------------
-    s3 = _SectionBuilder(3, "Physiological Measures", _PHYSIO_INTRO, note)
+    s3 = _SectionBuilder(3, "Physiological Measures", _PHYSIO_INTRO, note, skipped)
     s3.section.stats = _physio_stats(data)
     if data.llm_summary:
         s3.section.notes.append(
@@ -377,7 +385,7 @@ def build_full_report(
     )
 
     # --- Section 4: Cross-signal analysis --------------------------------------
-    s4 = _SectionBuilder(4, "Cross-Signal Analysis", _CROSS_SIGNAL_INTRO, note)
+    s4 = _SectionBuilder(4, "Cross-Signal Analysis", _CROSS_SIGNAL_INTRO, note, skipped)
     s4.section.stats = _cross_stats(data, cfg)
     enough = len(data.signals) >= 2
     s4.add(
@@ -408,6 +416,7 @@ def build_full_report(
         kind="Demo report" if synthetic else "Personal report",
         synthetic=synthetic,
         persona=persona,
+        skipped=skipped,
     )
 
 
@@ -448,8 +457,8 @@ def generate_full_report(
     output_path: Path,
     config: ReportConfig | None = None,
     cache_dir: Path | None = None,
-) -> Path:
-    """Collect all data for the period and write the full HTML report to *output_path*.
+) -> Report:
+    """Collect all data for the period, write the full HTML report and return it.
 
     Model scores and LLM text are cached in ``<output dir>/.cache/<label>/``
     (or *cache_dir*); delete those files to force re-scoring.
@@ -472,4 +481,5 @@ def generate_full_report(
         target_resting_heart_rate=target_resting_heart_rate,
         target_exercise_minutes=target_exercise_minutes,
     )
-    return write_report(report, output_path)
+    write_report(report, output_path)
+    return report

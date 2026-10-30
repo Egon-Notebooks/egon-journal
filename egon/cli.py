@@ -4,11 +4,16 @@ CLI entry point for egon-journal.
 Run via:  uv run egon <command>
 """
 
+import contextlib
+import io
 import os
+import re
 import subprocess
+import sys
+import time
 from datetime import date as date_type
 from pathlib import Path
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import typer
 import yaml
@@ -32,13 +37,7 @@ from egon.health.apple_health import (
     load_records,
 )
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
-from egon.limbic.bigfive import bigfive_by_day
-from egon.limbic.cognitive_bias import cognitive_bias_by_day
-from egon.limbic.emotion import emotion_by_day
-from egon.limbic.loneliness import loneliness_by_day
-from egon.limbic.mbti import mbti_by_day
 from egon.limbic.sentiment import sentiment_by_day
-from egon.limbic.stress import stress_by_day
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.local_llm import DEFAULT_MODEL, check_hardware, ensure_model, generate_journal_prompt
 from egon.node_types.journal_entry import generate_journal_entry
@@ -656,9 +655,7 @@ def report_bigfive(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Found {len(entries)} journal entries for {label}.")
-    typer.echo("Scoring Big Five traits (this may take a moment on first run) …")
-    data = bigfive_by_day(entries)
+    data = _model_scores("bigfive", entries, label)
 
     resolved_output = output or Path(f"reports/bigfive/{label}.html")
     _save_figure(figures.bigfive_figure(data), resolved_output, label, start, end)
@@ -718,9 +715,7 @@ def report_mbti(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Found {len(entries)} journal entries for {label}.")
-    typer.echo("Classifying MBTI type per entry …")
-    data = mbti_by_day(entries)
+    data = _model_scores("mbti", entries, label)
 
     resolved_output = output or Path(f"reports/mbti/{label}.html")
     _save_figure(figures.mbti_figure(data), resolved_output, label, start, end)
@@ -729,6 +724,20 @@ def report_mbti(
 # ---------------------------------------------------------------------------
 # Health reports
 # ---------------------------------------------------------------------------
+
+
+def _model_scores(name: str, entries: list, label: str) -> list:
+    """Model scores for *entries*, from the shared per-period cache when available."""
+    from egon.report.data import SCORE_CACHE_ROOT, cached_scores, scorers
+
+    typer.echo(f"Found {len(entries)} journal entries for {label}.")
+    scores, status = cached_scores(name, scorers()[name], entries, SCORE_CACHE_ROOT / label)
+    if scores is None:
+        typer.echo(f"Error: {name} model {status}", err=True)
+        raise typer.Exit(1)
+    if status == "cached":
+        typer.echo(f"Using cached {name} scores ({SCORE_CACHE_ROOT / label}).")
+    return scores
 
 
 def _require_html(output: Path) -> None:
@@ -771,6 +780,135 @@ def _save_section(
     section = Section(number=1, title=title, figures=section_figures)
     write_report(Report(title=label, start=start, end=end, sections=[section], kind=title), output)
     typer.echo(f"Saved: {output}")
+
+
+class _StepResult(NamedTuple):
+    name: str
+    status: str  # "ok" | "skipped" | "failed"
+    path: str | None
+    detail: str
+
+
+_FOUND_RE = re.compile(r"Found (\d[\d,]*) (journal entries|days|nights)")
+_SIGNALS_RE = re.compile(r"across (\d+) signals")
+
+
+def _fmt_duration(seconds: float) -> str:
+    m, s = divmod(round(seconds), 60)
+    return f"{m}m {s:02d}s" if m else f"{s}s"
+
+
+def _print_report_header(
+    label: str,
+    start: date_type,
+    end: date_type,
+    journal_dir: Path,
+    entries: list,
+    xml: Path | None,
+) -> None:
+    typer.echo(f"Egon reports · {label} ({start:%-d %B %Y} – {end:%-d %B %Y})")
+    if journal_dir.is_dir():
+        typer.echo(f"  Journal       {len(entries)} entries in this period · {journal_dir}")
+    else:
+        typer.echo(f"  Journal       not found ({journal_dir}) — set EGON_JOURNAL_DIR")
+    if xml and xml.is_file():
+        size_mb = xml.stat().st_size / 1_000_000
+        size = f"{size_mb:,.0f} MB" if size_mb >= 1 else "<1 MB"
+        typer.echo(f"  Apple Health  {xml.name} ({size}, parsed once)")
+    else:
+        typer.echo("  Apple Health  not configured — set EGON_APPLE_HEALTH_XML for health reports")
+    typer.echo("  Output        reports/ (HTML, works offline · contains your personal data)")
+
+
+def _run_report_step(name: str, fn) -> _StepResult:
+    """Run one report command quietly and print a one-line result."""
+    live = sys.stdout.isatty()
+    if live:  # show what is running; the result line overwrites it
+        typer.echo(f"  … {name:<20}", nl=False)
+    out, err = io.StringIO(), io.StringIO()
+    started = time.monotonic()
+    status = "ok"
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            fn()
+    except typer.Exit:
+        status = "skipped"
+    except Exception as exc:
+        status = "failed"
+        err.write(f"{exc}\n")
+    elapsed = time.monotonic() - started
+
+    cr = "\r" if live else ""
+    text = out.getvalue()
+    saved = re.findall(r"Saved: (.+)", text)
+    path = saved[-1].strip() if saved else None
+    if m := _FOUND_RE.search(text):
+        unit = "entries" if m.group(2) == "journal entries" else m.group(2)
+        detail = f"{m.group(1)} {unit}"
+    elif m := _SIGNALS_RE.search(text):
+        detail = f"{m.group(1)} signals"
+    else:
+        detail = ""
+
+    if status == "ok":
+        timing = f"  ({_fmt_duration(elapsed)})" if elapsed >= 5 else ""
+        typer.echo(f"{cr}  ✓ {name:<20}{detail:<14}{path or ''}{timing}")
+    else:
+        err_lines = [ln.strip() for ln in err.getvalue().splitlines() if ln.strip()]
+        out_lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        lines = err_lines or out_lines
+        reason = lines[-1].removeprefix("Error: ") if lines else "no output"
+        mark = "–" if status == "skipped" else "✗"
+        typer.echo(f"{cr}  {mark} {name:<20}{reason}")
+    return _StepResult(name, status, path, detail)
+
+
+def _run_full_report(
+    entries: list,
+    xml: Path | None,
+    start: date_type,
+    end: date_type,
+    label: str,
+    full_output: Path,
+) -> str | None:
+    def _parse_target(env_key: str) -> float | None:
+        raw = os.getenv(env_key, "").strip()
+        try:
+            return float(raw) if raw else None
+        except ValueError:
+            return None
+
+    from egon.config import load_report_config
+    from egon.full_report import generate_full_report
+
+    started = time.monotonic()
+    try:
+        report = generate_full_report(
+            journal_entries=entries,
+            xml_path=xml,
+            start=start,
+            end=end,
+            label=label,
+            target_body_mass=_parse_target("EGON_TARGET_BODY_MASS"),
+            target_lean_body_mass=_parse_target("EGON_TARGET_LEAN_BODY_MASS"),
+            target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
+            target_exercise_minutes=_parse_target("EGON_TARGET_EXERCISE_MINUTES"),
+            output_path=full_output,
+            config=load_report_config(),
+        )
+    except Exception as exc:
+        typer.echo(f"  ✗ full report failed: {exc}", err=True)
+        return None
+
+    sections = [s for s in report.sections if s.figures]
+    n_figures = sum(len(s.figures) for s in sections)
+    typer.echo(
+        f"  ✓ {n_figures} figures in {len(sections)} sections · {full_output}"
+        f"  ({_fmt_duration(time.monotonic() - started)})"
+    )
+    for name, reason in report.skipped:
+        typer.echo(f"  – {name:<20}{reason}")
+    return str(full_output)
 
 
 def _resolve_apple_health_xml(cli_path: Optional[Path]) -> Optional[Path]:
@@ -1407,8 +1545,7 @@ def report_emotion(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Scoring emotions for {len(entries)} entries …")
-    data = emotion_by_day(entries)
+    data = _model_scores("emotion", entries, label)
 
     resolved_output = output or Path(f"reports/emotion/{label}.html")
 
@@ -1465,8 +1602,7 @@ def report_stress(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Scoring stress for {len(entries)} entries …")
-    data = stress_by_day(entries)
+    data = _model_scores("stress", entries, label)
 
     resolved_output = output or Path(f"reports/stress/{label}.html")
 
@@ -1523,8 +1659,7 @@ def report_loneliness(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Scoring loneliness for {len(entries)} entries …")
-    data = loneliness_by_day(entries)
+    data = _model_scores("loneliness", entries, label)
 
     resolved_output = output or Path(f"reports/loneliness/{label}.html")
 
@@ -1581,8 +1716,7 @@ def report_cognitive_bias(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Scoring cognitive biases for {len(entries)} entries …")
-    data = cognitive_bias_by_day(entries)
+    data = _model_scores("cognitive_bias", entries, label)
 
     resolved_output = output or Path(f"reports/cognitive_bias/{label}.html")
 
@@ -1672,7 +1806,11 @@ def report_correlations(
     from egon.config import load_report_config
 
     cfg = load_report_config()
-    section_figures = [figures.correlation_matrix_figure(signals)]
+    try:
+        section_figures = [figures.correlation_matrix_figure(signals)]
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
     for name, build in [
         (
             "top pairs",
@@ -1860,45 +1998,6 @@ def report_all(
         ),
     ]
 
-    period_display = for_period or period
-    typer.echo(f"Generating all reports for: {period_display}\n")
-
-    ok: list[str] = []
-    skipped: list[str] = []
-    failed: list[str] = []
-
-    for name, fn in [*_journal_reports, *_health_reports]:
-        typer.echo(f"[ {name} ]")
-        try:
-            fn()
-            ok.append(name)
-        except typer.Exit:
-            # Sub-command printed its own error and exited — treat as skipped
-            skipped.append(name)
-        except Exception as exc:
-            typer.echo(f"  Error: {exc}", err=True)
-            failed.append(name)
-        typer.echo("")
-
-    # Summary
-    typer.echo("─" * 50)
-    typer.echo(f"Done: {len(ok)} generated, {len(skipped)} skipped, {len(failed)} failed")
-    if ok:
-        typer.echo(f"  Generated : {', '.join(ok)}")
-    if skipped:
-        typer.echo(f"  Skipped   : {', '.join(skipped)}")
-    if failed:
-        typer.echo(f"  Failed    : {', '.join(failed)}")
-
-    # ------------------------------------------------------------------
-    # Full combined HTML report
-    # ------------------------------------------------------------------
-    if not full:
-        return
-
-    typer.echo("\n[ full-report ]")
-
-    # Resolve period bounds and label (needed to load filtered entries).
     try:
         if for_period:
             start, end, label = parse_period_value(for_period)
@@ -1907,52 +2006,60 @@ def report_all(
             start, end = period_bounds(period, _ref)
             label = period_label(period, _ref)
     except ValueError as exc:
-        typer.echo(f"  Error resolving period: {exc}", err=True)
-        return
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
 
-    # Load and filter journal entries.
     resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
     entries: list = []
     if resolved_dir.is_dir():
-        from egon.analytics.word_count import filter_entries
-
-        all_entries = load_journal_entries(resolved_dir)
-        entries = filter_entries(all_entries, start, end)
-
-    # Resolve Apple Health XML.
+        entries = filter_entries(load_journal_entries(resolved_dir), start, end)
     resolved_xml = _resolve_apple_health_xml(xml_path)
 
-    # Target weight lines from environment.
-    def _parse_target(env_key: str) -> float | None:
-        raw = os.getenv(env_key, "").strip()
-        try:
-            return float(raw) if raw else None
-        except ValueError:
-            return None
+    started = time.monotonic()
+    _print_report_header(label, start, end, resolved_dir, entries, resolved_xml)
 
-    from egon.config import load_report_config
-    from egon.full_report import generate_full_report
+    results: list[_StepResult] = []
+    have_health = bool(resolved_xml and resolved_xml.is_file())
+    for heading, steps in [
+        ("Journal reports", _journal_reports),
+        ("Health reports", _health_reports),
+    ]:
+        typer.echo(f"\n{heading}")
+        if heading == "Health reports" and not have_health:
+            typer.echo(
+                "  – weight, resting HR, HRV, sleep, steps, VO₂ max, exercise: no Apple Health "
+                "export (set EGON_APPLE_HEALTH_XML in .env or pass --xml)"
+            )
+        for name, fn in steps:
+            if heading == "Health reports" and not have_health and name != "correlations":
+                results.append(_StepResult(name, "skipped", None, ""))
+                continue
+            results.append(_run_report_step(name, fn))
 
-    report_cfg = load_report_config()
-    full_output = Path(f"reports/full_report/{label}.html")
-    typer.echo(f"  Compiling full report → {full_output} …")
-    try:
-        generate_full_report(
-            journal_entries=entries,
-            xml_path=resolved_xml,
-            start=start,
-            end=end,
-            label=label,
-            target_body_mass=_parse_target("EGON_TARGET_BODY_MASS"),
-            target_lean_body_mass=_parse_target("EGON_TARGET_LEAN_BODY_MASS"),
-            target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
-            target_exercise_minutes=_parse_target("EGON_TARGET_EXERCISE_MINUTES"),
-            output_path=full_output,
-            config=report_cfg,
+    ok = [r for r in results if r.status == "ok"]
+    skipped = [r for r in results if r.status == "skipped"]
+    failed = [r for r in results if r.status == "failed"]
+    open_hint = ok[0].path if ok else None
+
+    if full:
+        typer.echo("\nFull report")
+        full_path = _run_full_report(
+            entries,
+            resolved_xml,
+            start,
+            end,
+            label,
+            full_output=Path(f"reports/full_report/{label}.html"),
         )
-        typer.echo(f"  Saved: {full_output}")
-    except Exception as exc:
-        typer.echo(f"  Error generating full report: {exc}", err=True)
+        if full_path:
+            open_hint = full_path
+
+    typer.echo(
+        f"\nDone in {_fmt_duration(time.monotonic() - started)} · "
+        f"{len(ok)} reports generated, {len(skipped)} skipped, {len(failed)} failed"
+    )
+    if open_hint:
+        typer.echo(f"Open: open {open_hint}")
 
 
 # ---------------------------------------------------------------------------

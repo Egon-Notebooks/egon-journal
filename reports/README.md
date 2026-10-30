@@ -34,8 +34,9 @@ uv run egon report --for 2026-Q1
 Default output: `./reports/full_report/<period>.html`
 
 Slow model scores (Big Five, MBTI, emotion, cognitive bias, stress, loneliness) and the
-LLM health text are cached in `./reports/full_report/.cache/<period>/`; delete a file
-there to force re-scoring.
+LLM health text are cached in `./reports/full_report/.cache/<period>/`. The cache is
+shared with the single-chart commands (`report-stress`, `report-emotion`, …), so each
+model runs at most once per period. Delete a file there to force re-scoring.
 
 Which analyses appear in the report is controlled by `egon.toml` in the project root.
 All analyses default to enabled except `wordcloud` (opt-in) and `topics` (requires the `topics` extra).

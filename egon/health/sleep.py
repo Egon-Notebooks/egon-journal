@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date as date_type
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 _SLEEP_TYPE = "HKCategoryTypeIdentifierSleepAnalysis"
@@ -79,8 +80,16 @@ def _onset_hours(dt: datetime) -> float:
 def _collect_by_date(xml_path: Path) -> dict[date_type, list[tuple[datetime, datetime]]]:
     """
     Parse export.xml and return a dict mapping wake-up date → list of raw
-    (start, end) asleep intervals (not yet merged).
+    (start, end) asleep intervals (not yet merged).  Cached per file version.
     """
+    stat = Path(xml_path).stat()
+    return _collect_by_date_cached(str(xml_path), stat.st_mtime_ns, stat.st_size)
+
+
+@lru_cache(maxsize=2)
+def _collect_by_date_cached(
+    xml_path: str, _mtime_ns: int, _size: int
+) -> dict[date_type, list[tuple[datetime, datetime]]]:
     tree = ET.parse(xml_path)
     root = tree.getroot()
 

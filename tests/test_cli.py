@@ -743,7 +743,20 @@ class TestReportAll:
             ],
         )
         output = result.output
-        assert "Generated" in output or "Skipped" in output or "Done" in output
+        assert "Egon reports · 2026-Q2" in output
+        assert "Apple Health  not configured" in output
+        assert "✓ word-count" in output and "reports/word_count/2026-Q2.html" in output
+        # health reports are skipped with the reason, not a stray progress line
+        assert "HRV, sleep" in output and "no Apple Health export" in output
+        assert "✗" not in output  # missing data is a skip, never a failure
+        assert "Done in" in output and "skipped" in output
+
+    def test_invalid_period_exits(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(
+            app, ["report", "--journal-dir", str(journal_dir), "--for", "2026-Q9"]
+        )
+        assert result.exit_code == 1
 
     def test_for_period_propagates(self, journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -761,3 +774,37 @@ class TestReportAll:
         assert result.exit_code == 0
         # word-count report for 2026-04 should be created
         assert (tmp_path / "reports" / "word_count" / "2026-04.html").exists()
+
+
+class TestSharedScoreCache:
+    def test_model_report_uses_cached_scores(self, journal_dir, tmp_path, monkeypatch):
+        from egon.limbic.stress import StressScore
+        from egon.report.data import save_scores
+
+        monkeypatch.chdir(tmp_path)
+        cached = [(date(2026, 4, i), StressScore(0.7, 0.3)) for i in range(1, 22)]
+        save_scores(cached, tmp_path / "reports/full_report/.cache/2026-04/stress_data.json")
+
+        def _no_model(*_a, **_k):
+            raise AssertionError("model must not run when scores are cached")
+
+        monkeypatch.setattr("egon.limbic.stress.stress_by_day", _no_model)
+        result = runner.invoke(
+            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 0, result.output
+        assert "Using cached stress scores" in result.output
+        assert (tmp_path / "reports/stress/2026-04.html").exists()
+
+    def test_unavailable_model_is_a_clean_skip(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("model not installed")
+
+        monkeypatch.setattr("egon.limbic.stress.stress_by_day", _boom)
+        result = runner.invoke(
+            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 1
+        assert "unavailable: model not installed" in result.output
