@@ -1,4 +1,4 @@
-"""Tests for egon.limbic.sentiment, sentiment_plot, emotion_plot, and cognitive_bias_plot."""
+"""Tests for egon.limbic.sentiment, emotion and cognitive_bias score types."""
 
 from datetime import date
 from pathlib import Path
@@ -7,11 +7,8 @@ import pytest
 
 from egon.analytics.loader import JournalEntry
 from egon.limbic.cognitive_bias import BIASES, DISTORTION_TYPES, CognitiveBiasScores
-from egon.limbic.cognitive_bias_plot import plot_cognitive_bias
 from egon.limbic.emotion import EMOTIONS, EmotionScores
-from egon.limbic.emotion_plot import plot_emotion
 from egon.limbic.sentiment import sentiment_by_day, sentiment_score
-from egon.limbic.sentiment_plot import plot_sentiment
 
 
 def _entry(d: date, body: str) -> JournalEntry:
@@ -52,29 +49,6 @@ class TestSentimentByDay:
         assert sentiment_by_day([]) == []
 
 
-class TestPlotSentiment:
-    def test_saves_pdf(self, tmp_path):
-        entries = [
-            _entry(date(2026, 4, 1), "Feeling happy and energised."),
-            _entry(date(2026, 4, 2), "A tough day, feeling low."),
-            _entry(date(2026, 4, 3), "Okay, nothing special."),
-        ]
-        out = tmp_path / "sentiment.pdf"
-        plot_sentiment(entries, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        entries = [_entry(date(2026, 4, 1), "Good day.")]
-        out = tmp_path / "nested" / "sentiment.pdf"
-        plot_sentiment(entries, out)
-        assert out.exists()
-
-    def test_raises_on_empty_entries(self, tmp_path):
-        with pytest.raises(ValueError, match="No journal entries"):
-            plot_sentiment([], tmp_path / "out.pdf")
-
-
 # ---------------------------------------------------------------------------
 # EmotionScores
 # ---------------------------------------------------------------------------
@@ -102,40 +76,6 @@ class TestEmotionScores:
 
         assert _NEUTRAL.neutral == pytest.approx(1.0)
         assert sum(_NEUTRAL) == pytest.approx(1.0)
-
-
-# ---------------------------------------------------------------------------
-# plot_emotion
-# ---------------------------------------------------------------------------
-
-
-class TestPlotEmotion:
-    DATA = [
-        (date(2026, 4, d), EmotionScores(0.05, 0.02, 0.03, 0.5, 0.2, 0.15, 0.05))
-        for d in range(1, 8)
-    ]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "emotion.pdf"
-        plot_emotion(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "emotion.pdf"
-        plot_emotion(self.DATA, out)
-        assert out.exists()
-
-    def test_returns_figure_when_no_output_path(self):
-        import matplotlib.pyplot as plt
-
-        fig = plot_emotion(self.DATA, None)
-        assert fig is not None
-        plt.close(fig)
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No emotion data"):
-            plot_emotion([], tmp_path / "out.pdf")
 
 
 # ---------------------------------------------------------------------------
@@ -183,40 +123,3 @@ class TestCognitiveBiasScores:
         )
         assert scores.no_distortion == pytest.approx(0.7)
         assert scores.personalization == pytest.approx(0.1)
-
-
-# ---------------------------------------------------------------------------
-# plot_cognitive_bias
-# ---------------------------------------------------------------------------
-
-
-class TestPlotCognitiveBias:
-    DATA = [
-        (
-            date(2026, 4, d),
-            CognitiveBiasScores(0.6, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05),
-        )
-        for d in range(1, 8)
-    ]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "cognitive_bias.pdf"
-        plot_cognitive_bias(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "cognitive_bias.pdf"
-        plot_cognitive_bias(self.DATA, out)
-        assert out.exists()
-
-    def test_returns_figure_when_no_output_path(self):
-        import matplotlib.pyplot as plt
-
-        fig = plot_cognitive_bias(self.DATA, None)
-        assert fig is not None
-        plt.close(fig)
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No cognitive bias data"):
-            plot_cognitive_bias([], tmp_path / "out.pdf")

@@ -13,7 +13,6 @@ from egon.analytics.word_count import (
     parse_period_value,
     period_bounds,
     period_label,
-    plot_word_count,
     word_counts_by_day,
 )
 
@@ -105,30 +104,6 @@ class TestWordCountsByDay:
         entries = load_journal_entries(tmp_path)
         result = word_counts_by_day(entries)
         assert result == [(date(2026, 4, 1), 3), (date(2026, 4, 2), 2)]
-
-
-class TestPlotWordCount:
-    def test_saves_pdf(self, tmp_path):
-        entries = [
-            JournalEntry(date=date(2026, 4, 1), body="one two three", path=tmp_path / "a.md"),
-            JournalEntry(date=date(2026, 4, 2), body="four five six seven", path=tmp_path / "b.md"),
-        ]
-        out = tmp_path / "output.pdf"
-        plot_word_count(entries, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        entries = [
-            JournalEntry(date=date(2026, 4, 1), body="hello world", path=tmp_path / "a.md"),
-        ]
-        out = tmp_path / "nested" / "dir" / "plot.pdf"
-        plot_word_count(entries, out)
-        assert out.exists()
-
-    def test_raises_on_empty_entries(self, tmp_path):
-        with pytest.raises(ValueError, match="No journal entries"):
-            plot_word_count([], tmp_path / "out.pdf")
 
 
 # ---------------------------------------------------------------------------

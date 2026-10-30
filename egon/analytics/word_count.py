@@ -6,13 +6,8 @@ import math
 import re
 from datetime import date as date_type
 from datetime import timedelta
-from pathlib import Path
-
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 
 from egon.analytics.loader import JournalEntry
-from egon.plot_style import apply_style
 
 # HTML/Markdown comment pattern (<!-- ... -->)
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -186,44 +181,3 @@ def filter_entries(
 # ---------------------------------------------------------------------------
 # Plot
 # ---------------------------------------------------------------------------
-
-
-def plot_word_count(
-    entries: list[JournalEntry],
-    output_path: Path | None,
-    title: str = "Journal word count by day",
-) -> "plt.Figure | None":
-    """
-    Generate a word-count-by-day bar chart and save it to *output_path*.
-
-    The file format is inferred from the extension (.pdf, .png, .svg, …).
-    """
-    apply_style()
-    data = word_counts_by_day(entries)
-    if not data:
-        raise ValueError("No journal entries found — nothing to plot.")
-
-    dates, counts = zip(*data)
-
-    fig, ax = plt.subplots(figsize=(14, 4))
-
-    ax.bar(dates, counts, width=0.8, color="#4C72B0", alpha=0.85)
-
-    locator = mdates.AutoDateLocator(minticks=4, maxticks=12)
-    formatter = mdates.ConciseDateFormatter(locator)
-    ax.xaxis.set_major_locator(locator)
-    ax.xaxis.set_major_formatter(formatter)
-    fig.autofmt_xdate(rotation=30)
-
-    ax.set_ylabel("word count")
-    ax.set_title(title)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    fig.tight_layout()
-    if output_path is None:
-        return fig
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path)
-    plt.close(fig)
-    return None

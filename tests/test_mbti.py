@@ -1,4 +1,4 @@
-"""Tests for egon.limbic.mbti and egon.limbic.mbti_plot."""
+"""Tests for egon.limbic.mbti."""
 
 from datetime import date
 from pathlib import Path
@@ -8,7 +8,6 @@ import pytest
 
 from egon.analytics.loader import JournalEntry
 from egon.limbic.mbti import MBTIScores, _type_to_scores, mbti_by_day, score_text
-from egon.limbic.mbti_plot import plot_mbti
 
 # ---------------------------------------------------------------------------
 # _type_to_scores
@@ -98,37 +97,3 @@ class TestMbtiByDay:
         )
         dates = [d for d, _ in mbti_by_day(entries)]
         assert dates == sorted(dates)
-
-
-# ---------------------------------------------------------------------------
-# plot_mbti
-# ---------------------------------------------------------------------------
-
-
-class TestPlotMbti:
-    DATA = [(date(2026, 4, d), MBTIScores(ei=d % 2, ns=1, tf=0, jp=1)) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "mbti.pdf"
-        plot_mbti(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "mbti.pdf"
-        plot_mbti(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No MBTI data"):
-            plot_mbti([], tmp_path / "out.pdf")
-
-    def test_fractional_averages(self, tmp_path):
-        # Mixed E/I days → fractional average, should not crash
-        data = [
-            (date(2026, 4, 1), MBTIScores(ei=1, ns=1, tf=0, jp=1)),
-            (date(2026, 4, 2), MBTIScores(ei=0, ns=1, tf=0, jp=1)),
-        ]
-        out = tmp_path / "mbti_mixed.pdf"
-        plot_mbti(data, out)
-        assert out.exists()
