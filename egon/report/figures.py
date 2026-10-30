@@ -773,8 +773,8 @@ def highlighted_correlations_figure(signals: Signals, commentary: str = "") -> F
         caption="Signal pairs with well-documented links to mental health",
         spec=highlighted_pairs_chart(signals, pairs),
         why=(
-            "These pairs connect body and mind through well-studied routes: sleep and "
-            "mood; heart rate variability and resting heart rate as markers of stress "
+            "These pairs connect body and mind through well-studied routes: last "
+            "night's sleep and the next day's mood; heart rate variability and resting heart rate as markers of stress "
             "physiology, alongside neuroticism; and physical activity alongside "
             "extraversion and energy. Seeing whether they hold for you turns general "
             "findings into personal ones."
@@ -782,7 +782,9 @@ def highlighted_correlations_figure(signals: Signals, commentary: str = "") -> F
         how_to_read=(
             "Each dot is one day; the line is a least-squares fit. r ranges from −1 to +1 "
             "(0 = no linear relationship); p below 0.05 means the pattern is unlikely to be "
-            "chance alone. A faded line is not statistically significant."
+            "chance alone. A faded line is not statistically significant. Sleep is counted on "
+            "the day you wake up, so the sleep panel pairs each night with the next day's "
+            "writing."
         ),
         commentary=commentary,
         table=Table(
