@@ -344,8 +344,14 @@ All extras are opt-in and not required for core journaling functionality.
 # Install with dev dependencies (pytest, ruff)
 uv sync --all-groups
 
-# Run tests (the full suite takes ~5 minutes: some tests run the real models)
+# Run tests (~45 s; tests are isolated from your .env, reports and installed models)
 uv run pytest
+
+# Run exactly what CI runs (Python 3.13, no optional extras) — do this before pushing
+bash scripts/check.sh
+
+# Optional: run those checks automatically before every git push
+git config core.hooksPath .githooks
 
 # Lint
 uv run ruff check egon/ tests/

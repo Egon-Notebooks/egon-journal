@@ -7,17 +7,22 @@ English, git conventions) are in `../CLAUDE.md`; product docs are in `../docs/`.
 ## Commands
 
 ```bash
-uv sync --all-groups                       # install (Python 3.13+)
-uv run ruff check egon/ tests/             # lint     (CI)
-uv run ruff format --check egon/ tests/    # format   (CI)
-uv run pytest --no-cov                     # tests    (CI runs with coverage)
+uv sync --all-groups --extra local-llm     # install (Python 3.13+); plain `uv sync` drops extras
+bash scripts/check.sh                      # exactly what CI runs — do this before every push
+uv run pytest --no-cov                     # quick local test run (~45 s)
 uv run egon --help                         # all commands
 ```
 
-The full test suite takes about 5 minutes: a few CLI tests run the real models via
-`.venv-limbic`. For quick iteration run the relevant files, e.g.
-`uv run pytest --no-cov tests/test_report_figures.py tests/test_report_html.py`.
-CI (`.github/workflows/`) runs only on pushes and pull requests to `main`.
+- `scripts/check.sh` runs ruff, the format check and pytest in a throwaway Python 3.13
+  environment with no optional extras and no `.env` — the same as CI. Your `.venv` is
+  untouched. Optional pre-push hook: `git config core.hooksPath .githooks`.
+- `tests/conftest.py` makes every test hermetic: all `EGON_*` variables are removed,
+  each test runs in its own temp directory (so real `reports/` and caches are never
+  read or written), and the optional extras (models, BERTopic, Ollama) are hidden.
+  Never weaken this — a test that passes only on a machine with personal data or
+  models installed will fail in CI. `EGON_TEST_MODELS=1 uv run pytest` runs against
+  the real models instead.
+- CI (`.github/workflows/`) runs only on pushes and pull requests to `main`.
 
 ## Layout
 
