@@ -338,7 +338,7 @@ All extras are opt-in and not required for core journaling functionality.
 # Install with dev dependencies (pytest, ruff)
 uv sync --all-groups
 
-# Run tests (the full suite takes ~8 minutes: some tests run the real models)
+# Run tests (the full suite takes ~5 minutes: some tests run the real models)
 uv run pytest
 
 # Lint

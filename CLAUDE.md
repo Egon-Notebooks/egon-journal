@@ -14,7 +14,7 @@ uv run pytest --no-cov                     # tests    (CI runs with coverage)
 uv run egon --help                         # all commands
 ```
 
-The full test suite takes about 8 minutes: a few CLI tests run the real models via
+The full test suite takes about 5 minutes: a few CLI tests run the real models via
 `.venv-limbic`. For quick iteration run the relevant files, e.g.
 `uv run pytest --no-cov tests/test_report_figures.py tests/test_report_html.py`.
 CI (`.github/workflows/`) runs only on pushes and pull requests to `main`.
