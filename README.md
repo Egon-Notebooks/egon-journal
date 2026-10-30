@@ -6,8 +6,16 @@
 
 Structured journaling support for the [Egon Notebooks](https://egonnotebooks.com) graph.
 
-Generates journal entry nodes, prompt nodes, structured program nodes, and summary templates — all as plain Markdown files with YAML frontmatter, ready to drop into an Obsidian or Logseq vault.
-We separate into 3 modules: the affective engine (limbic system), (prefrontal cortex), and backend (cerebellum).
+Two jobs, both fully local:
+
+1. **Journaling nodes** — journal entries, prompts, structured programs and summary templates, as plain
+   Markdown files with YAML frontmatter, ready to drop into an Obsidian or Logseq vault.
+2. **Reports** — analyzes your journal and Apple Health export on your own device and produces
+   interactive HTML reports on mood, stress, personality, sleep, activity and how they relate.
+
+Code layout: `egon/node_types` (graph nodes), `egon/limbic` (the affective engine: emotion, stress,
+loneliness, cognitive distortions and personality from local language models), `egon/analytics` and
+`egon/health` (journal-text and Apple Health signals), and `egon/report` (the HTML reports).
 
 All scripts and notebooks in this repository are meant as *proof-of-concept*.
 
@@ -26,9 +34,9 @@ git clone <repo>
 cd egon-journal
 uv sync
 
-# Configure your graph directories (optional but recommended)
+# Configure your graph directories and Apple Health export (optional but recommended)
 cp .env.example .env
-# Edit .env and set EGON_JOURNAL_DIR, EGON_SUMMARIES_DIR, EGON_GRAPH_DIR
+# Edit .env — see "Environment variables" below
 ```
 
 ---
@@ -132,7 +140,7 @@ uv sync --extra local-llm
 ### Usage
 
 ```bash
-# Generate a prompt using the last 3 months of entries (default model: llama3.2:3b)
+# Generate a prompt using the last 3 months of entries (default model: qwen2.5:7b)
 uv run egon suggest-prompt
 
 # Use a different time window
@@ -153,9 +161,9 @@ Set your preferred model in `egon.toml` so you don't need `--model` every time:
 
 ```toml
 [local_llm]
-model = "llama3.2:3b"   # default — fast, good quality
-# model = "qwen2.5:7b"  # better reasoning, needs ~6 GB RAM
-# model = "gemma3:12b"  # best quality, needs ~10 GB RAM
+model = "qwen2.5:7b"     # default — strong instruction-following, needs ~6 GB RAM
+# model = "llama3.2:3b"  # faster, less RAM, weaker at following instructions
+# model = "gemma3:12b"   # best quality, needs ~10 GB RAM
 ```
 
 See [Ollama's model library](https://ollama.com/library) for all available models.
@@ -187,11 +195,11 @@ The full report (`uv run egon report --full`) also uses this: it adds an AI-gene
 
 ```toml
 [report.analyses]
-llm_health_summary    = true   # "Health Summary" page in the full report
+llm_health_summary    = true   # "Health summary" note in the full report
 llm_health_commentary = true   # per-figure commentary under each health chart
 ```
 
-Generated text is cached per period alongside the other ML scores (`reports/full-report/.cache/<label>/llm_health.json`); delete that file to force regeneration.
+Generated text is cached per period alongside the model scores (`reports/full_report/.cache/<period>/llm_health.json`); delete that file to force regeneration.
 
 ---
 
@@ -243,9 +251,18 @@ Every chart comes with a short note on **why it matters for mental health and
 wellbeing**, how to read it, and a data table.
 
 ```bash
-# Everything for the last complete month, plus one combined report
-uv run egon report --period month --full     # → reports/full_report/<period>.html
+# Every chart for a quarter, plus one combined report
+uv run egon report --for 2026-Q1 --full      # → reports/full_report/2026-Q1.html
+
+# The last complete month
+uv run egon report --period month --full
 ```
+
+The terminal shows one line per report (✓ generated, – skipped with the reason),
+which model scores were loaded from cache or computed, and where the combined
+report was written. Model scores are cached per period in
+`reports/full_report/.cache/<period>/` and shared by all report commands, so each
+model runs at most once per period; delete a file there to re-score.
 
 Available charts: word count, frequent words, first-person pronoun ratio, topics,
 sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,
@@ -263,28 +280,37 @@ product docs (`docs/DESIGN_LANGUAGE.md` → *Data visualization*).
 
 Set these in `.env` (copy from `.env.example`):
 
-| Variable             | Purpose                                               |
-|----------------------|-------------------------------------------------------|
-| `EGON_JOURNAL_DIR`   | Where `new-entry` and `report-*` commands read/write  |
-| `EGON_SUMMARIES_DIR` | Where `new-summary` writes                            |
-| `EGON_GRAPH_DIR`     | Root of your assembled graph (used by `index`)        |
+| Variable                          | Purpose                                                    |
+|-----------------------------------|------------------------------------------------------------|
+| `EGON_JOURNAL_DIR`                | Where `new-entry` writes and reports read journal entries  |
+| `EGON_SUMMARIES_DIR`              | Where `new-summary` writes                                 |
+| `EGON_GRAPH_DIR`                  | Root of your assembled graph (used by `index`)             |
+| `EGON_APPLE_HEALTH_XML`           | Apple Health `export.xml`, used by health reports          |
+| `EGON_TARGET_BODY_MASS`           | Optional target line on the weight chart                   |
+| `EGON_TARGET_LEAN_BODY_MASS`      | Optional target line on the lean-mass panel                |
+| `EGON_TARGET_RESTING_HEART_RATE`  | Optional target line on the resting heart rate chart       |
+| `EGON_TARGET_EXERCISE_MINUTES`    | Daily exercise target (replaces the WHO 30-minute line)    |
 
 All variables are optional.
-Commands fall back to `./generated/` if unset.
+Node commands fall back to `./generated/` if unset; health reports are skipped
+without an Apple Health export.
 
 ---
 
 ## Optional extras
 
-Two optional dependency groups are available for analysis features. Install them alongside the base package:
+Three optional dependency groups add analysis features. Install them alongside the base package:
 
-**Big Five personality inference** — uses a HuggingFace transformer model to infer OCEAN trait scores from journal text:
+**Local language models (`limbic`)** — Hugging Face models that score journal text for
+emotion, stress, loneliness, cognitive distortions, Big Five and MBTI:
 
 ```bash
-uv sync --extra limbic
+uv sync --extra limbic         # Linux, Apple Silicon, Windows
+bash scripts/setup_limbic.sh   # Intel Mac (creates .venv-limbic; used automatically)
 ```
 
-Requires `transformers`, `torch`, `sentencepiece`, and `protobuf`. The model runs locally; no data leaves the device.
+Requires `transformers`, `torch`, `sentencepiece`, and `protobuf`. Models run locally and are
+downloaded once on first use; no journal data leaves the device.
 
 **Topic modeling** — uses BERTopic to cluster journal entries into recurring themes:
 
@@ -292,9 +318,17 @@ Requires `transformers`, `torch`, `sentencepiece`, and `protobuf`. The model run
 uv sync --extra topics
 ```
 
-Requires `bertopic` and `sentence-transformers`. Enable in `egon.toml` by setting `report.analyses.topics = true`.
+Requires `bertopic` and `sentence-transformers` (on Intel Macs topics run via `.venv-limbic`).
+Turn off in `egon.toml` with `topics = false` under `[report.analyses]`.
 
-Both extras are opt-in and not required for core journaling functionality.
+**Local LLM (`local-llm`)** — the Ollama client for `suggest-prompt`, `health-summary` and the AI
+commentary in reports (see above):
+
+```bash
+uv sync --extra local-llm
+```
+
+All extras are opt-in and not required for core journaling functionality.
 
 ---
 
@@ -304,7 +338,7 @@ Both extras are opt-in and not required for core journaling functionality.
 # Install with dev dependencies (pytest, ruff)
 uv sync --all-groups
 
-# Run tests
+# Run tests (the full suite takes ~8 minutes: some tests run the real models)
 uv run pytest
 
 # Lint
