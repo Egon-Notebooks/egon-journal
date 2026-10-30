@@ -741,8 +741,8 @@ def highlighted_correlations_figure(signals: Signals, commentary: str = "") -> F
         caption="Signal pairs with well-documented links to mental health",
         spec=highlighted_pairs_chart(signals, pairs),
         why=(
-            "These pairs connect body and mind through well-studied routes: sleep and next-"
-            "day mood; heart rate variability and resting heart rate as markers of stress "
+            "These pairs connect body and mind through well-studied routes: sleep and "
+            "mood; heart rate variability and resting heart rate as markers of stress "
             "physiology, alongside neuroticism; and physical activity alongside "
             "extraversion and energy. Seeing whether they hold for you turns general "
             "findings into personal ones."

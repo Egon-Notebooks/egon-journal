@@ -20,7 +20,7 @@ Signals = dict[str, Signal]
 # Pairs with well-documented links to mental health — (signal_a, signal_b, title).
 # Rendered only when both signals are present with sufficient overlap.
 MENTAL_HEALTH_PAIRS: list[tuple[str, str, str]] = [
-    ("sleep (h)", "sentiment", "Sleep quality & next-day mood"),
+    ("sleep (h)", "sentiment", "Sleep & mood"),
     ("HRV", "B5-N", "HRV & neuroticism"),
     ("steps", "B5-E", "Physical activity & extraversion"),
     ("resting HR", "B5-N", "Resting heart rate & neuroticism"),
