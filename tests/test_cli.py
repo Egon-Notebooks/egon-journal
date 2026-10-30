@@ -68,6 +68,25 @@ def journal_dir(tmp_path):
 
 
 @pytest.fixture
+def varied_journal_dir(tmp_path):
+    """Entries whose length and tone vary, so journal signals can correlate."""
+    d = tmp_path / "varied_journal"
+    d.mkdir()
+    moods = [
+        "Today was wonderful and I felt happy and grateful.",
+        "A hard, sad day; I felt tired and worried.",
+        "An ordinary day at work.",
+    ]
+    for i in range(1, 22):
+        _write_journal(
+            d / f"2026-04-{i:02d}.md",
+            date(2026, 4, i),
+            f"Entry {i}. " + moods[i % 3] + " More notes." * (i % 5),
+        )
+    return d
+
+
+@pytest.fixture
 def recent_journal_dir(tmp_path):
     """Entries dated relative to today, for commands that look back from today."""
     d = tmp_path / "recent_journal"
@@ -452,14 +471,14 @@ class TestReportTopics:
 
 
 class TestReportCorrelations:
-    def test_success_with_journal_only(self, journal_dir, tmp_path):
+    def test_success_with_journal_only(self, varied_journal_dir, tmp_path):
         out_dir = tmp_path / "corr"
         result = runner.invoke(
             app,
             [
                 "report-correlations",
                 "--journal-dir",
-                str(journal_dir),
+                str(varied_journal_dir),
                 "--for",
                 "2026-Q2",
                 "--output-dir",
@@ -495,14 +514,14 @@ class TestReportCorrelations:
             )
         assert result.exit_code == 1
 
-    def test_output_dir_default(self, journal_dir, tmp_path, monkeypatch):
+    def test_output_dir_default(self, varied_journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         result = runner.invoke(
             app,
             [
                 "report-correlations",
                 "--journal-dir",
-                str(journal_dir),
+                str(varied_journal_dir),
                 "--for",
                 "2026-Q2",
             ],
@@ -510,10 +529,19 @@ class TestReportCorrelations:
         assert result.exit_code == 0
         assert (tmp_path / "reports" / "correlations" / "2026-Q2.html").exists()
 
+    # ---------------------------------------------------------------------------
+    # suggest-prompt
+    # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# suggest-prompt
-# ---------------------------------------------------------------------------
+    def test_constant_signals_are_a_clean_skip(self, journal_dir, tmp_path):
+        # The shared fixture's entries are near-identical: nothing varies, so
+        # there is nothing to correlate. That is "not enough data", not a crash.
+        result = runner.invoke(
+            app,
+            ["report-correlations", "--journal-dir", str(journal_dir), "--for", "2026-Q2"],
+        )
+        assert result.exit_code == 1
+        assert "Not enough overlapping signals" in result.output
 
 
 class TestSuggestPrompt:
