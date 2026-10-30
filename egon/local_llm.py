@@ -83,7 +83,8 @@ def _import_ollama():
         return ollama
     except ImportError:
         raise ImportError(
-            "The 'ollama' package is not installed.\nInstall it with:  uv sync --extra local-llm"
+            "The Ollama Python client is not installed (the Ollama app alone is not enough)."
+            "\nInstall it with:  uv sync --extra local-llm"
         )
 
 
@@ -162,6 +163,7 @@ def _raise_connection_error(exc: Exception) -> None:
     msg = str(exc).lower()
     if any(k in msg for k in ("connection", "refused", "connect", "socket")):
         raise RuntimeError(
-            "Cannot connect to Ollama. Is it running?\nStart it with:  ollama serve"
+            "Cannot connect to Ollama. Is the Ollama app running?"
+            "\nStart it with:  open -a Ollama   (or: ollama serve)"
         ) from exc
     raise exc

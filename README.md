@@ -137,6 +137,11 @@ open /Applications/Ollama.app
 uv sync --extra local-llm
 ```
 
+You need **both**: the Ollama app runs the language model on your machine, and the small
+`ollama` Python client (installed by `--extra local-llm`) is how egon-journal talks to it.
+A plain `uv sync` removes optional extras again, so keep using `uv sync --extra local-llm`
+(add `--extra limbic` / `--extra topics` if you use those too).
+
 ### Usage
 
 ```bash
@@ -174,7 +179,7 @@ See [Ollama's model library](https://ollama.com/library) for all available model
 
 Generate a narrative summary of your Apple Health data for a time period using a local LLM via Ollama (inspired by [krumjahn/applehealth](https://github.com/krumjahn/applehealth)). Compact per-metric statistics — mean, min, max, trend, and a weekly or monthly breakdown — are computed locally and narrated by the model. No data leaves your device.
 
-Prerequisites are the same as for journal prompts above (Ollama running, `uv sync --extra local-llm`), plus `EGON_APPLE_HEALTH_XML` set in `.env` (or pass `--xml`).
+Prerequisites are the same as for journal prompts above — the Ollama app running **and** the Python client installed (`uv sync --extra local-llm`) — plus `EGON_APPLE_HEALTH_XML` set in `.env` (or pass `--xml`).
 
 ```bash
 # Summarize the last complete month (default)
@@ -191,7 +196,8 @@ uv run egon health-summary --for 2026-Q1 --stats-only
 uv run egon health-summary --model gemma3:12b
 ```
 
-The full report (`uv run egon report --full`) also uses this: it adds an AI-generated "Health summary" to the Physiological Measures section and writes "This period" commentary under each health chart. If Ollama is not running, these are simply left out. Both behaviors can be toggled in `egon.toml`:
+The full report (`uv run egon report --full`) also uses this: it adds an AI-generated "Health summary" to the Physiological Measures section and writes "This period" commentary under each health chart. If the Ollama client isn't installed or the app isn't
+running, these are left out and the terminal says which of the two is missing. Both behaviors can be toggled in `egon.toml`:
 
 ```toml
 [report.analyses]
