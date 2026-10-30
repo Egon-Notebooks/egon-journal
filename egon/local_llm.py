@@ -18,7 +18,9 @@ from egon.analytics.loader import JournalEntry
 DEFAULT_MODEL = "qwen2.5:7b"
 
 _PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-_SYSTEM_PROMPT: str = (_PROMPTS_DIR / "reflection_question_system.txt").read_text(encoding="utf-8").strip()
+_SYSTEM_PROMPT: str = (
+    (_PROMPTS_DIR / "reflection_question_system.txt").read_text(encoding="utf-8").strip()
+)
 
 
 def check_hardware(model: str) -> str:
@@ -58,9 +60,10 @@ def _total_ram_gb() -> float | None:
     """Return total physical RAM in GB using stdlib sysconf (macOS/Linux)."""
     try:
         import os
+
         page_size = os.sysconf("SC_PAGE_SIZE")
         num_pages = os.sysconf("SC_PHYS_PAGES")
-        return (page_size * num_pages) / (1024 ** 3)
+        return (page_size * num_pages) / (1024**3)
     except (AttributeError, ValueError, OSError):
         return None
 
@@ -68,6 +71,7 @@ def _total_ram_gb() -> float | None:
 def _model_size_b(model: str) -> float | None:
     """Parse the parameter count in billions from a model name, e.g. 'qwen2.5:7b' → 7.0."""
     import re
+
     m = re.search(r"(\d+(?:\.\d+)?)b", model.lower())
     return float(m.group(1)) if m else None
 
@@ -75,11 +79,11 @@ def _model_size_b(model: str) -> float | None:
 def _import_ollama():
     try:
         import ollama
+
         return ollama
     except ImportError:
         raise ImportError(
-            "The 'ollama' package is not installed.\n"
-            "Install it with:  uv sync --extra local-llm"
+            "The 'ollama' package is not installed.\nInstall it with:  uv sync --extra local-llm"
         )
 
 
@@ -122,22 +126,18 @@ def build_context(entries: list[JournalEntry]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def generate_journal_prompt(entries: list[JournalEntry], model: str) -> str:
+def chat(model: str, system: str, user: str) -> str:
     """
-    Send recent journal *entries* to the local Ollama *model* and return a
-    suggested introspective question for today's journal entry.
+    Send a single system+user exchange to the local Ollama *model* and
+    return the stripped response text.
     """
     ollama = _import_ollama()
-    context = build_context(entries)
     try:
         response = ollama.chat(
             model=model,
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"Here are my recent journal entries:\n\n{context}\n\nRespond with exactly one reflective question. Nothing else.",
-                },
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
             ],
         )
     except Exception as exc:
@@ -145,11 +145,23 @@ def generate_journal_prompt(entries: list[JournalEntry], model: str) -> str:
     return response.message.content.strip()
 
 
+def generate_journal_prompt(entries: list[JournalEntry], model: str) -> str:
+    """
+    Send recent journal *entries* to the local Ollama *model* and return a
+    suggested introspective question for today's journal entry.
+    """
+    context = build_context(entries)
+    return chat(
+        model,
+        _SYSTEM_PROMPT,
+        f"Here are my recent journal entries:\n\n{context}\n\nRespond with exactly one reflective question. Nothing else.",
+    )
+
+
 def _raise_connection_error(exc: Exception) -> None:
     msg = str(exc).lower()
     if any(k in msg for k in ("connection", "refused", "connect", "socket")):
         raise RuntimeError(
-            "Cannot connect to Ollama. Is it running?\n"
-            "Start it with:  ollama serve"
+            "Cannot connect to Ollama. Is it running?\nStart it with:  ollama serve"
         ) from exc
     raise exc

@@ -7,9 +7,15 @@
 # Omit a key entirely to accept the default.
 
 [report.analyses]
-wordcloud     = false   # decorative; opt in if you want it
+wordcloud     = false   # most frequent words (formerly a word cloud); opt in
 topics        = true    # BERTopic topic modelling (requires `uv sync --extra topics`)
 pronoun_ratio = true
+
+# LLM-generated Apple Health narrative (requires `uv sync --extra local-llm`
+# and Ollama running). Skipped gracefully with placeholder text if Ollama is
+# unavailable. Results are cached per period next to the other ML scores.
+llm_health_summary    = true   # "Health Summary" text page in Section 3
+llm_health_commentary = true   # per-figure commentary under each health chart
 
 # ---------------------------------------------------------------------------
 # Local LLM (requires `uv sync --extra local-llm` and `ollama serve`)
