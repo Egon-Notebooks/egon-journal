@@ -11,6 +11,7 @@ source.  They describe associations at population level — they are context
 for reflection, not a diagnosis.
 """
 
+import math
 from datetime import date as date_type
 
 from egon.analytics.correlation import (
@@ -304,11 +305,34 @@ def emotion_figure(data: list[tuple[date_type, EmotionScores]], commentary: str 
     )
 
 
+# Population means per trait on the 1–5 scale, shown as a faint reference line.
+BIGFIVE_POPULATION_MEAN: dict[str, float] = {"O": 3.9, "C": 3.5, "E": 3.2, "A": 3.7, "N": 3.1}
+
+
 def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str = "") -> Figure:
+    """Five stacked trait panels on one shared, data-fitted axis.
+
+    The model card says scores are 0–1, but the model actually outputs values on
+    the 1–5 scale of its training labels (typically 2–4.5).  Fitting the axis to
+    the data keeps the lines inside their panels on either scale; population
+    means are only shown on the 1–5 scale they belong to.
+    """
+    if not data:
+        raise ValueError("No Big Five data found — nothing to plot.")
     colors = [theme.BLUE, theme.TERRACOTTA, theme.SAGE, theme.OCHRE, theme.PLUM]
+    values = [v for _, s in data for v in s]
+    likert = max(values) > 1.0
+    population = BIGFIVE_POPULATION_MEAN if likert else {}
+    span = values + list(population.values())
+    lo = math.floor((min(span) - 0.05) * 2) / 2
+    hi = math.ceil((max(span) + 0.05) * 2) / 2
+    scale = "1–5" if likert else "0–1"
+
     panels = []
-    for i, ((_, name), color) in enumerate(zip(TRAITS, colors, strict=True)):
+    headline = []
+    for i, ((letter, name), color) in enumerate(zip(TRAITS, colors, strict=True)):
         series = [(d, s[i]) for d, s in data]
+        refs = [(population[letter], "", theme.NEUTRAL)] if letter in population else []
         panels.append(
             (
                 series,
@@ -317,22 +341,25 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
                     "unit": "",
                     "color": color,
                     "decimals": 2,
-                    "domain": (0, 1),
+                    "domain": (lo, hi),
                     "height": 120,
+                    "references": refs,
                 },
             )
         )
-    headline = []
-    for i, (_, name) in enumerate(TRAITS):
-        s = series_summary([(d, sc[i]) for d, sc in data], decimals=2)
-        headline.append(Stat(name, s["mean"], "", f"{s['delta']} last vs first fortnight"))
+        summary = series_summary(series, decimals=2)
+        note = f"{summary['delta']} last vs first fortnight"
+        if letter in population:
+            note += f" · population {population[letter]:.1f}"
+        headline.append(Stat(name, summary["mean"], "", note))
+
     return Figure(
         key="bigfive",
         headline=headline,
         title="Personality in your writing (Big Five)",
         caption=(
-            "Daily scores (0–1) for Openness, Conscientiousness, Extraversion, Agreeableness "
-            "and Neuroticism, inferred from your entries"
+            f"Daily scores (scale {scale}) for Openness, Conscientiousness, Extraversion, "
+            "Agreeableness and Neuroticism, inferred from your entries"
         ),
         spec=stacked_series_chart(panels),
         why=(
@@ -344,10 +371,15 @@ def bigfive_figure(data: list[tuple[date_type, BigFiveScores]], commentary: str 
             "mirror how you have been rather than who you are."
         ),
         how_to_read=(
-            "The numbers above are period averages (0–1) with the change from the first to "
-            "the last fortnight. One panel per trait below: gray dots are single days, the "
-            "line the 7-day average, the dotted line and margin label the period average. "
-            "Compare a trait with itself over time, not across traits."
+            f"The numbers above are period averages (scale {scale}) with the change from the "
+            "first to the last fortnight"
+            + (" and the population average for comparison" if population else "")
+            + ". One panel per trait below, all on the same axis: gray dots are single days, "
+            "the colored line the 7-day average, the dotted line and margin label the period "
+            "average"
+            + (", and the faint line the population average" if population else "")
+            + ". The model is a rough estimate from writing style; small day-to-day changes "
+            "are mostly noise."
         ),
         commentary=commentary,
         table=Table(

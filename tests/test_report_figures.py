@@ -341,3 +341,25 @@ def test_bigfive_figure_shows_trait_estimates():
         "Neuroticism",
     ]
     assert fig.headline[0].value == "0.60"
+
+
+def test_bigfive_on_likert_scale_fits_axis_and_shows_population():
+    """The model outputs ~1–5 values in practice; panels must contain them."""
+    data = [
+        (d, BigFiveScores(4.3 + 0.05 * (i % 3), 3.5, 3.6, 3.8, 2.5)) for i, d in enumerate(DAYS)
+    ]
+    fig = F.bigfive_figure(data)
+    domains = {
+        tuple(p["layer"][0]["encoding"]["y"]["scale"]["domain"]) for p in fig.spec["vconcat"]
+    }
+    assert len(domains) == 1, "all panels share one axis"
+    lo, hi = domains.pop()
+    assert lo <= 2.5 and hi >= 4.4
+    assert "scale 1–5" in fig.caption
+    assert fig.headline[4].note.endswith("population 3.1")
+
+
+def test_bigfive_on_unit_scale_has_no_population_line():
+    fig = F.bigfive_figure(_scores()["bigfive"])
+    assert "scale 0–1" in fig.caption
+    assert "population" not in fig.headline[0].note

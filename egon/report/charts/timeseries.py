@@ -38,7 +38,7 @@ def series_layers(
     color: str = theme.BLUE,
     decimals: int = 0,
     percent: bool = False,
-    references: list[tuple[float, str]] | None = None,
+    references: list[tuple[float, str] | tuple[float, str, str]] | None = None,
     target: float | None = None,
     domain: tuple[float, float] | None = None,
     zero_baseline: bool = False,
@@ -134,8 +134,8 @@ def series_layers(
     )
     if show_mean:
         layers.append(mean_rule(avg, f"avg {avg:{fmt}}"))
-    for value, text in references or []:
-        layers.append(mean_rule(value, text))
+    for value, text, *ref_color in references or []:
+        layers.append(mean_rule(value, text, *ref_color))
     if target is not None:
         layers.append(mean_rule(target, f"target {target:{fmt}}", color=theme.ACCENT))
 
