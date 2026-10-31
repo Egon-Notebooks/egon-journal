@@ -79,7 +79,7 @@ The **Metric name** column is the string returned after the `HKQuantityTypeIdent
 | `DietaryProtein` | g | Protein |
 | `DietaryCarbohydrates` | g | Carbohydrates |
 | `DietaryFatTotal` | g | Total fat |
-| `DietaryFiber` | g | Dietary fibre |
+| `DietaryFiber` | g | Dietary fiber |
 | `DietaryWater` | mL | Water intake |
 | `DietaryCaffeine` | mg | Caffeine intake |
 

@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date as date_type
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from statistics import mean
 from typing import NamedTuple
@@ -54,7 +55,18 @@ def load_records(xml_path: Path) -> dict[str, list[HealthRecord]]:
     prefix stripped, e.g. "BodyMass", "RestingHeartRate", "StepCount".
 
     Only numeric records are included; non-numeric values are skipped.
+    Results are cached per file version, so commands that need the export
+    several times (e.g. ``egon report``) parse it only once.  Treat the
+    returned lists as read-only.
     """
+    stat = Path(xml_path).stat()
+    return _load_records_cached(str(xml_path), stat.st_mtime_ns, stat.st_size)
+
+
+@lru_cache(maxsize=2)
+def _load_records_cached(
+    xml_path: str, _mtime_ns: int, _size: int
+) -> dict[str, list[HealthRecord]]:
     tree = ET.parse(xml_path)
     root = tree.getroot()
 

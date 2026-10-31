@@ -1,11 +1,8 @@
-"""Tests for egon.health.sleep and egon.health.sleep_plot."""
+"""Tests for egon.health.sleep."""
 
 from datetime import date
 
-import pytest
-
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
-from egon.health.sleep_plot import plot_sleep
 
 
 def _make_sleep_xml(records: list[dict]) -> str:
@@ -195,29 +192,3 @@ class TestLoadSleepOnset:
         data = load_sleep_onset(path)
         _, onset = data[0]
         assert abs(onset - 4.5) < 0.01  # 22:30 = 4.5h after 18:00
-
-
-class TestPlotSleep:
-    DATA = [(date(2026, 4, d), 6.5 + d * 0.1) for d in range(1, 8)]
-    ONSET_DATA = [(date(2026, 4, d), 4.0 + d * 0.1) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "sleep.pdf"
-        plot_sleep(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "sleep.pdf"
-        plot_sleep(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No sleep data"):
-            plot_sleep([], tmp_path / "out.pdf")
-
-    def test_saves_pdf_with_onset_subplot(self, tmp_path):
-        out = tmp_path / "sleep_onset.pdf"
-        plot_sleep(self.DATA, out, onset_data=self.ONSET_DATA)
-        assert out.exists()
-        assert out.stat().st_size > 0

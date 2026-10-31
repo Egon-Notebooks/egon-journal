@@ -25,11 +25,13 @@ from pathlib import Path
 _DEFAULTS: dict[str, bool] = {
     # Section 1 — Journal Insights
     "word_count": True,
-    "wordcloud": False,  # slow and space-heavy; opt-in
+    "wordcloud": False,  # most frequent words (formerly a word cloud); opt-in
     "pronoun_ratio": True,
     "topics": True,
     # Section 2 — Personality & Affective Patterns
     "sentiment": True,
+    "stress": True,
+    "loneliness": True,
     "bigfive": True,
     "mbti": True,
     # Section 3 — Physiological Measures
@@ -45,8 +47,20 @@ _DEFAULTS: dict[str, bool] = {
     "cognitive_bias": True,
     # Section 4 — Cross-Signal Analysis
     "correlation_matrix": True,
+    "top_correlations": True,
     "highlighted_correlations": True,
+    # Local LLM additions (require `uv sync --extra local-llm` and Ollama running;
+    # skipped gracefully when Ollama is unavailable)
+    "llm_health_summary": True,
+    "llm_health_commentary": True,
 }
+
+# Default signal pairs to exclude from the top-correlations chart.
+# These are typically tautological or near-identity relationships that add
+# little interpretive value (e.g. body mass ↔ lean body mass).
+_DEFAULT_EXCLUDED_CORRELATION_PAIRS: list[tuple[str, str]] = [
+    ("weight", "lean mass"),
+]
 
 
 @dataclass
@@ -54,6 +68,9 @@ class ReportConfig:
     """Which analyses are enabled in the full report."""
 
     analyses: dict[str, bool] = field(default_factory=dict)
+    excluded_correlation_pairs: list[tuple[str, str]] = field(
+        default_factory=lambda: list(_DEFAULT_EXCLUDED_CORRELATION_PAIRS)
+    )
 
     def enabled(self, key: str) -> bool:
         """Return True if *key* is enabled, falling back to the hard-coded default."""

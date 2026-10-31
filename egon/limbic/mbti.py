@@ -71,6 +71,22 @@ def _type_to_scores(mbti_type: str) -> MBTIScores:
     )
 
 
+def period_type(data: list[tuple[date_type, MBTIScores]]) -> tuple[str, list[tuple[str, float]]]:
+    """The dominant MBTI type over a period, e.g. ``("INFJ", [("I", 0.72), ...])``.
+
+    For each dimension the pole that appears on most days wins (ties go to the
+    first pole: E, N, T, J); each letter comes with the share of days that
+    leaned that way.
+    """
+    if not data:
+        raise ValueError("No MBTI data — cannot determine a type.")
+    letters: list[tuple[str, float]] = []
+    for i, (pos, neg, _label) in enumerate(DIMENSIONS):
+        share = sum(s[i] for _, s in data) / len(data)
+        letters.append((pos, share) if share >= 0.5 else (neg, 1 - share))
+    return "".join(letter for letter, _ in letters), letters
+
+
 def _use_subprocess_venv() -> bool:
     return (
         _LIMBIC_VENV.is_dir() and platform.system() == "Darwin" and platform.machine() == "x86_64"

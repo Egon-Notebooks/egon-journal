@@ -1,4 +1,4 @@
-"""Tests for egon.limbic.bigfive and egon.limbic.bigfive_plot."""
+"""Tests for egon.limbic.bigfive."""
 
 from datetime import date
 from pathlib import Path
@@ -8,7 +8,6 @@ import pytest
 
 from egon.analytics.loader import JournalEntry
 from egon.limbic.bigfive import BigFiveScores, bigfive_by_day, score_text
-from egon.limbic.bigfive_plot import plot_bigfive
 
 # ---------------------------------------------------------------------------
 # BigFiveScores
@@ -108,27 +107,3 @@ class TestBigFiveByDay:
         result = bigfive_by_day(entries)
         dates = [d for d, _ in result]
         assert dates == sorted(dates)
-
-
-# ---------------------------------------------------------------------------
-# plot_bigfive
-# ---------------------------------------------------------------------------
-
-
-class TestPlotBigFive:
-    DATA = [(date(2026, 4, d), BigFiveScores(0.6, 0.5, 0.4, 0.7, 0.3)) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "bigfive.pdf"
-        plot_bigfive(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "bigfive.pdf"
-        plot_bigfive(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No Big Five data"):
-            plot_bigfive([], tmp_path / "out.pdf")

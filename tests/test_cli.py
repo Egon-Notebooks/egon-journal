@@ -7,7 +7,7 @@ avoid requiring the optional bigfive dependency group in CI.  Pure-Python
 report commands (word-count, sentiment, exercise) are tested end-to-end.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -68,6 +68,41 @@ def journal_dir(tmp_path):
 
 
 @pytest.fixture
+def varied_journal_dir(tmp_path):
+    """Entries whose length and tone vary, so journal signals can correlate."""
+    d = tmp_path / "varied_journal"
+    d.mkdir()
+    moods = [
+        "Today was wonderful and I felt happy and grateful.",
+        "A hard, sad day; I felt tired and worried.",
+        "An ordinary day at work.",
+    ]
+    for i in range(1, 22):
+        _write_journal(
+            d / f"2026-04-{i:02d}.md",
+            date(2026, 4, i),
+            f"Entry {i}. " + moods[i % 3] + " More notes." * (i % 5),
+        )
+    return d
+
+
+@pytest.fixture
+def recent_journal_dir(tmp_path):
+    """Entries dated relative to today, for commands that look back from today."""
+    d = tmp_path / "recent_journal"
+    d.mkdir()
+    today = date.today()
+    for i in range(1, 8):
+        day = today - timedelta(days=i)
+        _write_journal(
+            d / f"{day.isoformat()}.md",
+            day,
+            f"Entry {i}. Today I went for a walk and felt great.",
+        )
+    return d
+
+
+@pytest.fixture
 def health_xml(tmp_path):
     records = [
         {"type": _BM, "value": str(80.0 - i * 0.1), "unit": "kg", "date": f"2026-04-0{i}"}
@@ -95,8 +130,25 @@ def exercise_xml(tmp_path):
 
 
 class TestReportWordCount:
+    def test_pdf_output_is_rejected_with_hint(self, journal_dir, tmp_path):
+        result = runner.invoke(
+            app,
+            [
+                "report-word-count",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-04",
+                "--output",
+                str(tmp_path / "wc.pdf"),
+            ],
+        )
+        assert result.exit_code == 1
+        assert "Save as PDF" in result.output
+        assert not (tmp_path / "wc.pdf").exists()
+
     def test_success(self, journal_dir, tmp_path):
-        out = tmp_path / "wc.pdf"
+        out = tmp_path / "wc.html"
         result = runner.invoke(
             app, ["report-word-count", "--journal-dir", str(journal_dir), "--output", str(out)]
         )
@@ -111,7 +163,7 @@ class TestReportWordCount:
                 "--journal-dir",
                 str(tmp_path / "missing"),
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
@@ -126,13 +178,13 @@ class TestReportWordCount:
                 "--journal-dir",
                 str(empty),
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
 
     def test_period_month(self, journal_dir, tmp_path):
-        out = tmp_path / "wc-month.pdf"
+        out = tmp_path / "wc-month.html"
         result = runner.invoke(
             app,
             [
@@ -150,7 +202,7 @@ class TestReportWordCount:
         assert result.exit_code in (0, 1)
 
     def test_for_period(self, journal_dir, tmp_path):
-        out = tmp_path / "wc-q2.pdf"
+        out = tmp_path / "wc-q2.html"
         result = runner.invoke(
             app,
             [
@@ -176,7 +228,7 @@ class TestReportWordCount:
                 "--for",
                 "not-a-period",
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
@@ -189,7 +241,7 @@ class TestReportWordCount:
 
 class TestReportSentiment:
     def test_success(self, journal_dir, tmp_path):
-        out = tmp_path / "sentiment.pdf"
+        out = tmp_path / "sentiment.html"
         result = runner.invoke(
             app,
             ["report-sentiment", "--journal-dir", str(journal_dir), "--output", str(out)],
@@ -205,7 +257,7 @@ class TestReportSentiment:
                 "--journal-dir",
                 str(tmp_path / "gone"),
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
@@ -218,7 +270,7 @@ class TestReportSentiment:
 
 class TestReportWordcloud:
     def test_success(self, journal_dir, tmp_path):
-        out = tmp_path / "wc.pdf"
+        out = tmp_path / "wc.html"
         result = runner.invoke(
             app,
             ["report-wordcloud", "--journal-dir", str(journal_dir), "--output", str(out)],
@@ -234,7 +286,7 @@ class TestReportWordcloud:
 
 class TestReportWeight:
     def test_success(self, health_xml, tmp_path):
-        out = tmp_path / "weight.pdf"
+        out = tmp_path / "weight.html"
         result = runner.invoke(
             app,
             ["report-weight", "--xml", str(health_xml), "--for", "2026-Q2", "--output", str(out)],
@@ -250,14 +302,14 @@ class TestReportWeight:
                 "--xml",
                 str(tmp_path / "missing.xml"),
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
 
     def test_no_xml_no_env(self, tmp_path, monkeypatch):
         monkeypatch.delenv("EGON_APPLE_HEALTH_XML", raising=False)
-        result = runner.invoke(app, ["report-weight", "--output", str(tmp_path / "out.pdf")])
+        result = runner.invoke(app, ["report-weight", "--output", str(tmp_path / "out.html")])
         assert result.exit_code == 1
 
 
@@ -268,7 +320,7 @@ class TestReportWeight:
 
 class TestReportExercise:
     def test_success(self, exercise_xml, tmp_path):
-        out = tmp_path / "exercise.pdf"
+        out = tmp_path / "exercise.html"
         result = runner.invoke(
             app,
             [
@@ -286,7 +338,7 @@ class TestReportExercise:
 
     def test_custom_target_via_env(self, exercise_xml, tmp_path, monkeypatch):
         monkeypatch.setenv("EGON_TARGET_EXERCISE_MINUTES", "45")
-        out = tmp_path / "exercise.pdf"
+        out = tmp_path / "exercise.html"
         result = runner.invoke(
             app,
             [
@@ -304,7 +356,7 @@ class TestReportExercise:
 
     def test_invalid_target_env_is_ignored(self, exercise_xml, tmp_path, monkeypatch):
         monkeypatch.setenv("EGON_TARGET_EXERCISE_MINUTES", "not-a-number")
-        out = tmp_path / "exercise.pdf"
+        out = tmp_path / "exercise.html"
         result = runner.invoke(
             app,
             [
@@ -328,7 +380,7 @@ class TestReportExercise:
                 "--xml",
                 str(tmp_path / "missing.xml"),
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
@@ -344,7 +396,7 @@ class TestReportExercise:
                 "--for",
                 "2026-Q2",
                 "--output",
-                str(tmp_path / "out.pdf"),
+                str(tmp_path / "out.html"),
             ],
         )
         assert result.exit_code == 1
@@ -394,7 +446,7 @@ class TestReportTopics:
         mock_model.get_topic_info.return_value = [{"Topic": 0, "Count": 11}]
         mock_model.get_topic.return_value = [("walk", 0.9), ("feel", 0.8)]
         with patch(
-            "egon.analytics.topic_plot.fit_topics",
+            "egon.analytics.topics.fit_topics",
             return_value=([0] * 11, ["doc"] * 11, mock_model),
         ):
             result = runner.invoke(
@@ -410,7 +462,7 @@ class TestReportTopics:
                 ],
             )
         assert result.exit_code == 0
-        assert (out_dir / "2026-04_summary.pdf").exists()
+        assert (out_dir / "2026-04.html").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -419,14 +471,14 @@ class TestReportTopics:
 
 
 class TestReportCorrelations:
-    def test_success_with_journal_only(self, journal_dir, tmp_path):
+    def test_success_with_journal_only(self, varied_journal_dir, tmp_path):
         out_dir = tmp_path / "corr"
         result = runner.invoke(
             app,
             [
                 "report-correlations",
                 "--journal-dir",
-                str(journal_dir),
+                str(varied_journal_dir),
                 "--for",
                 "2026-Q2",
                 "--output-dir",
@@ -434,7 +486,7 @@ class TestReportCorrelations:
             ],
         )
         assert result.exit_code == 0
-        assert (out_dir / "2026-Q2_matrix.pdf").exists()
+        assert (out_dir / "2026-Q2.html").exists()
 
     def test_too_few_signals(self, tmp_path):
         # A journal dir with only 1 signal (word-count) — but with a single
@@ -445,7 +497,7 @@ class TestReportCorrelations:
         _write_journal(jdir / "2026-04-01.md", date(2026, 4, 1), "Just one entry.")
         out_dir = tmp_path / "corr"
         with patch(
-            "egon.full_report.build_signals",
+            "egon.report.data.build_signals",
             return_value={"only-signal": [(date(2026, 4, 1), 1.0)]},
         ):
             result = runner.invoke(
@@ -462,29 +514,38 @@ class TestReportCorrelations:
             )
         assert result.exit_code == 1
 
-    def test_output_dir_default(self, journal_dir, tmp_path, monkeypatch):
+    def test_output_dir_default(self, varied_journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         result = runner.invoke(
             app,
             [
                 "report-correlations",
                 "--journal-dir",
-                str(journal_dir),
+                str(varied_journal_dir),
                 "--for",
                 "2026-Q2",
             ],
         )
         assert result.exit_code == 0
-        assert (tmp_path / "reports" / "correlations" / "2026-Q2_matrix.pdf").exists()
+        assert (tmp_path / "reports" / "correlations" / "2026-Q2.html").exists()
 
+    # ---------------------------------------------------------------------------
+    # suggest-prompt
+    # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# suggest-prompt
-# ---------------------------------------------------------------------------
+    def test_constant_signals_are_a_clean_skip(self, journal_dir, tmp_path):
+        # The shared fixture's entries are near-identical: nothing varies, so
+        # there is nothing to correlate. That is "not enough data", not a crash.
+        result = runner.invoke(
+            app,
+            ["report-correlations", "--journal-dir", str(journal_dir), "--for", "2026-Q2"],
+        )
+        assert result.exit_code == 1
+        assert "Not enough overlapping signals" in result.output
 
 
 class TestSuggestPrompt:
-    def test_success(self, journal_dir, tmp_path):
+    def test_success(self, recent_journal_dir, tmp_path):
         with (
             patch("egon.cli.ensure_model"),
             patch(
@@ -497,7 +558,7 @@ class TestSuggestPrompt:
                 [
                     "suggest-prompt",
                     "--journal-dir",
-                    str(journal_dir),
+                    str(recent_journal_dir),
                     "--model",
                     "llama3.2:3b",
                 ],
@@ -505,7 +566,7 @@ class TestSuggestPrompt:
         assert result.exit_code == 0
         assert "What would it mean to fully let go of this?" in result.output
 
-    def test_model_from_config(self, journal_dir, tmp_path, monkeypatch):
+    def test_model_from_config(self, recent_journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "egon.toml").write_text('[local_llm]\nmodel = "qwen2.5:7b"\n')
         with (
@@ -517,7 +578,7 @@ class TestSuggestPrompt:
         ):
             runner.invoke(
                 app,
-                ["suggest-prompt", "--journal-dir", str(journal_dir)],
+                ["suggest-prompt", "--journal-dir", str(recent_journal_dir)],
             )
         _, kwargs = mock_gen.call_args
         assert kwargs.get("model", mock_gen.call_args[0][1]) == "qwen2.5:7b"
@@ -538,26 +599,137 @@ class TestSuggestPrompt:
         )
         assert result.exit_code == 1
 
-    def test_ollama_not_installed(self, journal_dir):
+    def test_ollama_not_installed(self, recent_journal_dir):
         with patch(
             "egon.cli.ensure_model",
             side_effect=ImportError("ollama package not installed"),
         ):
             result = runner.invoke(
                 app,
-                ["suggest-prompt", "--journal-dir", str(journal_dir), "--model", "llama3.2:3b"],
+                [
+                    "suggest-prompt",
+                    "--journal-dir",
+                    str(recent_journal_dir),
+                    "--model",
+                    "llama3.2:3b",
+                ],
             )
         assert result.exit_code == 1
         assert "ollama" in result.output.lower()
 
-    def test_ollama_not_running(self, journal_dir):
+    def test_ollama_not_running(self, recent_journal_dir):
         with patch(
             "egon.cli.ensure_model",
             side_effect=RuntimeError("Cannot connect to Ollama. Is it running?"),
         ):
             result = runner.invoke(
                 app,
-                ["suggest-prompt", "--journal-dir", str(journal_dir), "--model", "llama3.2:3b"],
+                [
+                    "suggest-prompt",
+                    "--journal-dir",
+                    str(recent_journal_dir),
+                    "--model",
+                    "llama3.2:3b",
+                ],
+            )
+        assert result.exit_code == 1
+        assert "ollama" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# health-summary
+# ---------------------------------------------------------------------------
+
+
+class TestHealthSummary:
+    def test_stats_only(self, health_xml):
+        result = runner.invoke(
+            app,
+            ["health-summary", "--xml", str(health_xml), "--for", "2026-04", "--stats-only"],
+        )
+        assert result.exit_code == 0
+        assert "Weight" in result.output
+        assert "Apple Health statistics" in result.output
+
+    def test_success(self, health_xml):
+        with (
+            patch("egon.cli.ensure_model"),
+            patch(
+                "egon.health.llm_summary.chat",
+                return_value="Your weight trended gently downward this month.",
+            ),
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "health-summary",
+                    "--xml",
+                    str(health_xml),
+                    "--for",
+                    "2026-04",
+                    "--model",
+                    "llama3.2:3b",
+                ],
+            )
+        assert result.exit_code == 0
+        assert "Your weight trended gently downward this month." in result.output
+
+    def test_output_file(self, health_xml, tmp_path):
+        out = tmp_path / "summary.md"
+        with (
+            patch("egon.cli.ensure_model"),
+            patch("egon.health.llm_summary.chat", return_value="A summary."),
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "health-summary",
+                    "--xml",
+                    str(health_xml),
+                    "--for",
+                    "2026-04",
+                    "--model",
+                    "llama3.2:3b",
+                    "--output",
+                    str(out),
+                ],
+            )
+        assert result.exit_code == 0
+        content = out.read_text(encoding="utf-8")
+        assert "# Health Summary — 2026-04" in content
+        assert "A summary." in content
+        assert "### Weight" in content  # stats appendix
+
+    def test_missing_xml(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("EGON_APPLE_HEALTH_XML", raising=False)
+        result = runner.invoke(app, ["health-summary", "--for", "2026-04"])
+        assert result.exit_code == 1
+        assert "export.xml" in result.output
+
+    def test_no_data_in_period(self, health_xml):
+        result = runner.invoke(
+            app,
+            ["health-summary", "--xml", str(health_xml), "--for", "2025-01", "--stats-only"],
+        )
+        assert result.exit_code == 1
+        assert "No health data" in result.output
+
+    def test_ollama_not_running(self, health_xml):
+        with patch(
+            "egon.cli.ensure_model",
+            side_effect=RuntimeError("Cannot connect to Ollama. Is it running?"),
+        ):
+            result = runner.invoke(
+                app,
+                [
+                    "health-summary",
+                    "--xml",
+                    str(health_xml),
+                    "--for",
+                    "2026-04",
+                    "--model",
+                    "llama3.2:3b",
+                ],
             )
         assert result.exit_code == 1
         assert "ollama" in result.output.lower()
@@ -599,7 +771,20 @@ class TestReportAll:
             ],
         )
         output = result.output
-        assert "Generated" in output or "Skipped" in output or "Done" in output
+        assert "Egon reports · 2026-Q2" in output
+        assert "Apple Health  not configured" in output
+        assert "✓ word-count" in output and "reports/word_count/2026-Q2.html" in output
+        # health reports are skipped with the reason, not a stray progress line
+        assert "HRV, sleep" in output and "no Apple Health export" in output
+        assert "✗" not in output  # missing data is a skip, never a failure
+        assert "Done in" in output and "skipped" in output
+
+    def test_invalid_period_exits(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(
+            app, ["report", "--journal-dir", str(journal_dir), "--for", "2026-Q9"]
+        )
+        assert result.exit_code == 1
 
     def test_for_period_propagates(self, journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -616,4 +801,38 @@ class TestReportAll:
         )
         assert result.exit_code == 0
         # word-count report for 2026-04 should be created
-        assert (tmp_path / "reports" / "word_count" / "2026-04.pdf").exists()
+        assert (tmp_path / "reports" / "word_count" / "2026-04.html").exists()
+
+
+class TestSharedScoreCache:
+    def test_model_report_uses_cached_scores(self, journal_dir, tmp_path, monkeypatch):
+        from egon.limbic.stress import StressScore
+        from egon.report.data import save_scores
+
+        monkeypatch.chdir(tmp_path)
+        cached = [(date(2026, 4, i), StressScore(0.7, 0.3)) for i in range(1, 22)]
+        save_scores(cached, tmp_path / "reports/full_report/.cache/2026-04/stress_data.json")
+
+        def _no_model(*_a, **_k):
+            raise AssertionError("model must not run when scores are cached")
+
+        monkeypatch.setattr("egon.limbic.stress.stress_by_day", _no_model)
+        result = runner.invoke(
+            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 0, result.output
+        assert "Using cached stress scores" in result.output
+        assert (tmp_path / "reports/stress/2026-04.html").exists()
+
+    def test_unavailable_model_is_a_clean_skip(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("model not installed")
+
+        monkeypatch.setattr("egon.limbic.stress.stress_by_day", _boom)
+        result = runner.invoke(
+            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 1
+        assert "unavailable: model not installed" in result.output

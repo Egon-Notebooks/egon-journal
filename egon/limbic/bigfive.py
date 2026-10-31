@@ -2,7 +2,9 @@
 Big Five personality trait scoring from journal text.
 
 Uses `vladinc/bigfive-regression-model` — a DistilBERT-based regression model
-trained on the Essays Big5 dataset. Outputs 5 continuous scores in [0, 1] for:
+trained on the Essays Big5 dataset. Outputs 5 continuous scores — in practice on
+the 1–5 scale of the training labels (typically 2–4.5), although the model card
+says 0–1 — for:
   O — Openness
   C — Conscientiousness
   E — Extraversion
@@ -48,7 +50,7 @@ TRAITS: list[tuple[str, str]] = [
     ("N", "Neuroticism"),
 ]
 
-# Lazy-loaded globals — initialised on first call to score_text()
+# Lazy-loaded globals — initialized on first call to score_text()
 _tokenizer = None
 _model = None
 

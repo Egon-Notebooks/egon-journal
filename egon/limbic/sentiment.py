@@ -12,8 +12,8 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from egon.analytics.loader import JournalEntry
 
-# Module-level analyser — initialised once, reused across calls
-_analyser = SentimentIntensityAnalyzer()
+# Module-level analyzer — initialized once, reused across calls
+_analyzer = SentimentIntensityAnalyzer()
 
 
 def sentiment_score(text: str) -> float:
@@ -23,7 +23,7 @@ def sentiment_score(text: str) -> float:
     """
     if not text.strip():
         return 0.0
-    return _analyser.polarity_scores(text)["compound"]
+    return _analyzer.polarity_scores(text)["compound"]
 
 
 def sentiment_by_day(entries: list[JournalEntry]) -> list[tuple[date_type, float]]:

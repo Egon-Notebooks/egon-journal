@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Optional: run the CI checks before every push.
+# Enable once per clone with:   git config core.hooksPath .githooks
+# Skip in an emergency with:    git push --no-verify
+exec bash "$(git rev-parse --show-toplevel)/scripts/check.sh"

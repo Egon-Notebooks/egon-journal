@@ -1,22 +1,42 @@
 # Reports
 
-All reports are generated as PDFs (or other matplotlib-supported formats) and saved to subdirectories under `reports/`.
+All reports are generated as **self-contained, interactive HTML files** and saved to
+subdirectories under `reports/`. Each file inlines its charts, data and fonts: it opens
+offline in any browser and never makes a network request.
+
+- **Interactive:** hover for exact values, drag across a time chart to zoom (double-click
+  resets), click legend entries to isolate a series, click a correlation cell to see that pair.
+- **Explained:** every chart has a *Why it matters for wellbeing* note, a *How to read this*
+  guide, optional *This period* commentary (from the local LLM), and a *Show data* table.
+- **Light & dark:** follows your system setting; toggle with the ◐ button.
+- **PDF:** use your browser's *Print → Save as PDF*. The print layout is A4, one section
+  per page, always in light mode.
+
+> Report files contain your personal data. They are git-ignored here; share them only
+> if you mean to.
 
 ---
 
 ## Full report
 
-Generates a single multi-section PDF covering all enabled analyses.
+Generates a single multi-section HTML report covering all enabled analyses: an overview,
+then Journal insights, Personality & affective patterns, Physiological measures and
+Cross-signal analysis, each with headline numbers and numbered figures.
 
 ```bash
 uv run egon report
 
 uv run egon report --period month
+uv run egon report --period year --full
 uv run egon report --for 2026-Q1
-uv run egon report --output ~/my-reports/full-report.pdf
 ```
 
-Default output: `./reports/full_report/<period>.pdf`
+Default output: `./reports/full_report/<period>.html`
+
+Slow model scores (Big Five, MBTI, emotion, cognitive bias, stress, loneliness) and the
+LLM health text are cached in `./reports/full_report/.cache/<period>/`. The cache is
+shared with the single-chart commands (`report-stress`, `report-emotion`, …), so each
+model runs at most once per period. Delete a file there to force re-scoring.
 
 Which analyses appear in the report is controlled by `egon.toml` in the project root.
 All analyses default to enabled except `wordcloud` (opt-in) and `topics` (requires the `topics` extra).
@@ -46,35 +66,37 @@ uv run egon report-word-count
 
 uv run egon report-word-count --period month
 uv run egon report-word-count --for 2026-Q1
-uv run egon report-word-count --output ~/my-reports/word-count.pdf
+uv run egon report-word-count --output ~/my-reports/word-count.html
 ```
 
-Default output: `./reports/word_count/<period>.pdf`
+Default output: `./reports/word_count/<period>.html`
 
 ---
 
-### Word cloud
+### Frequent words
 
-Generates a word cloud image from all journal entries in the selected period.
-Disabled by default in the full report (`egon.toml`: `wordcloud = false`).
+Ranks the most frequent meaningful words across all journal entries in the selected
+period (common words removed). This replaces the former word-cloud image — a ranked
+list is easier to read and compare. Disabled by default in the full report
+(`egon.toml`: `wordcloud = false`); the command name is unchanged.
 
 ```bash
 uv run egon report-wordcloud
 
 uv run egon report-wordcloud --period month
 uv run egon report-wordcloud --for 2026
-uv run egon report-wordcloud --output ~/my-reports/wordcloud.pdf
+uv run egon report-wordcloud --output ~/my-reports/wordcloud.html
 ```
 
-Default output: `./reports/wordcloud/<period>.pdf`
+Default output: `./reports/wordcloud/<period>.html`
 
 ---
 
 ### Topics (BERTopic)
 
-Discovers latent themes in the journal corpus. Produces two figures:
-a horizontal bar chart of topics by size (with top keywords as labels) and
-a stacked area chart of topic prevalence by calendar month.
+Discovers latent themes in the journal corpus. Produces one report with two figures:
+a ranked bar chart of topics by size (labelled with their top keywords) and
+stacked monthly bars of entries per topic.
 
 On Linux / Apple Silicon / Windows, uses BERTopic with sentence-transformers embeddings:
 
@@ -92,7 +114,7 @@ uv run egon report-topics --for 2026-Q1
 uv run egon report-topics --output-dir ~/my-reports/topics/
 ```
 
-Default output: `./reports/topics/<period>_summary.pdf` and `<period>_timeline.pdf`
+Default output: `./reports/topics/<period>.html`
 
 ---
 
@@ -103,9 +125,9 @@ Detects cognitive distortions in journal text using
 categories: no distortion · personalization · emotional reasoning · overgeneralizing ·
 labeling · should statements · catastrophizing · reward fallacy.
 
-Produces a two-panel figure: a daily distortion signal line (1 − no-distortion
-probability) and a stacked area chart showing the composition of distorted writing
-by type over the period.
+Produces a two-panel figure: the daily distortion signal (1 − no-distortion
+probability, 7-day mean) and a week × distortion-type heatmap showing which
+distortions drive it.
 
 Requires the `limbic` setup (same model runtime):
 
@@ -119,10 +141,10 @@ uv run egon report-cognitive-bias
 
 uv run egon report-cognitive-bias --period month
 uv run egon report-cognitive-bias --for 2026-Q1
-uv run egon report-cognitive-bias --output ~/my-reports/cognitive-bias.pdf
+uv run egon report-cognitive-bias --output ~/my-reports/cognitive-bias.html
 ```
 
-Default output: `./reports/cognitive_bias/<period>.pdf`
+Default output: `./reports/cognitive_bias/<period>.html`
 
 ---
 
@@ -130,17 +152,70 @@ Default output: `./reports/cognitive_bias/<period>.pdf`
 
 ### Sentiment
 
-Plots daily sentiment score (VADER, range −1 to +1) as a scatter/line chart with a neutral band.
+Plots daily sentiment score (VADER, range −1 to +1) as diverging bars around a neutral
+band, with a 7-day trend line.
 
 ```bash
 uv run egon report-sentiment
 
 uv run egon report-sentiment --period month
 uv run egon report-sentiment --for 2026-Q1
-uv run egon report-sentiment --output ~/my-reports/sentiment.pdf
+uv run egon report-sentiment --output ~/my-reports/sentiment.html
 ```
 
-Default output: `./reports/sentiment/<period>.pdf`
+Default output: `./reports/sentiment/<period>.html`
+
+---
+
+### Stress
+
+Detects psychological stress in journal text using
+`jnyx74/stress-prediction` — a DistilBERT model fine-tuned on the Dreaddit dataset
+(Reddit posts labelled for psychological stress). Outputs a daily stress probability
+(0–1) with its 7-day mean and period average.
+
+Requires the `limbic` setup (same model runtime):
+
+```bash
+bash scripts/setup_limbic.sh   # Intel Mac (once)
+uv sync --extra limbic         # Linux / Apple Silicon / Windows
+```
+
+```bash
+uv run egon report-stress
+
+uv run egon report-stress --period month
+uv run egon report-stress --for 2026-Q1
+uv run egon report-stress --output ~/my-reports/stress.html
+```
+
+Default output: `./reports/stress/<period>.html`
+
+---
+
+### Loneliness
+
+Detects loneliness from journal text using `Tianlin668/loneliness` — a MentalBERT
+model (BERT-base, ~440 MB) fine-tuned for binary loneliness classification
+(arXiv:2309.13567). Outputs a daily loneliness probability (0–1) with its 7-day mean
+and period average.
+
+Requires the `limbic` setup (same model runtime):
+
+```bash
+bash scripts/setup_limbic.sh   # Intel Mac (once)
+uv sync --extra limbic         # Linux / Apple Silicon / Windows
+```
+
+```bash
+uv run egon report-loneliness
+
+uv run egon report-loneliness --period month
+uv run egon report-loneliness --for 2026-Q1
+uv run egon report-loneliness --output ~/my-reports/loneliness.html
+```
+
+Default output: `./reports/loneliness/<period>.html`
 
 ---
 
@@ -148,8 +223,9 @@ Default output: `./reports/sentiment/<period>.pdf`
 
 Plots daily emotion profile derived from journal text using
 `j-hartmann/emotion-english-distilroberta-base` — a DistilRoBERTa model fine-tuned
-on six emotion datasets. Produces a two-panel figure: a stacked area chart of all
-seven emotion probabilities and a joy-vs-sadness overlay.
+on six emotion datasets. Produces a 100% stacked area of the seven emotions (7-day
+mean; positive affect above the neutral band, negative below) and a period profile.
+Click a legend entry to isolate one emotion.
 
 Seven emotions: anger · disgust · fear · joy · neutral · sadness · surprise.
 
@@ -165,18 +241,18 @@ uv run egon report-emotion
 
 uv run egon report-emotion --period month
 uv run egon report-emotion --for 2026-Q1
-uv run egon report-emotion --output ~/my-reports/emotion.pdf
+uv run egon report-emotion --output ~/my-reports/emotion.html
 ```
 
-Default output: `./reports/emotion/<period>.pdf`
+Default output: `./reports/emotion/<period>.html`
 
 ---
 
 ### Big Five personality traits
 
 Scores each journal entry on the Big Five personality dimensions (O, C, E, A, N)
-using a DistilBERT regression model. Produces five stacked subplots — one per trait —
-with the period average annotated to the right of each panel.
+using a DistilBERT regression model. Produces five small multiples — one per trait —
+with the period average labelled in the margin.
 
 Requires the `limbic` optional dependency group (downloads ~270 MB on first run):
 
@@ -190,10 +266,10 @@ uv run egon report-bigfive
 
 uv run egon report-bigfive --period month
 uv run egon report-bigfive --for 2026-Q1
-uv run egon report-bigfive --output ~/my-reports/bigfive.pdf
+uv run egon report-bigfive --output ~/my-reports/bigfive.html
 ```
 
-Default output: `./reports/bigfive/<period>.pdf`
+Default output: `./reports/bigfive/<period>.html`
 
 ---
 
@@ -201,7 +277,8 @@ Default output: `./reports/bigfive/<period>.pdf`
 
 Classifies each journal entry as one of 16 MBTI types and decomposes the result
 into 4 binary dimensions (E/I, N/S, T/F, J/P).
-Produces four stacked subplots — one per dimension — with the dominant pole and proportion annotated to the right.
+Produces four small multiples — one per dimension, from one pole to the other — with the
+dominant pole and its share labelled in the margin.
 
 Requires the same `limbic` setup as Big Five (same `.venv-limbic`).
 
@@ -210,10 +287,10 @@ uv run egon report-mbti
 
 uv run egon report-mbti --period month
 uv run egon report-mbti --for 2026-Q1
-uv run egon report-mbti --output ~/my-reports/mbti.pdf
+uv run egon report-mbti --output ~/my-reports/mbti.html
 ```
 
-Default output: `./reports/mbti/<period>.pdf`
+Default output: `./reports/mbti/<period>.html`
 
 ---
 
@@ -231,10 +308,10 @@ uv run egon report-weight
 
 uv run egon report-weight --period month
 uv run egon report-weight --for 2026-Q1
-uv run egon report-weight --output ~/my-reports/weight.pdf
+uv run egon report-weight --output ~/my-reports/weight.html
 ```
 
-Default output: `./reports/weight/<period>.pdf`
+Default output: `./reports/weight/<period>.html`
 
 ---
 
@@ -249,10 +326,10 @@ uv run egon report-resting-heart-rate
 
 uv run egon report-resting-heart-rate --period month
 uv run egon report-resting-heart-rate --for 2026
-uv run egon report-resting-heart-rate --output ~/my-reports/rhr.pdf
+uv run egon report-resting-heart-rate --output ~/my-reports/rhr.html
 ```
 
-Default output: `./reports/resting_heart_rate/<period>.pdf`
+Default output: `./reports/resting_heart_rate/<period>.html`
 
 ---
 
@@ -266,16 +343,17 @@ uv run egon report-hrv
 
 uv run egon report-hrv --period month
 uv run egon report-hrv --for 2026-W14
-uv run egon report-hrv --output ~/my-reports/hrv.pdf
+uv run egon report-hrv --output ~/my-reports/hrv.html
 ```
 
-Default output: `./reports/hrv/<period>.pdf`
+Default output: `./reports/hrv/<period>.html`
 
 ---
 
 ### Sleep
 
-Plots nightly time asleep (hours) from an Apple Health export as a bar chart with 7 h/9 h reference lines.
+Plots nightly time asleep (hours) from an Apple Health export as bars with a 7-day mean
+and 7 h / 9 h reference lines, plus a panel of sleep-onset times with a ±1 SD band.
 Sleep quality is strongly associated with mental health symptoms.
 Sleep onset rhythmicity — whether you sleep at the same time every day — has been shown to be associated with depressive symptoms.
 
@@ -284,26 +362,27 @@ uv run egon report-sleep
 
 uv run egon report-sleep --period month
 uv run egon report-sleep --for 2026-Q1
-uv run egon report-sleep --output ~/my-reports/sleep.pdf
+uv run egon report-sleep --output ~/my-reports/sleep.html
 ```
 
-Default output: `./reports/sleep/<period>.pdf`
+Default output: `./reports/sleep/<period>.html`
 
 ---
 
 ### Step count
 
-Plots daily total steps from an Apple Health export as a bar chart with a 10,000-step reference line.
+Plots daily total steps from an Apple Health export as bars with a 7-day mean and a
+7,000-step reference line (benefits for mood are seen from roughly 5,000–7,500 steps a day).
 
 ```bash
 uv run egon report-step-count
 
 uv run egon report-step-count --period month
 uv run egon report-step-count --for 2026-Q1
-uv run egon report-step-count --output ~/my-reports/steps.pdf
+uv run egon report-step-count --output ~/my-reports/steps.html
 ```
 
-Default output: `./reports/step_count/<period>.pdf`
+Default output: `./reports/step_count/<period>.html`
 
 ---
 
@@ -320,10 +399,10 @@ uv run egon report-exercise
 
 uv run egon report-exercise --period month
 uv run egon report-exercise --for 2026-Q1
-uv run egon report-exercise --output ~/my-reports/exercise.pdf
+uv run egon report-exercise --output ~/my-reports/exercise.html
 ```
 
-Default output: `./reports/exercise/<period>.pdf`
+Default output: `./reports/exercise/<period>.html`
 
 ---
 
@@ -336,10 +415,10 @@ uv run egon report-vo2max
 
 uv run egon report-vo2max --period month
 uv run egon report-vo2max --for 2026-Q1
-uv run egon report-vo2max --output ~/my-reports/vo2max.pdf
+uv run egon report-vo2max --output ~/my-reports/vo2max.html
 ```
 
-Default output: `./reports/vo2max/<period>.pdf`
+Default output: `./reports/vo2max/<period>.html`
 
 ---
 
@@ -348,7 +427,15 @@ Default output: `./reports/vo2max/<period>.pdf`
 ### Correlations
 
 Computes pairwise Pearson correlations across all available journal and health signals,
-and saves two figures: a full correlation matrix heatmap and a highlighted top-pairs chart.
+and saves one report (`<period>.html`) with three figures:
+
+1. **Correlation explorer** — lower-triangle heatmap of all signal pairs; faded cells are
+   not statistically significant (p ≥ 0.05). Click any cell to see that pair's daily
+   values as a scatter plot with a fitted line.
+2. **Top pairs** — the 10 pairs with the largest absolute Pearson r. Near-identity pairs
+   (e.g. weight ↔ lean mass) are excluded by default; configure via `egon.toml`.
+3. **Highlighted pairs** — scatter plots for four pairs with well-documented
+   mental-health relevance.
 
 Requires at least two signals to be available (any combination of journal directory and
 Apple Health export).
@@ -361,7 +448,17 @@ uv run egon report-correlations --for 2026-Q1
 uv run egon report-correlations --output-dir ~/my-reports/correlations/
 ```
 
-Default output: `./reports/correlations/<period>_matrix.pdf` and `<period>_highlighted.pdf`
+To customize which pairs are excluded from the top-pairs chart, add to `egon.toml`:
+
+```toml
+[report.correlations]
+exclude_pairs = [
+    ["weight", "lean mass"],
+    ["steps", "exercise (min)"],
+]
+```
+
+Default output directory: `./reports/correlations/`
 
 ---
 
@@ -371,7 +468,8 @@ All `report-*` commands share these options:
 
 - **`--period`** — Relative period: `week`, `month`, `quarter`, `year`, `all-time`
 - **`--for`** — Named period: `2025`, `2026-02`, `2026-W14`, `2026-Q2`
-- **`--output`** — Output file path (matplotlib formats: `.pdf`, `.png`, `.svg`)
+- **`--output`** — Output file path (`.html`). For a PDF, open the report and use
+  *Print → Save as PDF*.
 
 Health reports (`weight`, `resting-heart-rate`, `hrv`, `sleep`, `step-count`, `exercise`, `vo2max`) also accept:
 

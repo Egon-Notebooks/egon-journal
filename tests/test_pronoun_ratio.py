@@ -1,4 +1,4 @@
-"""Tests for egon.analytics.pronoun_ratio_plot."""
+"""Tests for egon.analytics.pronoun_ratio."""
 
 from datetime import date
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from egon.analytics.loader import JournalEntry
-from egon.analytics.pronoun_ratio_plot import plot_pronoun_ratio, pronoun_ratio_by_day
+from egon.analytics.pronoun_ratio import pronoun_ratio_by_day
 
 
 def _entry(d: date, body: str) -> JournalEntry:
@@ -66,36 +66,3 @@ class TestPronounRatioByDay:
         # "mine" in "miner" should not match (word boundary)
         result = pronoun_ratio_by_day([_entry(date(2026, 4, 1), "the miner worked")])
         assert result[0][1] == pytest.approx(0.0)
-
-
-class TestPlotPronounRatio:
-    def test_saves_pdf(self, tmp_path):
-        entries = [_entry(date(2026, 4, d), f"I went for a walk on day {d}.") for d in range(1, 5)]
-        out = tmp_path / "pronoun.pdf"
-        plot_pronoun_ratio(entries, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        entries = [_entry(date(2026, 4, 1), "I feel good.")]
-        out = tmp_path / "nested" / "pronoun.pdf"
-        plot_pronoun_ratio(entries, out)
-        assert out.exists()
-
-    def test_returns_figure_when_no_output_path(self, tmp_path):
-        entries = [_entry(date(2026, 4, 1), "I feel good.")]
-        import matplotlib.pyplot as plt
-
-        fig = plot_pronoun_ratio(entries, None)
-        assert fig is not None
-        plt.close(fig)
-
-    def test_raises_on_empty_entries(self, tmp_path):
-        with pytest.raises(ValueError, match="No journal entries"):
-            plot_pronoun_ratio([], tmp_path / "out.pdf")
-
-    def test_custom_title(self, tmp_path):
-        entries = [_entry(date(2026, 4, 1), "I feel great today.")]
-        out = tmp_path / "pronoun.pdf"
-        plot_pronoun_ratio(entries, out, title="Custom title")
-        assert out.exists()

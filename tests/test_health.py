@@ -1,4 +1,4 @@
-"""Tests for egon.health.apple_health, weight_plot, step_count_plot, and exercise_plot."""
+"""Tests for egon.health.apple_health."""
 
 from datetime import date
 from pathlib import Path
@@ -12,12 +12,6 @@ from egon.health.apple_health import (
     infer_unit,
     load_records,
 )
-from egon.health.exercise_plot import plot_exercise
-from egon.health.hrv_plot import plot_hrv
-from egon.health.resting_heart_rate_plot import plot_resting_heart_rate
-from egon.health.step_count_plot import plot_step_count
-from egon.health.vo2max_plot import plot_vo2max
-from egon.health.weight_plot import plot_weight
 
 # ---------------------------------------------------------------------------
 # Minimal Apple Health XML fixture
@@ -167,173 +161,24 @@ class TestInferUnit:
         assert infer_unit([]) == ""
 
 
-# ---------------------------------------------------------------------------
-# plot_weight
-# ---------------------------------------------------------------------------
+class TestLoadRecordsCache:
+    def test_parsed_once_and_reparsed_when_file_changes(self, tmp_path):
+        import os
 
-
-class TestPlotHrv:
-    DATA = [(date(2026, 4, d), 40.0 + d * 0.5) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "hrv.pdf"
-        plot_hrv(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "hrv.pdf"
-        plot_hrv(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No HRV data"):
-            plot_hrv([], tmp_path / "out.pdf")
-
-
-class TestPlotRestingHeartRate:
-    DATA = [(date(2026, 4, d), 58.0 + d * 0.2) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "rhr.pdf"
-        plot_resting_heart_rate(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "rhr.pdf"
-        plot_resting_heart_rate(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No resting heart rate data"):
-            plot_resting_heart_rate([], tmp_path / "out.pdf")
-
-
-class TestPlotWeight:
-    DATA = [(date(2026, 4, d), 80.0 - d * 0.1) for d in range(1, 8)]
-    LEAN_DATA = [(date(2026, 4, d), 65.0 - d * 0.05) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "weight.pdf"
-        plot_weight(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "weight.pdf"
-        plot_weight(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No weight data"):
-            plot_weight([], tmp_path / "out.pdf")
-
-    def test_saves_pdf_with_lean_data(self, tmp_path):
-        out = tmp_path / "weight_lean.pdf"
-        plot_weight(self.DATA, out, lean_data=self.LEAN_DATA)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_lean_data_none_does_not_error(self, tmp_path):
-        out = tmp_path / "weight_no_lean.pdf"
-        plot_weight(self.DATA, out, lean_data=None)
-        assert out.exists()
-
-    def test_target_lines(self, tmp_path):
-        out = tmp_path / "weight_targets.pdf"
-        plot_weight(
-            self.DATA,
-            out,
-            lean_data=self.LEAN_DATA,
-            target_body_mass=75.0,
-            target_lean_body_mass=65.0,
+        xml = tmp_path / "export.xml"
+        xml.write_text(
+            '<HealthData><Record type="HKQuantityTypeIdentifierStepCount" value="100" '
+            'unit="count" endDate="2026-04-01 08:00:00 +0100"/></HealthData>'
         )
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_target_body_mass_only(self, tmp_path):
-        out = tmp_path / "weight_target_bm.pdf"
-        plot_weight(self.DATA, out, target_body_mass=75.0)
-        assert out.exists()
-
-
-class TestPlotStepCount:
-    DATA = [(date(2026, 4, d), 8000.0 + d * 200) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "steps.pdf"
-        plot_step_count(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "steps.pdf"
-        plot_step_count(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No step count data"):
-            plot_step_count([], tmp_path / "out.pdf")
-
-
-class TestPlotVo2Max:
-    DATA = [(date(2026, 4, d), 45.0 + d * 0.1) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "vo2max.pdf"
-        plot_vo2max(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "vo2max.pdf"
-        plot_vo2max(self.DATA, out)
-        assert out.exists()
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No VO2 max data"):
-            plot_vo2max([], tmp_path / "out.pdf")
-
-
-class TestPlotExercise:
-    DATA = [(date(2026, 4, d), float(20 + d * 2)) for d in range(1, 8)]
-
-    def test_saves_pdf(self, tmp_path):
-        out = tmp_path / "exercise.pdf"
-        plot_exercise(self.DATA, out)
-        assert out.exists()
-        assert out.stat().st_size > 0
-
-    def test_creates_parent_directory(self, tmp_path):
-        out = tmp_path / "nested" / "exercise.pdf"
-        plot_exercise(self.DATA, out)
-        assert out.exists()
-
-    def test_returns_figure_when_no_output_path(self):
-        import matplotlib.pyplot as plt
-
-        fig = plot_exercise(self.DATA, None)
-        assert fig is not None
-        plt.close(fig)
-
-    def test_who_guideline_label(self, tmp_path):
-        # No custom target → label should mention "WHO guideline"
-        fig = plot_exercise(self.DATA, None)
-        import matplotlib.pyplot as plt
-
-        legend_texts = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
-        assert any("WHO guideline" in t for t in legend_texts)
-        plt.close(fig)
-
-    def test_custom_target_label(self, tmp_path):
-        fig = plot_exercise(self.DATA, None, target_exercise_minutes=45.0)
-        import matplotlib.pyplot as plt
-
-        legend_texts = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
-        assert any("goal" in t for t in legend_texts)
-        plt.close(fig)
-
-    def test_raises_on_empty_data(self, tmp_path):
-        with pytest.raises(ValueError, match="No exercise time data"):
-            plot_exercise([], tmp_path / "out.pdf")
+        first = load_records(xml)
+        assert load_records(xml) is first  # cached
+        xml.write_text(
+            '<HealthData><Record type="HKQuantityTypeIdentifierStepCount" value="250" '
+            'unit="count" endDate="2026-04-01 08:00:00 +0100"/>'
+            '<Record type="HKQuantityTypeIdentifierStepCount" value="5" '
+            'unit="count" endDate="2026-04-02 08:00:00 +0100"/></HealthData>'
+        )
+        os.utime(xml, ns=(1, 2))  # force a different mtime
+        second = load_records(xml)
+        assert second is not first
+        assert [r.value for r in second["StepCount"]] == [250.0, 5.0]
