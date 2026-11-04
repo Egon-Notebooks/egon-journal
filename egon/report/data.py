@@ -159,6 +159,7 @@ class ReportData:
     sleep_onset: Series = field(default_factory=list)
     llm_summary: str | None = None
     llm_commentary: dict[str, str] = field(default_factory=dict)
+    llm_model: str | None = None  # the local model that wrote the AI text
     signals: Signals = field(default_factory=dict)
 
 
@@ -246,17 +247,17 @@ def _llm_health_text(
     end: date_type,
     label: str,
     cache_dir: Path,
-) -> tuple[str | None, dict[str, str]]:
+) -> tuple[str | None, dict[str, str], str | None]:
     want_summary = cfg.enabled("llm_health_summary")
     want_commentary = cfg.enabled("llm_health_commentary")
     if not (want_summary or want_commentary) or not records:
-        return None, {}
+        return None, {}, None
     cache = cache_dir / "llm_health.json"
     if cache.exists():
         try:
             cached = json.loads(cache.read_text())
             _log("AI health summary: loaded from cache")
-            return cached.get("summary"), cached.get("commentary", {})
+            return cached.get("summary"), cached.get("commentary", {}), cached.get("model")
         except Exception as exc:
             _log(f"AI health summary cache unreadable, regenerating ({_first_line(exc)})")
     try:
@@ -271,7 +272,7 @@ def _llm_health_text(
 
         stats = build_health_stats(records, xml_path, start, end)
         if not stats:
-            return None, {}
+            return None, {}, None
         model = load_local_llm_config().model
         ensure_model(model)
         summary = None
@@ -283,11 +284,11 @@ def _llm_health_text(
             for s in stats:
                 _log(f"AI commentary: {s.name} …")
                 commentary[s.key] = generate_metric_commentary(s, label, model)
-        cache.write_text(json.dumps({"summary": summary, "commentary": commentary}))
-        return summary, commentary
+        cache.write_text(json.dumps({"summary": summary, "commentary": commentary, "model": model}))
+        return summary, commentary, model
     except (ImportError, RuntimeError) as exc:
         _log(f"AI health summary skipped: {_first_line(exc)}")
-        return None, {}
+        return None, {}, None
 
 
 def collect_report_data(
@@ -328,7 +329,7 @@ def collect_report_data(
             _log(f"sleep data unavailable ({_first_line(exc)})")
     data.health = health_series(records, start, end)
 
-    data.llm_summary, data.llm_commentary = _llm_health_text(
+    data.llm_summary, data.llm_commentary, data.llm_model = _llm_health_text(
         config, records, xml_path, start, end, label, cache_dir
     )
     data.signals = build_signals(

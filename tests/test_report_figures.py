@@ -363,3 +363,12 @@ def test_bigfive_on_unit_scale_has_no_population_line():
     fig = F.bigfive_figure(_scores()["bigfive"])
     assert "scale 0–1" in fig.caption
     assert "population" not in fig.headline[0].note
+
+
+def test_ai_note_names_the_model_and_mentions_larger_models():
+    data = _report_data()
+    data.llm_model = "qwen2.5:7b"
+    report = build_full_report(data, config=ReportConfig(analyses={"topics": False}))
+    note = next(text for s in report.sections for heading, text in s.notes if "AI" in heading)
+    assert "qwen2.5:7b" in note
+    assert "larger models" in note

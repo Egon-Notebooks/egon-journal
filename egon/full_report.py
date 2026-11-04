@@ -112,11 +112,16 @@ _CROSS_SIGNAL_INTRO = (
     "(e.g. VO\u2082 max, lean body mass) may rest on fewer data points."
 )
 
-_LLM_NOTE = (
-    "This summary was generated locally by an on-device language model via "
-    "Ollama; no data left this device. Verify any figures against the charts "
-    "that follow."
-)
+
+def _llm_note(model: str | None) -> str:
+    who = f"the local language model {model}" if model else "a local language model"
+    return (
+        f"This summary and the commentary under each health chart were written by {who} "
+        "via Ollama; no data left this device. Small models, which run on older computers, "
+        "sometimes misread numbers — verify figures against the charts. Newer computers can "
+        "run larger models (for example gemma3:12b or bigger) for more reliable summaries; "
+        "set the model in egon.toml."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +341,7 @@ def build_full_report(
     s3.section.stats = _physio_stats(data)
     if data.llm_summary:
         s3.section.notes.append(
-            ("Health summary (AI-generated)", data.llm_summary + "\n\n" + _LLM_NOTE)
+            ("Health summary (AI-generated)", data.llm_summary + "\n\n" + _llm_note(data.llm_model))
         )
     s3.add(
         cfg.enabled("weight") and "weight" in hl,
