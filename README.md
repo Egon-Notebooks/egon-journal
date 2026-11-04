@@ -370,3 +370,7 @@ uv run ruff format --check egon/ tests/
 ## References
 
 [krumjahn/applehealth](https://github.com/krumjahn/applehealth)
+
+## License
+
+[MIT License](LICENSE).
