@@ -1,8 +1,10 @@
 # egon-journal
 
 [![Tests](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/tests.yml/badge.svg)](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/tests.yml)
-![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
-![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue)
+[![Lint](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/lint.yml/badge.svg)](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/lint.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Structured journaling support for the [Egon Notebooks](https://egonnotebooks.com) graph.
 
@@ -370,3 +372,7 @@ uv run ruff format --check egon/ tests/
 ## References
 
 [krumjahn/applehealth](https://github.com/krumjahn/applehealth)
+
+## License
+
+[MIT License](LICENSE).
