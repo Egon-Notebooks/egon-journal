@@ -462,6 +462,8 @@ def generate_full_report(
     output_path: Path,
     config: ReportConfig | None = None,
     cache_dir: Path | None = None,
+    synthetic: bool = False,
+    persona: str | None = None,
 ) -> Report:
     """Collect all data for the period, write the full HTML report and return it.
 
@@ -485,6 +487,8 @@ def generate_full_report(
         target_lean_body_mass=target_lean_body_mass,
         target_resting_heart_rate=target_resting_heart_rate,
         target_exercise_minutes=target_exercise_minutes,
+        synthetic=synthetic,
+        persona=persona,
     )
     write_report(report, output_path)
     return report

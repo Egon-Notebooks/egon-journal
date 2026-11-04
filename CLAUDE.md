@@ -41,6 +41,9 @@ uv run egon --help                         # all commands
     page swaps them for dark mode via `DARK_MAP`, so every hex in a spec must be in it.
 - `egon/full_report.py` — assembles the multi-section report.
 - `egon.toml` — which analyses the full report includes; `.env` — user paths and targets.
+- Demo reports: `egon demo-report --data ../egon-content/generated_content/demo/<persona>`
+  (see reports/README.md → Demo reports). Never build a demo from anything but
+  egon-content's synthetic personas; the command enforces the synthetic-data marker.
 
 ## Things to know
 

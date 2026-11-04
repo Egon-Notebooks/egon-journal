@@ -280,6 +280,10 @@ sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,
 weight, resting heart rate, HRV, sleep, steps, exercise, VO₂ max, and cross-signal
 correlations.
 
+An example built from synthetic data is on the website's
+[Reports page](https://egon-notebooks.github.io/reports/); see *Demo reports* in
+[reports/README.md](reports/README.md) for how it is made.
+
 See [reports/README.md](reports/README.md) for full usage instructions. Charts are
 built with [Vega-Lite](https://vega.github.io/vega-lite/) via
 [Altair](https://altair-viz.github.io/); the visual language is described in the

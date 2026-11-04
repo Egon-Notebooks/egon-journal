@@ -462,6 +462,30 @@ Default output directory: `./reports/correlations/`
 
 ---
 
+## Demo reports
+
+Example reports are built only from synthetic personas generated in
+[egon-content](https://github.com/EgonWorkbooks/egon-content) (see its README → *Demo
+personas*): a year of journal entries plus an Apple Health export that follows each
+persona's mood.
+
+```bash
+uv run egon demo-report \
+  --data ../egon-content/generated_content/demo/david-osei \
+  --persona "David Osei (Self-Directed Individual)" \
+  --for 2025-Q1 \
+  --output reports/demo/david-osei-2025-Q1.html
+```
+
+`demo-report` ignores your `.env` (paths and targets) and `egon.toml`, refuses any
+Apple Health export without egon-content's "Synthetic demo data" marker, and marks
+the report as a demo instead of confidential. Model scores and AI text are cached in
+the persona folder (`model_scores/<period>/`), so committing them in egon-content
+makes the report reproducible without the models. The website embeds the result from
+`public/demo/`.
+
+---
+
 ## Common options
 
 All `report-*` commands share these options:
