@@ -465,7 +465,7 @@ Default output directory: `./reports/correlations/`
 ## Demo reports
 
 Example reports are built only from synthetic personas generated in
-[egon-content](https://github.com/EgonWorkbooks/egon-content) (see its README → *Demo
+[egon-content](https://github.com/Egon-Notebooks/egon-content) (see its README → *Demo
 personas*): a year of journal entries plus an Apple Health export that follows each
 persona's mood.
 
