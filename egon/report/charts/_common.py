@@ -61,7 +61,24 @@ def rolling_mean(data: Series, window_days: int = 7) -> list[float]:
     return out
 
 
-def mean_rule(value: float, label: str, color: str = theme.INK_MUTED) -> alt.LayerChart:
+def label_offsets(values: list[float], span: float, min_gap: float = 0.07) -> list[float]:
+    """Vertical pixel offsets that keep margin labels of nearby reference lines apart.
+
+    Lines closer than *min_gap* × *span* (the y-axis range) get their labels pushed
+    7 px apart — the higher value up, the lower one down.
+    """
+    offsets = [0.0] * len(values)
+    order = sorted(range(len(values)), key=lambda i: values[i])
+    for lo, hi in zip(order, order[1:], strict=False):
+        if span > 0 and abs(values[hi] - values[lo]) < min_gap * span:
+            offsets[lo] += 7  # lower value: label moves down (screen y grows downward)
+            offsets[hi] -= 7
+    return offsets
+
+
+def mean_rule(
+    value: float, label: str, color: str = theme.INK_MUTED, dy: float = 0
+) -> alt.LayerChart:
     """A dotted hairline reference rule, labeled in the right-hand margin.
 
     The label sits outside the plot so it never collides with the data.
@@ -69,6 +86,6 @@ def mean_rule(value: float, label: str, color: str = theme.INK_MUTED) -> alt.Lay
     base = alt.Chart(alt.Data(values=[{"y": value, "label": label}]))
     rule = base.mark_rule(color=color, strokeWidth=1, strokeDash=[1, 3]).encode(y="y:Q")
     text = base.mark_text(
-        align="left", baseline="middle", dx=8, color=color, fontSize=11, clip=False
+        align="left", baseline="middle", dx=8, dy=dy, color=color, fontSize=11, clip=False
     ).encode(y="y:Q", x=alt.value("width"), text="label:N")
     return rule + text

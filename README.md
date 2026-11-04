@@ -173,6 +173,11 @@ model = "qwen2.5:7b"     # default — strong instruction-following, needs ~6 GB
 
 See [Ollama's model library](https://ollama.com/library) for all available models.
 
+**Model size matters.** The default `qwen2.5:7b` runs on older laptops but sometimes
+misreads numbers in the AI health summary. A newer computer — especially one with 16 GB
+of RAM or more, or Apple Silicon — can run larger models such as `gemma3:12b` (or bigger)
+for noticeably more reliable summaries. Reports state which model wrote their AI text.
+
 ---
 
 ## AI health summary
@@ -274,6 +279,10 @@ Available charts: word count, frequent words, first-person pronoun ratio, topics
 sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,
 weight, resting heart rate, HRV, sleep, steps, exercise, VO₂ max, and cross-signal
 correlations.
+
+An example built from synthetic data is on the website's
+[Reports page](https://egon-notebooks.github.io/reports/); see *Demo reports* in
+[reports/README.md](reports/README.md) for how it is made.
 
 See [reports/README.md](reports/README.md) for full usage instructions. Charts are
 built with [Vega-Lite](https://vega.github.io/vega-lite/) via

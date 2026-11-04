@@ -836,3 +836,75 @@ class TestSharedScoreCache:
         )
         assert result.exit_code == 1
         assert "unavailable: model not installed" in result.output
+
+
+class TestDemoReport:
+    def _demo_dir(self, tmp_path, marker=True):
+        data = tmp_path / "demo-persona"
+        journal = data / "obsidian"
+        journal.mkdir(parents=True)
+        for i in range(1, 22):
+            _write_journal(
+                journal / f"2025-01-{i:02d}.md",
+                date(2025, 1, i),
+                f"Entry {i}. "
+                + ("A calm, good day." if i % 2 else "A tiring, sad day.") * (i % 4 + 1),
+            )
+        xml = data / "apple_health_export" / "export.xml"
+        xml.parent.mkdir()
+        records = [
+            {"type": _BM, "value": str(80 + i * 0.1), "unit": "kg", "date": f"2025-01-{i:02d}"}
+            for i in range(1, 22)
+        ]
+        text = _make_export_xml(records)
+        if marker:
+            text = text.replace(
+                "<HealthData", "<!-- Synthetic demo data for a test. -->\n<HealthData"
+            )
+        xml.write_text(text, encoding="utf-8")
+        return data
+
+    def test_builds_marked_demo_and_ignores_env_targets(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("EGON_TARGET_BODY_MASS", "71.5")  # a personal setting that must not leak
+        data = self._demo_dir(tmp_path)
+        out = tmp_path / "demo.html"
+        result = runner.invoke(
+            app,
+            [
+                "demo-report",
+                "--data",
+                str(data),
+                "--persona",
+                "Test Persona",
+                "--for",
+                "2025-01",
+                "--output",
+                str(out),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert 'content="synthetic"' in html and "Test Persona" in html
+        assert ">Confidential<" not in html
+        assert "71.5" not in html
+        assert (data / "model_scores" / "2025-01").is_dir()
+
+    def test_refuses_data_without_synthetic_marker(self, tmp_path):
+        data = self._demo_dir(tmp_path, marker=False)
+        result = runner.invoke(
+            app,
+            [
+                "demo-report",
+                "--data",
+                str(data),
+                "--persona",
+                "X",
+                "--for",
+                "2025-01",
+                "--output",
+                str(tmp_path / "x.html"),
+            ],
+        )
+        assert result.exit_code == 1
+        assert "Synthetic demo data" in result.output
+        assert not (tmp_path / "x.html").exists()

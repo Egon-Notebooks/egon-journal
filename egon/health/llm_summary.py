@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date as date_type
+from datetime import timedelta
 from pathlib import Path
 from statistics import mean
 
@@ -72,7 +73,7 @@ class MetricStats:
     min_date: date_type
     max_value: float
     max_date: date_type
-    # (bucket label, mean of daily values) — weekly or monthly
+    # (bucket label, mean of daily values) — weekly or monthly, full buckets only
     buckets: list[tuple[str, float]] = field(default_factory=list)
 
     def format(self) -> str:
@@ -85,6 +86,8 @@ class MetricStats:
             f"min: {_fmt(self.min_value)} ({self.min_date.isoformat()}) | "
             f"max: {_fmt(self.max_value)} ({self.max_date.isoformat()})",
         ]
+        if reading := _READING.get(self.key):
+            lines.append(f"- reading: {reading}")
         if len(self.buckets) >= 2:
             first_label, first_val = self.buckets[0]
             last_label, last_val = self.buckets[-1]
@@ -94,6 +97,22 @@ class MetricStats:
             breakdown = ", ".join(f"{label}: {_fmt(v)}" for label, v in self.buckets)
             lines.append(f"- breakdown (mean per day): {breakdown}")
         return "\n".join(lines)
+
+
+# How to read the direction of each metric, so the model frames changes correctly.
+_READING: dict[str, str] = {
+    "resting-heart-rate": "lower usually means better recovery and fitness; a fall is an improvement",
+    "hrv": "higher usually means better recovery and lower stress; a rise is an improvement",
+    "vo2max": "higher means fitter; it changes slowly",
+    "step-count": "more steps are generally better for mood",
+    "exercise": "more is generally better; the WHO suggests about 30 minutes a day",
+    "sleep": "7–9 hours a night is the usual recommendation for adults",
+    "weight": "neither direction is good or bad in itself; sudden changes are worth noticing",
+}
+
+# An edge bucket (first or last week/month) only counts if the period covers enough
+# of it; a one-day "week" at the end of a quarter would otherwise look like a big change.
+_MIN_EDGE_DAYS = {True: 4, False: 15}  # weekly: 4 of 7 days, monthly: 15 days
 
 
 def _fmt(value: float) -> str:
@@ -110,8 +129,17 @@ def _bucket_label(d: date_type, weekly: bool) -> str:
     return f"{d.year}-{d.month:02d}"
 
 
-def _bucket_means(data: list[tuple[date_type, float]], weekly: bool) -> list[tuple[str, float]]:
-    """Group daily values into weekly or monthly buckets and average each."""
+def _bucket_means(
+    data: list[tuple[date_type, float]],
+    weekly: bool,
+    start: date_type | None = None,
+    end: date_type | None = None,
+) -> list[tuple[str, float]]:
+    """Group daily values into weekly or monthly buckets and average each.
+
+    When the period [start, end] is given, a first or last bucket that the period
+    only partly covers is dropped (see ``_MIN_EDGE_DAYS``).
+    """
     buckets: dict[str, list[float]] = {}
     order: list[str] = []
     for d, v in data:
@@ -120,6 +148,16 @@ def _bucket_means(data: list[tuple[date_type, float]], weekly: bool) -> list[tup
             buckets[label] = []
             order.append(label)
         buckets[label].append(v)
+    if start is not None and end is not None and len(order) > 2:
+        covered: dict[str, int] = {}
+        day = start
+        while day <= end:
+            label = _bucket_label(day, weekly)
+            covered[label] = covered.get(label, 0) + 1
+            day += timedelta(days=1)
+        for edge in (order[0], order[-1]):
+            if covered.get(edge, 0) < _MIN_EDGE_DAYS[weekly] and len(order) > 2:
+                order.remove(edge)
     return [(label, mean(buckets[label])) for label in order]
 
 
@@ -129,6 +167,8 @@ def _stats_from_series(
     unit: str,
     data: list[tuple[date_type, float]],
     weekly: bool,
+    start: date_type | None = None,
+    end: date_type | None = None,
 ) -> MetricStats:
     values = [v for _, v in data]
     min_date, min_value = min(data, key=lambda x: x[1])
@@ -143,7 +183,7 @@ def _stats_from_series(
         min_date=min_date,
         max_value=max_value,
         max_date=max_date,
-        buckets=_bucket_means(data, weekly),
+        buckets=_bucket_means(data, weekly, start, end),
     )
 
 
@@ -171,7 +211,9 @@ def build_health_stats(
         data = filter_by_date(aggregate(records), start, end)
         if not data:
             continue
-        stats.append(_stats_from_series(fig_key, name, infer_unit(records), data, weekly))
+        stats.append(
+            _stats_from_series(fig_key, name, infer_unit(records), data, weekly, start, end)
+        )
 
     if xml_path and xml_path.is_file():
         try:
@@ -179,7 +221,9 @@ def build_health_stats(
         except Exception:
             sleep_data = []
         if sleep_data:
-            stats.append(_stats_from_series("sleep", "Sleep duration", "h", sleep_data, weekly))
+            stats.append(
+                _stats_from_series("sleep", "Sleep duration", "h", sleep_data, weekly, start, end)
+            )
 
     return stats
 

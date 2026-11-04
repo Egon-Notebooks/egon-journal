@@ -27,7 +27,7 @@ and 00:30 = 6.5. This keeps values positive and monotonic across midnight.
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date as date_type
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 
@@ -77,6 +77,19 @@ def _onset_hours(dt: datetime) -> float:
     return h - _ONSET_REF_HOUR
 
 
+def _night_of(start: datetime) -> date_type:
+    """The wake-up date of the night a sleep record belongs to.
+
+    Apple Watch writes a night as many short stage records.  Keying each record
+    by its own end date split nights at midnight (a 22:30–23:50 stage landed on
+    the previous day).  Instead, everything that *starts* from 18:00 onward
+    belongs to the next morning, and anything before 18:00 (an early-morning
+    stage or a daytime nap) to that same day — the same 18:00 reference used
+    for onset times.
+    """
+    return (start - timedelta(hours=_ONSET_REF_HOUR)).date() + timedelta(days=1)
+
+
 def _collect_by_date(xml_path: Path) -> dict[date_type, list[tuple[datetime, datetime]]]:
     """
     Parse export.xml and return a dict mapping wake-up date → list of raw
@@ -108,7 +121,7 @@ def _collect_by_date_cached(
             continue
         if (end - start).total_seconds() <= 0:
             continue
-        by_date[end.date()].append((start, end))
+        by_date[_night_of(start)].append((start, end))
 
     return dict(by_date)
 

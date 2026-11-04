@@ -162,3 +162,33 @@ class TestGeneration:
         user_msg = mock_chat.call_args[0][2]
         assert "Resting heart rate" in user_msg
         assert "2026-04" in user_msg
+
+
+class TestPartialEdgeBuckets:
+    def test_one_day_final_week_is_dropped(self):
+        from datetime import timedelta
+
+        from egon.health.llm_summary import _bucket_means
+
+        start, end = date(2025, 1, 1), date(2025, 3, 31)  # Q1 ends on a Monday: 1-day week 14
+        data = [(start + timedelta(days=i), 100.0) for i in range((end - start).days + 1)]
+        data[-1] = (end, 999.0)  # the lone Monday would dominate a "trend"
+        labels = [label for label, _ in _bucket_means(data, weekly=True, start=start, end=end)]
+        assert "2025-W14" not in labels
+        assert "2025-W02" in labels
+
+    def test_reading_line_guides_direction(self):
+        from egon.health.llm_summary import MetricStats
+
+        s = MetricStats(
+            "resting-heart-rate",
+            "Resting heart rate",
+            "bpm",
+            10,
+            60,
+            58,
+            date(2025, 1, 1),
+            62,
+            date(2025, 1, 2),
+        )
+        assert "a fall is an improvement" in s.format()

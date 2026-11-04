@@ -2,6 +2,8 @@
 
 from datetime import date
 
+import pytest
+
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
 
 
@@ -192,3 +194,33 @@ class TestLoadSleepOnset:
         data = load_sleep_onset(path)
         _, onset = data[0]
         assert abs(onset - 4.5) < 0.01  # 22:30 = 4.5h after 18:00
+
+
+class TestNightsCrossingMidnight:
+    """A night written as several stage records must not be split at midnight."""
+
+    def _staged_night(self, tmp_path):
+        stages = [
+            ("2026-04-03 22:30:00 +0100", "2026-04-03 23:50:00 +0100"),
+            ("2026-04-03 23:55:00 +0100", "2026-04-04 02:30:00 +0100"),
+            ("2026-04-04 02:40:00 +0100", "2026-04-04 06:30:00 +0100"),
+        ]
+        records = "\n".join(
+            f'<Record type="HKCategoryTypeIdentifierSleepAnalysis" '
+            f'value="HKCategoryValueSleepAnalysisAsleepCore" startDate="{s}" endDate="{e}"/>'
+            for s, e in stages
+        )
+        xml = tmp_path / "export.xml"
+        xml.write_text(f"<HealthData>{records}</HealthData>")
+        return xml
+
+    def test_whole_night_counted_on_wake_date(self, tmp_path):
+        result = load_sleep_records(self._staged_night(tmp_path))
+        assert len(result) == 1
+        day, hours = result[0]
+        assert day == date(2026, 4, 4)
+        assert hours == pytest.approx(80 / 60 + 155 / 60 + 230 / 60)
+
+    def test_onset_is_first_stage_before_midnight(self, tmp_path):
+        result = load_sleep_onset(self._staged_night(tmp_path))
+        assert result == [(date(2026, 4, 4), pytest.approx(4.5))]  # 22:30
