@@ -14,6 +14,7 @@ Format example (egon.toml):
     # ... any subset of keys; omitted keys keep their defaults
 """
 
+import os
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -103,6 +104,24 @@ def load_report_config(config_path: Path | None = None) -> ReportConfig:
         excluded_pairs = list(_DEFAULT_EXCLUDED_CORRELATION_PAIRS)
 
     return ReportConfig(analyses=analyses, excluded_correlation_pairs=excluded_pairs)
+
+
+# ---------------------------------------------------------------------------
+# Where reports are written
+# ---------------------------------------------------------------------------
+
+DEFAULT_REPORTS_DIR = Path("reports")
+
+
+def reports_dir() -> Path:
+    """Folder for all reports and the model-score cache.
+
+    ``$EGON_REPORTS_DIR`` (``~`` is expanded) if set, otherwise ``./reports`` in the
+    current working directory.  Reports contain personal data, so keep this folder
+    out of anything that syncs or shares publicly.
+    """
+    raw = os.environ.get("EGON_REPORTS_DIR", "").strip()
+    return Path(raw).expanduser() if raw else DEFAULT_REPORTS_DIR
 
 
 # ---------------------------------------------------------------------------

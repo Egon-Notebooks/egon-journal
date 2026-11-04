@@ -1,5 +1,7 @@
 """Tests for egon.config — ReportConfig and load_report_config."""
 
+from pathlib import Path
+
 from egon.config import _DEFAULTS, ReportConfig, load_report_config
 
 
@@ -91,3 +93,24 @@ class TestLoadReportConfig:
         assert cfg.enabled("wordcloud") is True
         # sentiment not in file → default True
         assert cfg.enabled("sentiment") is True
+
+
+class TestReportsDir:
+    def test_defaults_to_reports_in_cwd(self, monkeypatch):
+        from egon.config import reports_dir
+
+        monkeypatch.delenv("EGON_REPORTS_DIR", raising=False)
+        assert reports_dir() == Path("reports")
+
+    def test_env_var_with_home_expansion(self, monkeypatch, tmp_path):
+        from egon.config import reports_dir
+
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("EGON_REPORTS_DIR", "~/egon-reports")
+        assert reports_dir() == tmp_path / "egon-reports"
+
+    def test_blank_env_var_means_default(self, monkeypatch):
+        from egon.config import reports_dir
+
+        monkeypatch.setenv("EGON_REPORTS_DIR", "  ")
+        assert reports_dir() == Path("reports")
