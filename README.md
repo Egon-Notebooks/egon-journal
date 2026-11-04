@@ -212,7 +212,7 @@ llm_health_summary    = true   # "Health summary" note in the full report
 llm_health_commentary = true   # per-figure commentary under each health chart
 ```
 
-Generated text is cached per period alongside the model scores (`reports/full_report/.cache/<period>/llm_health.json`); delete that file to force regeneration.
+Generated text is cached per period alongside the model scores (`<reports dir>/full_report/.cache/<period>/llm_health.json`); delete that file to force regeneration.
 
 ---
 
@@ -273,8 +273,9 @@ uv run egon report --period month --full
 
 The terminal shows one line per report (✓ generated, – skipped with the reason),
 which model scores were loaded from cache or computed, and where the combined
-report was written. Model scores are cached per period in
-`reports/full_report/.cache/<period>/` and shared by all report commands, so each
+report was written. Reports go to `./reports/` by default; set `EGON_REPORTS_DIR` in
+`.env` (or pass `--reports-dir`) to keep them elsewhere. Model scores are cached per period
+in `<reports dir>/full_report/.cache/<period>/` and shared by all report commands, so each
 model runs at most once per period; delete a file there to re-score.
 
 Available charts: word count, frequent words, first-person pronoun ratio, topics,
@@ -307,6 +308,7 @@ Set these in `.env` (copy from `.env.example`):
 | `EGON_TARGET_LEAN_BODY_MASS`      | Optional target line on the lean-mass panel                |
 | `EGON_TARGET_RESTING_HEART_RATE`  | Optional target line on the resting heart rate chart       |
 | `EGON_TARGET_EXERCISE_MINUTES`    | Daily exercise target (replaces the WHO 30-minute line)    |
+| `EGON_REPORTS_DIR`                | Where reports and the model-score cache go (default `./reports`) |
 
 All variables are optional.
 Node commands fall back to `./generated/` if unset; health reports are skipped
