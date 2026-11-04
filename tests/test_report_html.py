@@ -157,3 +157,10 @@ def test_personal_report_is_marked_confidential_demo_is_not():
     assert ">Confidential<" in personal
     demo = Report(title="x", start=START, end=START, sections=[], synthetic=True)
     assert ">Confidential<" not in render_report(demo)
+
+
+def test_label_offsets_separate_close_reference_lines():
+    from egon.report.charts._common import label_offsets
+
+    assert label_offsets([7.3, 7.0, 9.0], span=10) == [-7.0, 7.0, 0.0]
+    assert label_offsets([2.0, 8.0], span=10) == [0.0, 0.0]

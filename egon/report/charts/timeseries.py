@@ -20,6 +20,7 @@ from egon.report.charts._common import (
     X_BAR_END,
     Series,
     bar_fields,
+    label_offsets,
     mean_rule,
     rolling_mean,
     x_time,
@@ -132,12 +133,24 @@ def series_layers(
     layers.append(
         alt.Chart().mark_line(color=color, interpolate="monotone").encode(x=x, y=alt.Y("avg7:Q"))
     )
+    rules: list[tuple[float, str, str]] = []
     if show_mean:
-        layers.append(mean_rule(avg, f"avg {avg:{fmt}}"))
+        rules.append((avg, f"avg {avg:{fmt}}", theme.INK_MUTED))
     for value, text, *ref_color in references or []:
-        layers.append(mean_rule(value, text, *ref_color))
+        rules.append((value, text, ref_color[0] if ref_color else theme.INK_MUTED))
     if target is not None:
-        layers.append(mean_rule(target, f"target {target:{fmt}}", color=theme.ACCENT))
+        rules.append((target, f"target {target:{fmt}}", theme.ACCENT))
+    values = [v for _, v in data] + [v for v, _, _ in rules]
+    span = (
+        (domain[1] - domain[0])
+        if domain
+        else (max(values) - min(0, min(values)) if mark == "bar" else max(values) - min(values))
+    )
+    labeled = [i for i, (_, text, _) in enumerate(rules) if text]
+    offsets = label_offsets([rules[i][0] for i in labeled], span)
+    dys = dict(zip(labeled, offsets, strict=True))
+    for i, (value, text, rule_color) in enumerate(rules):
+        layers.append(mean_rule(value, text, rule_color, dy=dys.get(i, 0)))
 
     value_title = f"{label} ({unit})" if unit else label
     hits = (
