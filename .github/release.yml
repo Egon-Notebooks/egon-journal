@@ -1,0 +1,32 @@
+# Groups GitHub's generated release notes by pull request label.
+# Used when you click "Generate release notes" while drafting a release.
+# Label each PR before merging; unlabeled PRs land under "Other changes".
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot
+  categories:
+    - title: New features
+      labels:
+        - enhancement
+        - feature
+    - title: Fixes
+      labels:
+        - bug
+        - fix
+    - title: Reports
+      labels:
+        - reports
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Maintenance
+      labels:
+        - chore
+        - ci
+        - dependencies
+    - title: Other changes
+      labels:
+        - "*"
