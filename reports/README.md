@@ -1,7 +1,9 @@
 # Reports
 
 All reports are generated as **self-contained, interactive HTML files** and saved to
-subdirectories under `reports/`. Each file inlines its charts, data and fonts: it opens
+subdirectories of the reports folder: `reports/` in the folder you run from, or the folder
+set by `EGON_REPORTS_DIR` in `.env` (or `egon report --reports-dir PATH` for one run). The
+paths below show the default `./reports/`. Each file inlines its charts, data and fonts: it opens
 offline in any browser and never makes a network request.
 
 - **Interactive:** hover for exact values, drag across a time chart to zoom (double-click
@@ -12,8 +14,9 @@ offline in any browser and never makes a network request.
 - **PDF:** use your browser's *Print → Save as PDF*. The print layout is A4, one section
   per page, always in light mode.
 
-> Report files contain your personal data. They are git-ignored here; share them only
-> if you mean to.
+> Report files contain your personal data. Inside this repository `reports/` is
+> git-ignored; if you point `EGON_REPORTS_DIR` elsewhere, keep that folder out of public
+> or shared syncs. Share reports only if you mean to.
 
 ---
 

@@ -908,3 +908,52 @@ class TestDemoReport:
         assert result.exit_code == 1
         assert "Synthetic demo data" in result.output
         assert not (tmp_path / "x.html").exists()
+
+
+class TestReportsDirLocation:
+    def test_single_chart_uses_env_reports_dir(self, journal_dir, tmp_path, monkeypatch):
+        target = tmp_path / "elsewhere"
+        monkeypatch.setenv("EGON_REPORTS_DIR", str(target))
+        result = runner.invoke(
+            app, ["report-word-count", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 0, result.output
+        assert (target / "word_count" / "2026-04.html").exists()
+        assert not (tmp_path / "reports").exists()
+
+    def test_report_option_overrides_env(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.setenv("EGON_REPORTS_DIR", str(tmp_path / "from-env"))
+        target = tmp_path / "from-option"
+        result = runner.invoke(
+            app,
+            [
+                "report",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-04",
+                "--full",
+                "--reports-dir",
+                str(target),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert f"Output        {target}/" in result.output
+        assert (target / "word_count" / "2026-04.html").exists()
+        assert (target / "full_report" / "2026-04.html").exists()
+        assert not (tmp_path / "from-env").exists()
+
+    def test_score_cache_lives_in_reports_dir(self, journal_dir, tmp_path, monkeypatch):
+        from egon.limbic.stress import StressScore
+        from egon.report.data import save_scores
+
+        target = tmp_path / "elsewhere"
+        monkeypatch.setenv("EGON_REPORTS_DIR", str(target))
+        cached = [(date(2026, 4, i), StressScore(0.7, 0.3)) for i in range(1, 22)]
+        save_scores(cached, target / "full_report" / ".cache" / "2026-04" / "stress_data.json")
+        monkeypatch.setattr("egon.limbic.stress.stress_by_day", lambda *_a, **_k: 1 / 0)
+        result = runner.invoke(
+            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 0, result.output
+        assert (target / "stress" / "2026-04.html").exists()

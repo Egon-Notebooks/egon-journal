@@ -28,7 +28,7 @@ from egon.analytics.word_count import (
     period_label,
     word_counts_by_day,
 )
-from egon.config import load_local_llm_config
+from egon.config import load_local_llm_config, reports_dir
 from egon.health.apple_health import (
     daily_mean,
     daily_sum,
@@ -433,7 +433,7 @@ def report_word_count(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/word_count/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/word_count/<period-label>.html)",
     ),
 ) -> None:
     """Chart journal word count by day as an HTML report."""
@@ -467,7 +467,7 @@ def report_word_count(
         typer.echo(f"No journal entries found for period '{period}' ({label}).", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/word_count/{label}.html")
+    resolved_output = output or reports_dir() / "word_count" / f"{label}.html"
 
     typer.echo(f"Found {len(entries)} journal entries for {label}.")
     _save_figure(
@@ -495,7 +495,7 @@ def report_sentiment(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/sentiment/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/sentiment/<period-label>.html)",
     ),
 ) -> None:
     """Chart VADER sentiment by day as an HTML report."""
@@ -529,7 +529,7 @@ def report_sentiment(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/sentiment/{label}.html")
+    resolved_output = output or reports_dir() / "sentiment" / f"{label}.html"
 
     typer.echo(f"Found {len(entries)} journal entries for {label}.")
     _save_figure(
@@ -557,7 +557,7 @@ def report_wordcloud(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/wordcloud/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/wordcloud/<period-label>.html)",
     ),
 ) -> None:
     """Rank the most frequent meaningful words in journal entries (HTML report)."""
@@ -591,7 +591,7 @@ def report_wordcloud(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/wordcloud/{label}.html")
+    resolved_output = output or reports_dir() / "wordcloud" / f"{label}.html"
 
     from egon.analytics.words import frequent_words
 
@@ -621,7 +621,7 @@ def report_bigfive(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/bigfive/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/bigfive/<period-label>.html)",
     ),
 ) -> None:
     """Plot Big Five personality trait scores from journal entries (requires --extra limbic)."""
@@ -657,7 +657,7 @@ def report_bigfive(
 
     data = _model_scores("bigfive", entries, label)
 
-    resolved_output = output or Path(f"reports/bigfive/{label}.html")
+    resolved_output = output or reports_dir() / "bigfive" / f"{label}.html"
     _save_figure(figures.bigfive_figure(data), resolved_output, label, start, end)
 
 
@@ -681,7 +681,7 @@ def report_mbti(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/mbti/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/mbti/<period-label>.html)",
     ),
 ) -> None:
     """Plot MBTI personality dimension scores from journal entries (requires --extra limbic)."""
@@ -717,7 +717,7 @@ def report_mbti(
 
     data = _model_scores("mbti", entries, label)
 
-    resolved_output = output or Path(f"reports/mbti/{label}.html")
+    resolved_output = output or reports_dir() / "mbti" / f"{label}.html"
     _save_figure(figures.mbti_figure(data), resolved_output, label, start, end)
 
 
@@ -728,15 +728,15 @@ def report_mbti(
 
 def _model_scores(name: str, entries: list, label: str) -> list:
     """Model scores for *entries*, from the shared per-period cache when available."""
-    from egon.report.data import SCORE_CACHE_ROOT, cached_scores, scorers
+    from egon.report.data import cached_scores, score_cache_root, scorers
 
     typer.echo(f"Found {len(entries)} journal entries for {label}.")
-    scores, status = cached_scores(name, scorers()[name], entries, SCORE_CACHE_ROOT / label)
+    scores, status = cached_scores(name, scorers()[name], entries, score_cache_root() / label)
     if scores is None:
         typer.echo(f"Error: {name} model {status}", err=True)
         raise typer.Exit(1)
     if status == "cached":
-        typer.echo(f"Using cached {name} scores ({SCORE_CACHE_ROOT / label}).")
+        typer.echo(f"Using cached {name} scores ({score_cache_root() / label}).")
     return scores
 
 
@@ -823,7 +823,9 @@ def _print_report_header(
         typer.echo(f"  Apple Health  {xml.name} ({size}, parsed once)")
     else:
         typer.echo("  Apple Health  not configured — set EGON_APPLE_HEALTH_XML for health reports")
-    typer.echo("  Output        reports/ (HTML, works offline · contains your personal data)")
+    typer.echo(
+        f"  Output        {reports_dir()}/ (HTML, works offline · contains your personal data)"
+    )
 
 
 def _run_report_step(name: str, fn) -> _StepResult:
@@ -956,7 +958,7 @@ def report_weight(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/weight/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/weight/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily mean weight from an Apple Health export."""
@@ -1012,7 +1014,7 @@ def report_weight(
     target_body_mass = _parse_target("EGON_TARGET_BODY_MASS")
     target_lean_body_mass = _parse_target("EGON_TARGET_LEAN_BODY_MASS")
 
-    resolved_output = output or Path(f"reports/weight/{label}.html")
+    resolved_output = output or reports_dir() / "weight" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} days of weight data for {label}.")
     figure = figures.weight_figure(
@@ -1045,7 +1047,7 @@ def report_resting_heart_rate(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/resting_heart_rate/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/resting_heart_rate/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily mean resting heart rate from an Apple Health export."""
@@ -1085,7 +1087,7 @@ def report_resting_heart_rate(
         typer.echo(f"No resting heart rate data found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/resting_heart_rate/{label}.html")
+    resolved_output = output or reports_dir() / "resting_heart_rate" / f"{label}.html"
 
     def _parse_target(env_key: str) -> float | None:
         raw = os.getenv(env_key, "").strip()
@@ -1122,7 +1124,7 @@ def report_hrv(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/hrv/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/hrv/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily mean heart rate variability (HRV SDNN) from an Apple Health export."""
@@ -1162,7 +1164,7 @@ def report_hrv(
         typer.echo(f"No HRV data found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/hrv/{label}.html")
+    resolved_output = output or reports_dir() / "hrv" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} days of HRV data for {label}.")
     _save_figure(
@@ -1195,7 +1197,7 @@ def report_sleep(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/sleep/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/sleep/<period-label>.html)",
     ),
 ) -> None:
     """Plot nightly hours asleep from an Apple Health export."""
@@ -1236,7 +1238,7 @@ def report_sleep(
     all_onset = load_sleep_onset(resolved_xml)
     onset_data = filter_sleep_by_date(all_onset, start, end) or None
 
-    resolved_output = output or Path(f"reports/sleep/{label}.html")
+    resolved_output = output or reports_dir() / "sleep" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} nights of sleep data for {label}.")
     _save_figure(figures.sleep_figure(data, onset_data), resolved_output, label, start, end)
@@ -1262,7 +1264,7 @@ def report_step_count(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/step_count/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/step_count/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily step count from an Apple Health export."""
@@ -1301,7 +1303,7 @@ def report_step_count(
         typer.echo(f"No step count data found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/step_count/{label}.html")
+    resolved_output = output or reports_dir() / "step_count" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} days of step count data for {label}.")
     _save_figure(figures.step_count_figure(data), resolved_output, label, start, end)
@@ -1327,7 +1329,7 @@ def report_vo2max(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/vo2max/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/vo2max/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily mean VO2 max from an Apple Health export."""
@@ -1367,7 +1369,7 @@ def report_vo2max(
         typer.echo(f"No VO2 max data found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    resolved_output = output or Path(f"reports/vo2max/{label}.html")
+    resolved_output = output or reports_dir() / "vo2max" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} days of VO2 max data for {label}.")
     _save_figure(figures.vo2max_figure(data, unit=unit), resolved_output, label, start, end)
@@ -1393,7 +1395,7 @@ def report_topics(
     output_dir: Optional[Path] = typer.Option(
         None,
         "--output-dir",
-        help="Output directory (default: reports/topics)",
+        help="Output directory (default: <reports dir>/topics)",
     ),
 ) -> None:
     """Discover journal topics (BERTopic) and save a summary and timeline as HTML."""
@@ -1421,7 +1423,7 @@ def report_topics(
         typer.echo(f"No journal entries found for period '{label}'.", err=True)
         raise typer.Exit(1)
 
-    out_dir = output_dir or Path("reports/topics")
+    out_dir = output_dir or reports_dir() / "topics"
 
     try:
         topic_ids, _docs, model = fit_topics(entries)
@@ -1458,7 +1460,7 @@ def report_exercise(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/exercise/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/exercise/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily Apple Exercise Time from an Apple Health export."""
@@ -1505,7 +1507,7 @@ def report_exercise(
             typer.echo(f"Warning: {env_key}={raw!r} is not a valid number — ignoring.", err=True)
             return None
 
-    resolved_output = output or Path(f"reports/exercise/{label}.html")
+    resolved_output = output or reports_dir() / "exercise" / f"{label}.html"
 
     typer.echo(f"Found {len(data)} days of exercise data for {label}.")
     figure = figures.exercise_figure(data, target=_parse_target("EGON_TARGET_EXERCISE_MINUTES"))
@@ -1532,7 +1534,7 @@ def report_emotion(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/emotion/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/emotion/<period-label>.html)",
     ),
 ) -> None:
     """Plot daily emotion profile from journal entries (anger/fear/joy/sadness etc.)."""
@@ -1560,7 +1562,7 @@ def report_emotion(
 
     data = _model_scores("emotion", entries, label)
 
-    resolved_output = output or Path(f"reports/emotion/{label}.html")
+    resolved_output = output or reports_dir() / "emotion" / f"{label}.html"
 
     _save_figure(figures.emotion_figure(data), resolved_output, label, start, end)
 
@@ -1585,7 +1587,7 @@ def report_stress(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/stress/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/stress/<period-label>.html)",
     ),
 ) -> None:
     """Plot psychological stress signal from journal entries (requires --extra limbic)."""
@@ -1617,7 +1619,7 @@ def report_stress(
 
     data = _model_scores("stress", entries, label)
 
-    resolved_output = output or Path(f"reports/stress/{label}.html")
+    resolved_output = output or reports_dir() / "stress" / f"{label}.html"
 
     _save_figure(figures.stress_figure(data), resolved_output, label, start, end)
 
@@ -1642,7 +1644,7 @@ def report_loneliness(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/loneliness/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/loneliness/<period-label>.html)",
     ),
 ) -> None:
     """Plot loneliness signal from journal entries (requires --extra limbic)."""
@@ -1674,7 +1676,7 @@ def report_loneliness(
 
     data = _model_scores("loneliness", entries, label)
 
-    resolved_output = output or Path(f"reports/loneliness/{label}.html")
+    resolved_output = output or reports_dir() / "loneliness" / f"{label}.html"
 
     _save_figure(figures.loneliness_figure(data), resolved_output, label, start, end)
 
@@ -1699,7 +1701,7 @@ def report_cognitive_bias(
     output: Optional[Path] = typer.Option(
         None,
         "--output",
-        help="Output HTML path (default: reports/cognitive_bias/<period-label>.html)",
+        help="Output HTML path (default: <reports dir>/cognitive_bias/<period-label>.html)",
     ),
 ) -> None:
     """Plot cognitive bias profile from journal entries (requires --extra limbic)."""
@@ -1731,7 +1733,7 @@ def report_cognitive_bias(
 
     data = _model_scores("cognitive_bias", entries, label)
 
-    resolved_output = output or Path(f"reports/cognitive_bias/{label}.html")
+    resolved_output = output or reports_dir() / "cognitive_bias" / f"{label}.html"
 
     _save_figure(figures.cognitive_bias_figure(data), resolved_output, label, start, end)
 
@@ -1761,7 +1763,7 @@ def report_correlations(
     output_dir: Optional[Path] = typer.Option(
         None,
         "--output-dir",
-        help="Output directory (default: reports/correlations)",
+        help="Output directory (default: <reports dir>/correlations)",
     ),
 ) -> None:
     """Correlate all available journal and health signals; save the analysis as HTML."""
@@ -1776,7 +1778,7 @@ def report_correlations(
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1)
 
-    out_dir = output_dir or Path("reports/correlations")
+    out_dir = output_dir or reports_dir() / "correlations"
 
     # --- Journal entries ---
     resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
@@ -1958,7 +1960,9 @@ def demo_report(
     ),
     for_period: str = typer.Option("2025-Q1", "--for", help="Period, e.g. 2025-Q1"),
     output: Optional[Path] = typer.Option(
-        None, "--output", help="Output HTML path (default: reports/demo/<folder>-<period>.html)"
+        None,
+        "--output",
+        help="Output HTML path (default: <reports dir>/demo/<folder>-<period>.html)",
     ),
 ) -> None:
     """Build a full report from synthetic persona data, marked as a demo.
@@ -1992,7 +1996,7 @@ def demo_report(
         raise typer.Exit(1)
 
     entries = filter_entries(load_journal_entries(journal_dir), start, end)
-    out = output or Path(f"reports/demo/{data_dir.name}-{label}.html")
+    out = output or reports_dir() / "demo" / f"{data_dir.name}-{label}.html"
     _require_html(out)
     typer.echo(f"Demo report · {persona} · {label} · {len(entries)} journal entries")
     report = generate_full_report(
@@ -2040,8 +2044,16 @@ def report_all(
         "--full",
         help="Also compile all figures into one combined HTML report.",
     ),
+    reports_dir_option: Optional[Path] = typer.Option(
+        None,
+        "--reports-dir",
+        help="Where to write reports and the score cache (default: $EGON_REPORTS_DIR, or ./reports)",
+    ),
 ) -> None:
     """Generate all reports for the given period."""
+    if reports_dir_option is not None:
+        # Every report command below reads the location through reports_dir().
+        os.environ["EGON_REPORTS_DIR"] = str(reports_dir_option)
     _kw = dict(period=period, for_period=for_period, output=None)
     _journal_reports = [
         ("word-count", lambda: report_word_count(journal_dir=journal_dir, **_kw)),
@@ -2135,7 +2147,7 @@ def report_all(
             start,
             end,
             label,
-            full_output=Path(f"reports/full_report/{label}.html"),
+            full_output=reports_dir() / "full_report" / f"{label}.html",
         )
         if full_path:
             open_hint = full_path

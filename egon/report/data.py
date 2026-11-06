@@ -44,9 +44,15 @@ def _duration(seconds: float) -> str:
 # Model scores (cached)
 # ---------------------------------------------------------------------------
 
+
 # Where model scores are cached, per period label.  Shared by the full report
 # and the single-chart commands, so each model runs at most once per period.
-SCORE_CACHE_ROOT = Path("reports/full_report/.cache")
+def score_cache_root() -> Path:
+    """``<reports dir>/full_report/.cache`` — see :func:`egon.config.reports_dir`."""
+    from egon.config import reports_dir
+
+    return reports_dir() / "full_report" / ".cache"
+
 
 # Cache file per model score — also written directly by the demo-data generator.
 

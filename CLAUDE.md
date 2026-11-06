@@ -31,7 +31,7 @@ uv run egon --help                         # all commands
   local models and Apple Health. No plotting code here.
 - `egon/report/` — the HTML report pipeline:
   - `data.py` collects all data for a period once and caches slow model scores and
-    LLM text as JSON in `reports/full_report/.cache/<period>/` — shared with the
+    LLM text as JSON in `<reports dir>/full_report/.cache/<period>/` — shared with the
     single-chart model commands, so each model runs at most once per period.
   - `charts/` — one pure function per chart returning a Vega-Lite spec (Altair).
   - `figures.py` — pairs each chart with caption, *why it matters for wellbeing*,
@@ -41,6 +41,8 @@ uv run egon --help                         # all commands
     page swaps them for dark mode via `DARK_MAP`, so every hex in a spec must be in it.
 - `egon/full_report.py` — assembles the multi-section report.
 - `egon.toml` — which analyses the full report includes; `.env` — user paths and targets.
+- Report locations: always go through `egon.config.reports_dir()` (`$EGON_REPORTS_DIR`,
+  else `./reports`); never hard-code `reports/` paths.
 - Demo reports: `egon demo-report --data ../egon-content/generated_content/demo/<persona>`
   (see reports/README.md → Demo reports). Never build a demo from anything but
   egon-content's synthetic personas; the command enforces the synthetic-data marker.
