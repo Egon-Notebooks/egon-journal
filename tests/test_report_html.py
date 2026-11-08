@@ -116,6 +116,16 @@ def test_single_figure_report_is_self_contained(tmp_path):
     assert "Demo report" not in html
 
 
+def test_every_report_points_to_crisis_resources(tmp_path):
+    report = single_figure_report(
+        hrv_figure(_series()), label="2026-01", start=START, end=START + timedelta(days=29)
+    )
+    html = write_report(report, tmp_path / "hrv.html").read_text()
+    footer = html[html.index('<footer class="colophon">') :]
+    assert "findahelpline.com" in footer
+    assert "immediate danger" in footer
+
+
 def test_synthetic_report_is_marked():
     report = Report(
         title="Demo",
