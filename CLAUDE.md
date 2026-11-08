@@ -15,7 +15,8 @@ uv run egon --help                         # all commands
 
 - `scripts/check.sh` runs ruff, the format check and pytest in a throwaway Python 3.13
   environment with no optional extras and no `.env` — the same as CI. Your `.venv` is
-  untouched. Optional pre-push hook: `git config core.hooksPath .githooks`.
+  untouched. Enable the hooks once per clone with `git config core.hooksPath .githooks`: pre-commit
+  blocks personal data (see `.githooks/pre-commit`), pre-push runs `check.sh`.
 - `tests/conftest.py` makes every test hermetic: all `EGON_*` variables are removed,
   each test runs in its own temp directory (so real `reports/` and caches are never
   read or written), and the optional extras (models, BERTopic, Ollama) are hidden.
