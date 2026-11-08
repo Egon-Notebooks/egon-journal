@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Blocks commits that may contain personal data: journal entries, Apple Health
+# exports, personal reports, .env files or the private paths set in .env.
+# Demo data must come from egon-content's synthetic personas (see ../CLAUDE.md).
+#
+#   Enable once per clone:   git config core.hooksPath .githooks
+#   Check all tracked files: bash .githooks/pre-commit --all
+#   Skip for a false alarm:  git commit --no-verify
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+SYNTHETIC_MARKER="Synthetic demo data"
+problems=0
+flag() { echo "  ✗ $1"; problems=$((problems + 1)); }
+
+if [ "${1:-}" = "--all" ]; then
+  list_files() { git ls-files -z; }
+else
+  list_files() { git diff --cached --name-only --diff-filter=ACMR -z; }
+fi
+
+while IFS= read -r -d '' path; do
+  name="${path##*/}"
+  synthetic_dir=0
+  case "$path" in tests/*|*/tests/*|generated_content/demo/*) synthetic_dir=1 ;; esac
+
+  case "$name" in
+    .env.example) ;;
+    .env|.env.*) flag "$path: .env files hold your private paths" ;;
+  esac
+  case "$path" in
+    reports/README.md) ;;
+    reports/*) flag "$path: reports contain your personal data" ;;
+  esac
+  if [ "$synthetic_dir" -eq 0 ]; then
+    case "$path" in
+      journal/*.md|*/journal/*.md|summaries/*.md|*/summaries/*.md)
+        flag "$path: looks like a journal entry or summary" ;;
+    esac
+    if [[ "$name" =~ ^(Journal\ —\ )?[0-9]{4}[-_][0-9]{2}[-_][0-9]{2}\.md$ ]]; then
+      flag "$path: looks like a journal entry"
+    fi
+  fi
+  case "$name" in
+    *.xml)
+      if git show ":$path" 2>/dev/null | head -c 4096 | grep -q '<HealthData' &&
+        ! git show ":$path" 2>/dev/null | head -c 4096 | grep -q "$SYNTHETIC_MARKER"; then
+        flag "$path: Apple Health export without the synthetic-data marker"
+      fi ;;
+    *.html)
+      if git show ":$path" 2>/dev/null | grep -q 'class="confidential"'; then
+        flag "$path: a personal report (marked confidential)"
+      fi ;;
+  esac
+done < <(list_files)
+
+# The private paths from this repo's .env must not appear in committed files.
+# .env.example is skipped: an unedited .env still holds its placeholder paths.
+not_examples=(':(exclude,glob)**/.env.example')
+if [ -f .env ]; then
+  while IFS='=' read -r key value; do
+    value="${value%\"}"; value="${value#\"}"; value="${value%\'}"; value="${value#\'}"
+    case "$key" in EGON_*) ;; *) continue ;; esac
+    case "$value" in /*|~*) ;; *) continue ;; esac
+    [ "${#value}" -ge 6 ] || continue
+    if [ "${1:-}" = "--all" ]; then
+      git grep --cached -q -F -e "$value" -- . "${not_examples[@]}" &&
+        flag "a tracked file contains the path set in $key"
+    else
+      git diff --cached -U0 -- . "${not_examples[@]}" | grep '^+' | grep -q -F -e "$value" &&
+        flag "the staged changes contain the path set in $key"
+    fi
+  done < <(grep -E '^EGON_[A-Z0-9_]+=' .env)
+fi
+
+if [ "$problems" -gt 0 ]; then
+  echo "Commit blocked: $problems possible personal-data problem(s) above."
+  echo "Unstage them (git restore --staged <file>). If this is a false alarm, commit with --no-verify."
+  exit 1
+fi
+exit 0
