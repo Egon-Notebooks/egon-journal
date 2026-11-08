@@ -58,6 +58,26 @@ exercise      = true
 
 ---
 
+## All journal entries in one Markdown file
+
+`egon report` also combines the period's journal entries into a single Markdown file,
+for AI chatbots that accept only a few uploaded files. Each entry gets a
+`## YYYY-MM-DD (weekday)` heading followed by its text; headings inside an entry move down two levels, and untouched templates are
+left out.
+
+```bash
+uv run egon report-journal-entries
+uv run egon report-journal-entries --for 2026-Q1
+uv run egon report-journal-entries --output ~/journal-2026-Q1.md
+```
+
+Default output: `./reports/journal_entries/<period>.md`
+
+> The file holds your full journal text. Egon only writes it to your machine; if you
+> upload it to a chatbot, it leaves your machine and is handled by that service.
+
+---
+
 ## Section 1 — Journal insights
 
 ### Word count
@@ -495,14 +515,14 @@ All `report-*` commands share these options:
 
 - **`--period`** — Relative period: `week`, `month`, `quarter`, `year`, `all-time`
 - **`--for`** — Named period: `2025`, `2026-02`, `2026-W14`, `2026-Q2`
-- **`--output`** — Output file path (`.html`). For a PDF, open the report and use
-  *Print → Save as PDF*.
+- **`--output`** — Output file path (`.html`; `.md` for `report-journal-entries`). For a
+  PDF, open the report and use *Print → Save as PDF*.
 
 Health reports (`weight`, `resting-heart-rate`, `hrv`, `sleep`, `step-count`, `exercise`, `vo2max`) also accept:
 
 - **`--xml`** — Apple Health export path; falls back to `EGON_APPLE_HEALTH_XML` in `.env`
 
-Journal reports (`word-count`, `sentiment`, `wordcloud`, `emotion`) also accept:
+Journal reports (`word-count`, `journal-entries`, `sentiment`, `wordcloud`, `emotion`) also accept:
 
 - **`--journal-dir`** — Override `EGON_JOURNAL_DIR` from `.env`
 
