@@ -17,6 +17,7 @@ class JournalEntry(NamedTuple):
     date: date_type
     body: str  # raw body text (after frontmatter)
     path: Path
+    meta: dict | None = None  # frontmatter, when the file has any
 
 
 def load_journal_entries(journal_dir: Path) -> list[JournalEntry]:
@@ -46,6 +47,7 @@ def _parse_file(path: Path) -> JournalEntry | None:
     except OSError:
         return None
 
+    meta = None
     if content.startswith("---"):
         parts = content.split("---", 2)
         if len(parts) == 3:
@@ -55,6 +57,7 @@ def _parse_file(path: Path) -> JournalEntry | None:
                 fm = {}
             body = parts[2]
             if isinstance(fm, dict):
+                meta = fm
                 # Only load nodes explicitly typed as journal (or untyped files
                 # that match the filename pattern)
                 node_type = fm.get("type")
@@ -64,14 +67,14 @@ def _parse_file(path: Path) -> JournalEntry | None:
                 if raw_date:
                     entry_date = _coerce_date(raw_date)
                     if entry_date:
-                        return JournalEntry(date=entry_date, body=body, path=path)
+                        return JournalEntry(date=entry_date, body=body, path=path, meta=meta)
     else:
         body = content
 
     # Fall back: try to extract date from filename  "Journal — YYYY-MM-DD.md"
     entry_date = _date_from_filename(path.stem)
     if entry_date:
-        return JournalEntry(date=entry_date, body=body, path=path)
+        return JournalEntry(date=entry_date, body=body, path=path, meta=meta)
 
     return None
 

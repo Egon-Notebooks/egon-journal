@@ -232,7 +232,7 @@ uv run egon export-context --months 3 --output ~/context.md
 uv run egon export-context --journal-dir ~/my-egon-graph/journal --months 2
 ```
 
-Output is a single Markdown file with a `## YYYY-MM-DD` heading before each entry, suitable for pasting directly into an LLM chat as context.
+Output is a single Markdown file with a `## YYYY-MM-DD (weekday)` heading before each entry, suitable for pasting directly into an LLM chat as context. `egon report` writes the same format for its period (see [Reports](#reports)).
 
 ---
 
@@ -277,6 +277,12 @@ report was written. Reports go to `./reports/` by default; set `EGON_REPORTS_DIR
 `.env` (or pass `--reports-dir`) to keep them elsewhere. Model scores are cached per period
 in `<reports dir>/full_report/.cache/<period>/` and shared by all report commands, so each
 model runs at most once per period; delete a file there to re-score.
+
+`egon report` also writes all journal entries of the period into **one Markdown file**,
+`<reports dir>/journal_entries/<period>.md`, one dated section per entry. Most AI chatbots
+accept only a few uploaded files, so this is the easy way to give one your whole journal for a period. The file is only written to your
+machine; anything you upload to a chatbot leaves it. On its own:
+`uv run egon report-journal-entries --for 2026-Q1`.
 
 Available charts: word count, frequent words, first-person pronoun ratio, topics,
 sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,

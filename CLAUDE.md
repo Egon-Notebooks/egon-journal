@@ -41,6 +41,8 @@ uv run egon --help                         # all commands
   - `theme.py` — palette and chart config. Colors are authored in light mode; the
     page swaps them for dark mode via `DARK_MAP`, so every hex in a spec must be in it.
 - `egon/full_report.py` — assembles the multi-section report.
+- `egon/analytics/export.py` — all journal entries in one Markdown file, used by
+  `export-context` and by `egon report` (`<reports dir>/journal_entries/<period>.md`).
 - `egon.toml` — which analyses the full report includes; `.env` — user paths and targets.
 - Report locations: always go through `egon.config.reports_dir()` (`$EGON_REPORTS_DIR`,
   else `./reports`); never hard-code `reports/` paths.
