@@ -19,6 +19,7 @@ import typer
 import yaml
 from dotenv import load_dotenv
 
+from egon.analytics.export import entries_with_text, journal_markdown
 from egon.analytics.loader import load_journal_entries
 from egon.analytics.word_count import (
     filter_entries,
@@ -316,22 +317,16 @@ def export_context(
     start = date_type(start_year, start_month, min(today.day, max_day))
 
     all_entries = load_journal_entries(resolved_dir)
-    entries = filter_entries(all_entries, start, today)
+    entries = entries_with_text(filter_entries(all_entries, start, today))
 
     if not entries:
         typer.echo(f"No journal entries found between {start} and {today}.", err=True)
         raise typer.Exit(1)
 
-    header = (
-        f"# Journal context — {start} to {today} ({months} month{'s' if months != 1 else ''})\n"
+    content = journal_markdown(
+        entries,
+        f"Journal context — {start} to {today} ({months} month{'s' if months != 1 else ''})",
     )
-    parts = [header]
-    for entry in entries:
-        parts.append(f"\n## {entry.date}\n")
-        parts.append(entry.body.strip())
-        parts.append("\n\n---")
-    parts.append("\n")
-    content = "\n".join(parts)
 
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -473,6 +468,72 @@ def report_word_count(
     _save_figure(
         figures.word_count_figure(word_counts_by_day(entries)), resolved_output, label, start, end
     )
+
+
+@app.command(name="report-journal-entries")
+def report_journal_entries(
+    journal_dir: Optional[Path] = typer.Option(
+        None,
+        "--journal-dir",
+        help="Directory containing journal entry Markdown files (default: $EGON_JOURNAL_DIR)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output Markdown path (default: <reports dir>/journal_entries/<period-label>.md)",
+    ),
+) -> None:
+    """Combine the period's journal entries into one Markdown file.
+
+    Handy for AI chatbots that accept only a few uploaded files. The file is written
+    locally only; anything you upload to a chatbot leaves your machine.
+    """
+    resolved_dir = _resolve_output(journal_dir, "EGON_JOURNAL_DIR")
+    if not resolved_dir.is_dir():
+        typer.echo(
+            f"Error: journal directory not found: {resolved_dir}\n"
+            "Set EGON_JOURNAL_DIR in .env or pass --journal-dir.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    entries = entries_with_text(filter_entries(load_journal_entries(resolved_dir), start, end))
+    if not entries:
+        typer.echo(f"No journal entries found for period '{period}' ({label}).", err=True)
+        raise typer.Exit(1)
+
+    resolved_output = output or reports_dir() / "journal_entries" / f"{label}.md"
+    if resolved_output.suffix.lower() != ".md":
+        typer.echo(f"Error: --output must end in .md (got {resolved_output.name}).", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Found {len(entries)} journal entries for {label}.")
+    resolved_output.parent.mkdir(parents=True, exist_ok=True)
+    resolved_output.write_text(
+        journal_markdown(entries, f"Journal entries — {label}"), encoding="utf-8"
+    )
+    typer.echo(f"Saved: {resolved_output}")
 
 
 @app.command(name="report-sentiment")
@@ -824,7 +885,8 @@ def _print_report_header(
     else:
         typer.echo("  Apple Health  not configured — set EGON_APPLE_HEALTH_XML for health reports")
     typer.echo(
-        f"  Output        {reports_dir()}/ (HTML, works offline · contains your personal data)"
+        f"  Output        {reports_dir()}/ (HTML and Markdown, works offline · "
+        "contains your personal data)"
     )
 
 
@@ -2057,6 +2119,7 @@ def report_all(
     _kw = dict(period=period, for_period=for_period, output=None)
     _journal_reports = [
         ("word-count", lambda: report_word_count(journal_dir=journal_dir, **_kw)),
+        ("journal-entries", lambda: report_journal_entries(journal_dir=journal_dir, **_kw)),
         ("sentiment", lambda: report_sentiment(journal_dir=journal_dir, **_kw)),
         ("stress", lambda: report_stress(journal_dir=journal_dir, **_kw)),
         ("loneliness", lambda: report_loneliness(journal_dir=journal_dir, **_kw)),
@@ -2158,6 +2221,11 @@ def report_all(
     )
     if open_hint:
         typer.echo(f"Open: open {open_hint}")
+    if md := next((r.path for r in ok if r.name == "journal-entries"), None):
+        typer.echo(
+            f"All journal entries in one file: {md}\n"
+            "  (to upload to an AI chatbot; anything you upload leaves your machine)"
+        )
 
 
 # ---------------------------------------------------------------------------

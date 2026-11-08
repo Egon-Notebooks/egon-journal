@@ -740,6 +740,55 @@ class TestHealthSummary:
 # ---------------------------------------------------------------------------
 
 
+class TestReportJournalEntries:
+    def test_writes_one_markdown_file(self, journal_dir, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(
+            app, ["report-journal-entries", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+        )
+        assert result.exit_code == 0
+        out = tmp_path / "reports" / "journal_entries" / "2026-04.md"
+        md = out.read_text(encoding="utf-8")
+        assert md.startswith("# Journal entries — 2026-04")
+        assert md.count("\n## 2026-04-") == 21
+        assert "Entry 21." in md
+
+    def test_rejects_non_markdown_output(self, journal_dir, tmp_path):
+        result = runner.invoke(
+            app,
+            [
+                "report-journal-entries",
+                "--journal-dir",
+                str(journal_dir),
+                "--for",
+                "2026-04",
+                "--output",
+                str(tmp_path / "entries.txt"),
+            ],
+        )
+        assert result.exit_code == 1
+        assert ".md" in result.output
+
+    def test_empty_period_exits(self, journal_dir):
+        result = runner.invoke(
+            app, ["report-journal-entries", "--journal-dir", str(journal_dir), "--for", "2025-01"]
+        )
+        assert result.exit_code == 1
+
+
+class TestExportContext:
+    def test_writes_dated_sections(self, recent_journal_dir, tmp_path):
+        out = tmp_path / "context.md"
+        result = runner.invoke(
+            app,
+            ["export-context", "--journal-dir", str(recent_journal_dir), "--output", str(out)],
+        )
+        assert result.exit_code == 0
+        md = out.read_text(encoding="utf-8")
+        assert md.startswith("# Journal context — ")
+        assert md.count("\n## ") == 7
+
+
 class TestReportAll:
     def test_runs_without_crash(self, journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -774,6 +823,9 @@ class TestReportAll:
         assert "Egon reports · 2026-Q2" in output
         assert "Apple Health  not configured" in output
         assert "✓ word-count" in output and "reports/word_count/2026-Q2.html" in output
+        assert "✓ journal-entries" in output
+        assert "All journal entries in one file: reports/journal_entries/2026-Q2.md" in output
+        assert (tmp_path / "reports" / "journal_entries" / "2026-Q2.md").is_file()
         # health reports are skipped with the reason, not a stray progress line
         assert "HRV, sleep" in output and "no Apple Health export" in output
         assert "✗" not in output  # missing data is a skip, never a failure
