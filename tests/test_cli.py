@@ -134,7 +134,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(journal_dir),
                 "--for",
@@ -150,7 +151,7 @@ class TestReportWordCount:
     def test_success(self, journal_dir, tmp_path):
         out = tmp_path / "wc.html"
         result = runner.invoke(
-            app, ["report-word-count", "--journal-dir", str(journal_dir), "--output", str(out)]
+            app, ["report", "word-count", "--journal-dir", str(journal_dir), "--output", str(out)]
         )
         assert result.exit_code == 0
         assert out.exists()
@@ -159,7 +160,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(tmp_path / "missing"),
                 "--output",
@@ -174,7 +176,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(empty),
                 "--output",
@@ -188,7 +191,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(journal_dir),
                 "--period",
@@ -206,7 +210,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(journal_dir),
                 "--for",
@@ -222,7 +227,8 @@ class TestReportWordCount:
         result = runner.invoke(
             app,
             [
-                "report-word-count",
+                "report",
+                "word-count",
                 "--journal-dir",
                 str(journal_dir),
                 "--for",
@@ -244,7 +250,7 @@ class TestReportSentiment:
         out = tmp_path / "sentiment.html"
         result = runner.invoke(
             app,
-            ["report-sentiment", "--journal-dir", str(journal_dir), "--output", str(out)],
+            ["report", "sentiment", "--journal-dir", str(journal_dir), "--output", str(out)],
         )
         assert result.exit_code == 0
         assert out.exists()
@@ -253,7 +259,8 @@ class TestReportSentiment:
         result = runner.invoke(
             app,
             [
-                "report-sentiment",
+                "report",
+                "sentiment",
                 "--journal-dir",
                 str(tmp_path / "gone"),
                 "--output",
@@ -273,7 +280,7 @@ class TestReportWordcloud:
         out = tmp_path / "wc.html"
         result = runner.invoke(
             app,
-            ["report-wordcloud", "--journal-dir", str(journal_dir), "--output", str(out)],
+            ["report", "wordcloud", "--journal-dir", str(journal_dir), "--output", str(out)],
         )
         assert result.exit_code == 0
         assert out.exists()
@@ -289,7 +296,16 @@ class TestReportWeight:
         out = tmp_path / "weight.html"
         result = runner.invoke(
             app,
-            ["report-weight", "--xml", str(health_xml), "--for", "2026-Q2", "--output", str(out)],
+            [
+                "report",
+                "weight",
+                "--xml",
+                str(health_xml),
+                "--for",
+                "2026-Q2",
+                "--output",
+                str(out),
+            ],
         )
         assert result.exit_code == 0
         assert out.exists()
@@ -298,7 +314,8 @@ class TestReportWeight:
         result = runner.invoke(
             app,
             [
-                "report-weight",
+                "report",
+                "weight",
                 "--xml",
                 str(tmp_path / "missing.xml"),
                 "--output",
@@ -309,7 +326,7 @@ class TestReportWeight:
 
     def test_no_xml_no_env(self, tmp_path, monkeypatch):
         monkeypatch.delenv("EGON_APPLE_HEALTH_XML", raising=False)
-        result = runner.invoke(app, ["report-weight", "--output", str(tmp_path / "out.html")])
+        result = runner.invoke(app, ["report", "weight", "--output", str(tmp_path / "out.html")])
         assert result.exit_code == 1
 
 
@@ -324,7 +341,8 @@ class TestReportExercise:
         result = runner.invoke(
             app,
             [
-                "report-exercise",
+                "report",
+                "exercise",
                 "--xml",
                 str(exercise_xml),
                 "--for",
@@ -342,7 +360,8 @@ class TestReportExercise:
         result = runner.invoke(
             app,
             [
-                "report-exercise",
+                "report",
+                "exercise",
                 "--xml",
                 str(exercise_xml),
                 "--for",
@@ -360,7 +379,8 @@ class TestReportExercise:
         result = runner.invoke(
             app,
             [
-                "report-exercise",
+                "report",
+                "exercise",
                 "--xml",
                 str(exercise_xml),
                 "--for",
@@ -376,7 +396,8 @@ class TestReportExercise:
         result = runner.invoke(
             app,
             [
-                "report-exercise",
+                "report",
+                "exercise",
                 "--xml",
                 str(tmp_path / "missing.xml"),
                 "--output",
@@ -390,7 +411,8 @@ class TestReportExercise:
         result = runner.invoke(
             app,
             [
-                "report-exercise",
+                "report",
+                "exercise",
                 "--xml",
                 str(health_xml),
                 "--for",
@@ -412,7 +434,8 @@ class TestReportTopics:
         result = runner.invoke(
             app,
             [
-                "report-topics",
+                "report",
+                "topics",
                 "--journal-dir",
                 str(tmp_path / "gone"),
                 "--output-dir",
@@ -426,7 +449,7 @@ class TestReportTopics:
         empty.mkdir()
         result = runner.invoke(
             app,
-            ["report-topics", "--journal-dir", str(empty), "--output-dir", str(tmp_path)],
+            ["report", "topics", "--journal-dir", str(empty), "--output-dir", str(tmp_path)],
         )
         assert result.exit_code == 1
 
@@ -452,7 +475,8 @@ class TestReportTopics:
             result = runner.invoke(
                 app,
                 [
-                    "report-topics",
+                    "report",
+                    "topics",
                     "--journal-dir",
                     str(jdir),
                     "--for",
@@ -476,7 +500,8 @@ class TestReportCorrelations:
         result = runner.invoke(
             app,
             [
-                "report-correlations",
+                "report",
+                "correlations",
                 "--journal-dir",
                 str(varied_journal_dir),
                 "--for",
@@ -503,7 +528,8 @@ class TestReportCorrelations:
             result = runner.invoke(
                 app,
                 [
-                    "report-correlations",
+                    "report",
+                    "correlations",
                     "--journal-dir",
                     str(jdir),
                     "--for",
@@ -519,7 +545,8 @@ class TestReportCorrelations:
         result = runner.invoke(
             app,
             [
-                "report-correlations",
+                "report",
+                "correlations",
                 "--journal-dir",
                 str(varied_journal_dir),
                 "--for",
@@ -538,7 +565,7 @@ class TestReportCorrelations:
         # there is nothing to correlate. That is "not enough data", not a crash.
         result = runner.invoke(
             app,
-            ["report-correlations", "--journal-dir", str(journal_dir), "--for", "2026-Q2"],
+            ["report", "correlations", "--journal-dir", str(journal_dir), "--for", "2026-Q2"],
         )
         assert result.exit_code == 1
         assert "Not enough overlapping signals" in result.output
@@ -744,7 +771,8 @@ class TestReportJournalEntries:
     def test_writes_one_markdown_file(self, journal_dir, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         result = runner.invoke(
-            app, ["report-journal-entries", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+            app,
+            ["report", "journal-entries", "--journal-dir", str(journal_dir), "--for", "2026-04"],
         )
         assert result.exit_code == 0
         out = tmp_path / "reports" / "journal_entries" / "2026-04.md"
@@ -757,7 +785,8 @@ class TestReportJournalEntries:
         result = runner.invoke(
             app,
             [
-                "report-journal-entries",
+                "report",
+                "journal-entries",
                 "--journal-dir",
                 str(journal_dir),
                 "--for",
@@ -771,7 +800,8 @@ class TestReportJournalEntries:
 
     def test_empty_period_exits(self, journal_dir):
         result = runner.invoke(
-            app, ["report-journal-entries", "--journal-dir", str(journal_dir), "--for", "2025-01"]
+            app,
+            ["report", "journal-entries", "--journal-dir", str(journal_dir), "--for", "2025-01"],
         )
         assert result.exit_code == 1
 
@@ -870,7 +900,7 @@ class TestSharedScoreCache:
 
         monkeypatch.setattr("egon.limbic.stress.stress_by_day", _no_model)
         result = runner.invoke(
-            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+            app, ["report", "stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
         )
         assert result.exit_code == 0, result.output
         assert "Using cached stress scores" in result.output
@@ -884,7 +914,7 @@ class TestSharedScoreCache:
 
         monkeypatch.setattr("egon.limbic.stress.stress_by_day", _boom)
         result = runner.invoke(
-            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+            app, ["report", "stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
         )
         assert result.exit_code == 1
         assert "unavailable: model not installed" in result.output
@@ -967,7 +997,7 @@ class TestReportsDirLocation:
         target = tmp_path / "elsewhere"
         monkeypatch.setenv("EGON_REPORTS_DIR", str(target))
         result = runner.invoke(
-            app, ["report-word-count", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+            app, ["report", "word-count", "--journal-dir", str(journal_dir), "--for", "2026-04"]
         )
         assert result.exit_code == 0, result.output
         assert (target / "word_count" / "2026-04.html").exists()
@@ -1005,7 +1035,18 @@ class TestReportsDirLocation:
         save_scores(cached, target / "full_report" / ".cache" / "2026-04" / "stress_data.json")
         monkeypatch.setattr("egon.limbic.stress.stress_by_day", lambda *_a, **_k: 1 / 0)
         result = runner.invoke(
-            app, ["report-stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
+            app, ["report", "stress", "--journal-dir", str(journal_dir), "--for", "2026-04"]
         )
         assert result.exit_code == 0, result.output
         assert (target / "stress" / "2026-04.html").exists()
+
+
+def test_old_report_command_names_still_work_and_are_deprecated(tmp_path):
+    result = runner.invoke(app, ["report-word-count", "--journal-dir", str(tmp_path / "missing")])
+    assert "deprecated" in result.output.lower()
+
+
+def test_report_lists_each_analysis_in_help():
+    result = runner.invoke(app, ["report", "--help"])
+    assert "word-count" in result.output
+    assert "report-word-count" not in runner.invoke(app, ["--help"]).output

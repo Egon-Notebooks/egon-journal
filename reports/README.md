@@ -38,7 +38,7 @@ Default output: `./reports/full_report/<period>.html`
 
 Slow model scores (Big Five, MBTI, emotion, cognitive bias, stress, loneliness) and the
 LLM health text are cached in `./reports/full_report/.cache/<period>/`. The cache is
-shared with the single-chart commands (`report-stress`, `report-emotion`, …), so each
+shared with the single-chart commands (`report stress`, `report emotion`, …), so each
 model runs at most once per period. Delete a file there to force re-scoring.
 
 Which analyses appear in the report is controlled by `egon.toml` in the project root.
@@ -66,9 +66,9 @@ for AI chatbots that accept only a few uploaded files. Each entry gets a
 left out.
 
 ```bash
-uv run egon report-journal-entries
-uv run egon report-journal-entries --for 2026-Q1
-uv run egon report-journal-entries --output ~/journal-2026-Q1.md
+uv run egon report journal-entries
+uv run egon report journal-entries --for 2026-Q1
+uv run egon report journal-entries --output ~/journal-2026-Q1.md
 ```
 
 Default output: `./reports/journal_entries/<period>.md`
@@ -85,11 +85,11 @@ Default output: `./reports/journal_entries/<period>.md`
 Plots daily word count across all journal entries as a bar chart.
 
 ```bash
-uv run egon report-word-count
+uv run egon report word-count
 
-uv run egon report-word-count --period month
-uv run egon report-word-count --for 2026-Q1
-uv run egon report-word-count --output ~/my-reports/word-count.html
+uv run egon report word-count --period month
+uv run egon report word-count --for 2026-Q1
+uv run egon report word-count --output ~/my-reports/word-count.html
 ```
 
 Default output: `./reports/word_count/<period>.html`
@@ -104,11 +104,11 @@ list is easier to read and compare. Disabled by default in the full report
 (`egon.toml`: `wordcloud = false`); the command name is unchanged.
 
 ```bash
-uv run egon report-wordcloud
+uv run egon report wordcloud
 
-uv run egon report-wordcloud --period month
-uv run egon report-wordcloud --for 2026
-uv run egon report-wordcloud --output ~/my-reports/wordcloud.html
+uv run egon report wordcloud --period month
+uv run egon report wordcloud --for 2026
+uv run egon report wordcloud --output ~/my-reports/wordcloud.html
 ```
 
 Default output: `./reports/wordcloud/<period>.html`
@@ -130,11 +130,11 @@ uv sync --extra topics
 On Intel Mac, uses pure-sklearn NMF automatically via `.venv-limbic` (no extra step needed beyond `bash scripts/setup_limbic.sh`).
 
 ```bash
-uv run egon report-topics
+uv run egon report topics
 
-uv run egon report-topics --period month
-uv run egon report-topics --for 2026-Q1
-uv run egon report-topics --output-dir ~/my-reports/topics/
+uv run egon report topics --period month
+uv run egon report topics --for 2026-Q1
+uv run egon report topics --output-dir ~/my-reports/topics/
 ```
 
 Default output: `./reports/topics/<period>.html`
@@ -160,11 +160,11 @@ uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
-uv run egon report-cognitive-bias
+uv run egon report cognitive-bias
 
-uv run egon report-cognitive-bias --period month
-uv run egon report-cognitive-bias --for 2026-Q1
-uv run egon report-cognitive-bias --output ~/my-reports/cognitive-bias.html
+uv run egon report cognitive-bias --period month
+uv run egon report cognitive-bias --for 2026-Q1
+uv run egon report cognitive-bias --output ~/my-reports/cognitive-bias.html
 ```
 
 Default output: `./reports/cognitive_bias/<period>.html`
@@ -179,11 +179,11 @@ Plots daily sentiment score (VADER, range −1 to +1) as diverging bars around a
 band, with a 7-day trend line.
 
 ```bash
-uv run egon report-sentiment
+uv run egon report sentiment
 
-uv run egon report-sentiment --period month
-uv run egon report-sentiment --for 2026-Q1
-uv run egon report-sentiment --output ~/my-reports/sentiment.html
+uv run egon report sentiment --period month
+uv run egon report sentiment --for 2026-Q1
+uv run egon report sentiment --output ~/my-reports/sentiment.html
 ```
 
 Default output: `./reports/sentiment/<period>.html`
@@ -205,11 +205,11 @@ uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
-uv run egon report-stress
+uv run egon report stress
 
-uv run egon report-stress --period month
-uv run egon report-stress --for 2026-Q1
-uv run egon report-stress --output ~/my-reports/stress.html
+uv run egon report stress --period month
+uv run egon report stress --for 2026-Q1
+uv run egon report stress --output ~/my-reports/stress.html
 ```
 
 Default output: `./reports/stress/<period>.html`
@@ -231,11 +231,11 @@ uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
-uv run egon report-loneliness
+uv run egon report loneliness
 
-uv run egon report-loneliness --period month
-uv run egon report-loneliness --for 2026-Q1
-uv run egon report-loneliness --output ~/my-reports/loneliness.html
+uv run egon report loneliness --period month
+uv run egon report loneliness --for 2026-Q1
+uv run egon report loneliness --output ~/my-reports/loneliness.html
 ```
 
 Default output: `./reports/loneliness/<period>.html`
@@ -260,11 +260,11 @@ uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
-uv run egon report-emotion
+uv run egon report emotion
 
-uv run egon report-emotion --period month
-uv run egon report-emotion --for 2026-Q1
-uv run egon report-emotion --output ~/my-reports/emotion.html
+uv run egon report emotion --period month
+uv run egon report emotion --for 2026-Q1
+uv run egon report emotion --output ~/my-reports/emotion.html
 ```
 
 Default output: `./reports/emotion/<period>.html`
@@ -285,11 +285,11 @@ uv sync --extra limbic         # Linux / Apple Silicon / Windows
 ```
 
 ```bash
-uv run egon report-bigfive
+uv run egon report bigfive
 
-uv run egon report-bigfive --period month
-uv run egon report-bigfive --for 2026-Q1
-uv run egon report-bigfive --output ~/my-reports/bigfive.html
+uv run egon report bigfive --period month
+uv run egon report bigfive --for 2026-Q1
+uv run egon report bigfive --output ~/my-reports/bigfive.html
 ```
 
 Default output: `./reports/bigfive/<period>.html`
@@ -306,11 +306,11 @@ dominant pole and its share labelled in the margin.
 Requires the same `limbic` setup as Big Five (same `.venv-limbic`).
 
 ```bash
-uv run egon report-mbti
+uv run egon report mbti
 
-uv run egon report-mbti --period month
-uv run egon report-mbti --for 2026-Q1
-uv run egon report-mbti --output ~/my-reports/mbti.html
+uv run egon report mbti --period month
+uv run egon report mbti --for 2026-Q1
+uv run egon report mbti --output ~/my-reports/mbti.html
 ```
 
 Default output: `./reports/mbti/<period>.html`
@@ -327,11 +327,11 @@ Sudden changes in weight are particularly indicative of mental health risk.
 Set an optional target line via `EGON_TARGET_BODY_MASS` in `.env`.
 
 ```bash
-uv run egon report-weight
+uv run egon report weight
 
-uv run egon report-weight --period month
-uv run egon report-weight --for 2026-Q1
-uv run egon report-weight --output ~/my-reports/weight.html
+uv run egon report weight --period month
+uv run egon report weight --for 2026-Q1
+uv run egon report weight --output ~/my-reports/weight.html
 ```
 
 Default output: `./reports/weight/<period>.html`
@@ -345,11 +345,11 @@ Plots daily resting heart rate (bpm) from an Apple Health export as a line chart
 Set an optional target line via `EGON_TARGET_RESTING_HEART_RATE` in `.env`.
 
 ```bash
-uv run egon report-resting-heart-rate
+uv run egon report resting-heart-rate
 
-uv run egon report-resting-heart-rate --period month
-uv run egon report-resting-heart-rate --for 2026
-uv run egon report-resting-heart-rate --output ~/my-reports/rhr.html
+uv run egon report resting-heart-rate --period month
+uv run egon report resting-heart-rate --for 2026
+uv run egon report resting-heart-rate --output ~/my-reports/rhr.html
 ```
 
 Default output: `./reports/resting_heart_rate/<period>.html`
@@ -362,11 +362,11 @@ Plots daily HRV (ms, SDNN) from an Apple Health export as a line chart.
 HRV is associated with stress levels.
 
 ```bash
-uv run egon report-hrv
+uv run egon report hrv
 
-uv run egon report-hrv --period month
-uv run egon report-hrv --for 2026-W14
-uv run egon report-hrv --output ~/my-reports/hrv.html
+uv run egon report hrv --period month
+uv run egon report hrv --for 2026-W14
+uv run egon report hrv --output ~/my-reports/hrv.html
 ```
 
 Default output: `./reports/hrv/<period>.html`
@@ -381,11 +381,11 @@ Sleep quality is strongly associated with mental health symptoms.
 Sleep onset rhythmicity — whether you sleep at the same time every day — has been shown to be associated with depressive symptoms.
 
 ```bash
-uv run egon report-sleep
+uv run egon report sleep
 
-uv run egon report-sleep --period month
-uv run egon report-sleep --for 2026-Q1
-uv run egon report-sleep --output ~/my-reports/sleep.html
+uv run egon report sleep --period month
+uv run egon report sleep --for 2026-Q1
+uv run egon report sleep --output ~/my-reports/sleep.html
 ```
 
 Default output: `./reports/sleep/<period>.html`
@@ -398,11 +398,11 @@ Plots daily total steps from an Apple Health export as bars with a 7-day mean an
 7,000-step reference line (benefits for mood are seen from roughly 5,000–7,500 steps a day).
 
 ```bash
-uv run egon report-step-count
+uv run egon report step-count
 
-uv run egon report-step-count --period month
-uv run egon report-step-count --for 2026-Q1
-uv run egon report-step-count --output ~/my-reports/steps.html
+uv run egon report step-count --period month
+uv run egon report step-count --for 2026-Q1
+uv run egon report step-count --output ~/my-reports/steps.html
 ```
 
 Default output: `./reports/step_count/<period>.html`
@@ -418,11 +418,11 @@ this is drawn as the default reference line.
 Set a custom target via `EGON_TARGET_EXERCISE_MINUTES` in `.env`.
 
 ```bash
-uv run egon report-exercise
+uv run egon report exercise
 
-uv run egon report-exercise --period month
-uv run egon report-exercise --for 2026-Q1
-uv run egon report-exercise --output ~/my-reports/exercise.html
+uv run egon report exercise --period month
+uv run egon report exercise --for 2026-Q1
+uv run egon report exercise --output ~/my-reports/exercise.html
 ```
 
 Default output: `./reports/exercise/<period>.html`
@@ -434,11 +434,11 @@ Default output: `./reports/exercise/<period>.html`
 Plots daily mean VO2 max (mL/min/kg) from an Apple Health export as a line chart with a period average.
 
 ```bash
-uv run egon report-vo2max
+uv run egon report vo2max
 
-uv run egon report-vo2max --period month
-uv run egon report-vo2max --for 2026-Q1
-uv run egon report-vo2max --output ~/my-reports/vo2max.html
+uv run egon report vo2max --period month
+uv run egon report vo2max --for 2026-Q1
+uv run egon report vo2max --output ~/my-reports/vo2max.html
 ```
 
 Default output: `./reports/vo2max/<period>.html`
@@ -464,11 +464,11 @@ Requires at least two signals to be available (any combination of journal direct
 Apple Health export).
 
 ```bash
-uv run egon report-correlations
+uv run egon report correlations
 
-uv run egon report-correlations --period month
-uv run egon report-correlations --for 2026-Q1
-uv run egon report-correlations --output-dir ~/my-reports/correlations/
+uv run egon report correlations --period month
+uv run egon report correlations --for 2026-Q1
+uv run egon report correlations --output-dir ~/my-reports/correlations/
 ```
 
 To customize which pairs are excluded from the top-pairs chart, add to `egon.toml`:

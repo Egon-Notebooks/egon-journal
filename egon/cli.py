@@ -58,6 +58,8 @@ from egon.schema import validate as _validate_frontmatter
 
 load_dotenv()
 
+report_app = typer.Typer(help="Generate reports. Name one analysis, or none for all of them.")
+
 app = typer.Typer(
     name="egon",
     help="egon-journal: structured journaling for the Egon graph.",
@@ -434,7 +436,6 @@ def suggest_prompt(
     typer.echo(f"({elapsed:.1f}s)", err=True)
 
 
-@app.command(name="report-word-count")
 def report_word_count(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -496,7 +497,6 @@ def report_word_count(
     )
 
 
-@app.command(name="report-journal-entries")
 def report_journal_entries(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -562,7 +562,6 @@ def report_journal_entries(
     typer.echo(f"Saved: {resolved_output}")
 
 
-@app.command(name="report-sentiment")
 def report_sentiment(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -624,7 +623,6 @@ def report_sentiment(
     )
 
 
-@app.command(name="report-wordcloud")
 def report_wordcloud(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -688,7 +686,6 @@ def report_wordcloud(
     )
 
 
-@app.command(name="report-bigfive")
 def report_bigfive(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -748,7 +745,6 @@ def report_bigfive(
     _save_figure(figures.bigfive_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-mbti")
 def report_mbti(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1029,7 +1025,6 @@ def _load_and_report(xml_path: Path) -> dict:
     return records
 
 
-@app.command(name="report-weight")
 def report_weight(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1118,7 +1113,6 @@ def report_weight(
     _save_figure(figure, resolved_output, label, start, end)
 
 
-@app.command(name="report-resting-heart-rate")
 def report_resting_heart_rate(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1195,7 +1189,6 @@ def report_resting_heart_rate(
     _save_figure(figure, resolved_output, label, start, end)
 
 
-@app.command(name="report-hrv")
 def report_hrv(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1268,7 +1261,6 @@ def report_hrv(
     )
 
 
-@app.command(name="report-sleep")
 def report_sleep(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1335,7 +1327,6 @@ def report_sleep(
     _save_figure(figures.sleep_figure(data, onset_data), resolved_output, label, start, end)
 
 
-@app.command(name="report-step-count")
 def report_step_count(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1400,7 +1391,6 @@ def report_step_count(
     _save_figure(figures.step_count_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-vo2max")
 def report_vo2max(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1466,7 +1456,6 @@ def report_vo2max(
     _save_figure(figures.vo2max_figure(data, unit=unit), resolved_output, label, start, end)
 
 
-@app.command(name="report-topics")
 def report_topics(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1531,7 +1520,6 @@ def report_topics(
     _save_section("Recurring themes", section_figures, out_dir / f"{label}.html", label, start, end)
 
 
-@app.command(name="report-exercise")
 def report_exercise(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1605,7 +1593,6 @@ def report_exercise(
     _save_figure(figure, resolved_output, label, start, end)
 
 
-@app.command(name="report-emotion")
 def report_emotion(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1658,7 +1645,6 @@ def report_emotion(
     _save_figure(figures.emotion_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-stress")
 def report_stress(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1715,7 +1701,6 @@ def report_stress(
     _save_figure(figures.stress_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-loneliness")
 def report_loneliness(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1772,7 +1757,6 @@ def report_loneliness(
     _save_figure(figures.loneliness_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-cognitive-bias")
 def report_cognitive_bias(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -1829,7 +1813,6 @@ def report_cognitive_bias(
     _save_figure(figures.cognitive_bias_figure(data), resolved_output, label, start, end)
 
 
-@app.command(name="report-correlations")
 def report_correlations(
     journal_dir: Optional[Path] = typer.Option(
         None,
@@ -2111,8 +2094,9 @@ def demo_report(
         typer.echo(f"  – {name:<20}{reason}")
 
 
-@app.command(name="report")
+@report_app.callback(invoke_without_command=True)
 def report_all(
+    ctx: typer.Context,
     journal_dir: Optional[Path] = typer.Option(
         None,
         "--journal-dir",
@@ -2150,6 +2134,8 @@ def report_all(
     ),
 ) -> None:
     """Generate all reports for the given period."""
+    if ctx.invoked_subcommand is not None:
+        return
     if reports_dir_option is not None:
         # Every report command below reads the location through reports_dir().
         os.environ["EGON_REPORTS_DIR"] = str(reports_dir_option)
@@ -2279,6 +2265,35 @@ def report_all(
             f"All journal entries in one file: {md}\n"
             "  (to upload to an AI chatbot; anything you upload leaves your machine)"
         )
+
+
+app.add_typer(report_app, name="report")
+
+_SINGLE_REPORTS = {
+    "word-count": report_word_count,
+    "journal-entries": report_journal_entries,
+    "sentiment": report_sentiment,
+    "wordcloud": report_wordcloud,
+    "bigfive": report_bigfive,
+    "mbti": report_mbti,
+    "weight": report_weight,
+    "resting-heart-rate": report_resting_heart_rate,
+    "hrv": report_hrv,
+    "sleep": report_sleep,
+    "step-count": report_step_count,
+    "vo2max": report_vo2max,
+    "topics": report_topics,
+    "exercise": report_exercise,
+    "emotion": report_emotion,
+    "stress": report_stress,
+    "loneliness": report_loneliness,
+    "cognitive-bias": report_cognitive_bias,
+    "correlations": report_correlations,
+}
+for _name, _command in _SINGLE_REPORTS.items():
+    report_app.command(name=_name)(_command)
+    # Old names, kept as deprecated aliases until v1.0.
+    app.command(name=f"report-{_name}", deprecated=True, hidden=True)(_command)
 
 
 # ---------------------------------------------------------------------------
