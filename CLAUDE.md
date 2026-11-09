@@ -43,6 +43,11 @@ uv run egon --help                         # all commands
 - `egon/full_report.py` — assembles the multi-section report.
 - `egon/analytics/export.py` — all journal entries in one Markdown file, used by
   `export-context` and by `egon report` (`<reports dir>/journal_entries/<period>.md`).
+- `egon/safety.py` — the synthetic safety test set. `egon safety-check` runs it against
+  Ollama and writes a review file to `<reports dir>/safety/`; a person reviews it before
+  each release. Add new model features to it. Not run in CI.
+- `egon/risk.py` — fixed phrase list and the short risk note. Any model feature that reads
+  journal entries must go through `entries_for_reflection`.
 - `egon.toml` — which analyses the full report includes; `.env` — user paths and targets.
 - Report locations: always go through `egon.config.reports_dir()` (`$EGON_REPORTS_DIR`,
   else `./reports`); never hard-code `reports/` paths.
