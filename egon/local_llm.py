@@ -17,7 +17,7 @@ from egon.analytics.loader import JournalEntry
 
 DEFAULT_MODEL = "qwen2.5:7b"
 
-_PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+_PROMPTS_DIR = Path(__file__).parent / "prompts"
 _SYSTEM_PROMPT: str = (
     (_PROMPTS_DIR / "reflection_question_system.txt").read_text(encoding="utf-8").strip()
 )

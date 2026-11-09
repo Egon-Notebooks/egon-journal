@@ -17,7 +17,7 @@ from typing import NamedTuple, Optional
 
 import typer
 import yaml
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 from egon.analytics.export import entries_with_text, journal_markdown
 from egon.analytics.loader import load_journal_entries
@@ -56,7 +56,7 @@ from egon.report.html import Figure, Report, Section, Stat, single_figure_report
 from egon.risk import entries_for_reflection
 from egon.schema import validate as _validate_frontmatter
 
-load_dotenv()
+load_dotenv(find_dotenv(usecwd=True))
 
 report_app = typer.Typer(help="Generate reports. Name one analysis, or none for all of them.")
 

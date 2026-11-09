@@ -50,6 +50,8 @@ uv run egon --help                         # all commands
   with a hash of the entries. `egon report --share` uses `[report.share]` in `egon.toml`.
 - `egon/risk.py` — fixed phrase list and the short risk note. Any model feature that reads
   journal entries must go through `entries_for_reflection`.
+- `egon report <name>` runs one analysis; the old `report-<name>` commands are hidden
+  deprecated aliases. Add new ones to `_SINGLE_REPORTS` in `egon/cli.py`.
 - `egon.toml` — which analyses the full report includes; `.env` — user paths and targets.
 - Report locations: always go through `egon.config.reports_dir()` (`$EGON_REPORTS_DIR`,
   else `./reports`); never hard-code `reports/` paths.
