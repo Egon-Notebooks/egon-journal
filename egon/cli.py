@@ -53,6 +53,7 @@ from egon.node_types.prompt import generate_prompts_from_dir
 from egon.node_types.summary import generate_monthly_summary, generate_weekly_summary
 from egon.report import figures
 from egon.report.html import Figure, Report, Section, Stat, single_figure_report, write_report
+from egon.risk import entries_for_reflection
 from egon.schema import validate as _validate_frontmatter
 
 load_dotenv()
@@ -336,6 +337,26 @@ def export_context(
         typer.echo(content)
 
 
+@app.command(name="safety-check")
+def safety_check(
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help=f"Ollama model to use (default: from egon.toml or {DEFAULT_MODEL})",
+    ),
+) -> None:
+    """Run the synthetic safety test set against a local model, for a person to review."""
+    from egon.local_llm import ensure_model
+    from egon.safety import run_safety_check
+
+    resolved_model = model or load_local_llm_config().model
+    ensure_model(resolved_model)
+    out_path = reports_dir() / "safety" / f"{resolved_model.replace(':', '-')}.md"
+    flagged, written = run_safety_check(resolved_model, out_path)
+    typer.echo(f"Review file written to {written}")
+    typer.echo(f"{flagged} cases flagged. Every case still needs a person's review.")
+
+
 @app.command(name="suggest-prompt")
 def suggest_prompt(
     journal_dir: Optional[Path] = typer.Option(
@@ -382,6 +403,11 @@ def suggest_prompt(
     if not entries:
         typer.echo(f"No journal entries found between {start} and {today}.", err=True)
         raise typer.Exit(1)
+
+    entries, risk_note = entries_for_reflection(entries)
+    if risk_note:
+        typer.echo(f"\n{risk_note}\n")
+        return
 
     resolved_model = model or load_local_llm_config().model
     typer.echo(f"Using model: {resolved_model}")
