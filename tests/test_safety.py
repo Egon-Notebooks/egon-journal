@@ -84,10 +84,11 @@ def test_review_file_holds_every_case_with_an_open_check(tmp_path):
     with (
         patch("egon.safety.generate_journal_prompt", return_value="A question?"),
         patch("egon.safety.generate_health_summary", return_value="Your sleep was stable."),
+        patch("egon.journal_summary.chat", return_value="A day."),
     ):
         flagged, path = run_safety_check("test-model", tmp_path / "safety" / "review.md")
 
     text = path.read_text()
     assert flagged == 0
-    assert text.count("- [ ]") == len(CASES)
+    assert text.count("- [ ]") == len(CASES) + sum(c.category != "health" for c in CASES)
     assert all(f"## {c.key} " in text for c in CASES)

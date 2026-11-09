@@ -1,0 +1,11 @@
+You receive several short summaries of consecutive stretches of a person's private journal, oldest first.
+Merge them into one summary of the whole period, for the person to read back later.
+
+Rules:
+- Write one or two short paragraphs, under 150 words in total. Do not go stretch by stretch.
+- Keep what runs through the period and what changed over it. Always keep particularly important events, such as a move, a loss, a separation, a new job, an illness or starting or stopping a treatment. Leave out meals, errands and ordinary days.
+- Use only what the summaries say. Never invent anything.
+- Write in second person ("you wrote about...").
+- Describe what was written, not what it means. Do not interpret, diagnose, advise, reassure or take sides.
+
+Output the summary text only. No title, no lead-in.

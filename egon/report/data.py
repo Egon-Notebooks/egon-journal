@@ -8,10 +8,11 @@ re-scoring.  The demo-data generator writes these same cache files, which is
 how demo reports are built without running any model.
 """
 
+import hashlib
 import json
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import date as date_type
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -21,6 +22,7 @@ from egon.analytics.loader import JournalEntry
 from egon.config import ReportConfig
 from egon.health.apple_health import daily_mean, daily_sum, filter_by_date, infer_unit, load_records
 from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
+from egon.journal_summary import JournalSummary
 from egon.limbic.bigfive import BigFiveScores
 from egon.limbic.cognitive_bias import CognitiveBiasScores
 from egon.limbic.emotion import EMOTIONS, EmotionScores
@@ -166,6 +168,8 @@ class ReportData:
     llm_summary: str | None = None
     llm_commentary: dict[str, str] = field(default_factory=dict)
     llm_model: str | None = None  # the local model that wrote the AI text
+    journal_summary: JournalSummary | None = None
+    journal_model: str | None = None  # the model that wrote the journal summary
     signals: Signals = field(default_factory=dict)
 
 
@@ -262,8 +266,15 @@ def _llm_health_text(
     if cache.exists():
         try:
             cached = json.loads(cache.read_text())
-            _log("AI health summary: loaded from cache")
-            return cached.get("summary"), cached.get("commentary", {}), cached.get("model")
+            if (not want_summary or cached.get("summary")) and (
+                not want_commentary or cached.get("commentary")
+            ):
+                _log("AI health summary: loaded from cache")
+                return (
+                    cached.get("summary") if want_summary else None,
+                    cached.get("commentary", {}) if want_commentary else {},
+                    cached.get("model"),
+                )
         except Exception as exc:
             _log(f"AI health summary cache unreadable, regenerating ({_first_line(exc)})")
     try:
@@ -295,6 +306,42 @@ def _llm_health_text(
     except (ImportError, RuntimeError) as exc:
         _log(f"AI health summary skipped: {_first_line(exc)}")
         return None, {}, None
+
+
+def journal_summary_text(
+    cfg: ReportConfig, entries: list[JournalEntry], cache_dir: Path
+) -> tuple[JournalSummary | None, str | None]:
+    """Return the AI journal summary and the model that wrote it, or (None, None)."""
+    if not cfg.enabled("llm_journal_summary") or not entries:
+        return None, None
+    digest = hashlib.sha256("\0".join(e.body for e in entries).encode()).hexdigest()
+    cache = cache_dir / "llm_journal_summary.json"
+    if cache.exists():
+        try:
+            cached = json.loads(cache.read_text())
+            if cached["digest"] == digest:
+                _log("AI journal summary: loaded from cache")
+                return (
+                    JournalSummary(cached["summary"], cached["risk_note"]),
+                    cached["model"],
+                )
+        except Exception as exc:
+            _log(f"AI journal summary cache unreadable, regenerating ({_first_line(exc)})")
+    try:
+        from egon.config import load_local_llm_config
+        from egon.journal_summary import generate_journal_summary
+        from egon.local_llm import ensure_model
+
+        model = load_local_llm_config().model
+        ensure_model(model)
+        _log(f"AI journal summary: writing with {model} …")
+        result = generate_journal_summary(entries, model)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps({"digest": digest, "model": model, **asdict(result)}))
+        return result, model
+    except (ImportError, RuntimeError) as exc:
+        _log(f"AI journal summary skipped: {_first_line(exc)}")
+        return None, None
 
 
 def collect_report_data(
@@ -337,6 +384,9 @@ def collect_report_data(
 
     data.llm_summary, data.llm_commentary, data.llm_model = _llm_health_text(
         config, records, xml_path, start, end, label, cache_dir
+    )
+    data.journal_summary, data.journal_model = journal_summary_text(
+        config, journal_entries, cache_dir
     )
     data.signals = build_signals(
         journal_entries=journal_entries,

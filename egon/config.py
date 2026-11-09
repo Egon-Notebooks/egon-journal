@@ -54,7 +54,21 @@ _DEFAULTS: dict[str, bool] = {
     # skipped gracefully when Ollama is unavailable)
     "llm_health_summary": True,
     "llm_health_commentary": True,
+    "llm_journal_summary": True,
 }
+
+# What `egon report --share` includes unless [report.share] in egon.toml says otherwise.
+_SHARE_INCLUDED = frozenset(
+    {
+        "llm_journal_summary",
+        "llm_health_summary",
+        "sentiment",
+        "stress",
+        "sleep",
+        "step_count",
+        "exercise",
+    }
+)
 
 # Default signal pairs to exclude from the top-correlations chart.
 # These are typically tautological or near-identity relationships that add
@@ -78,7 +92,14 @@ class ReportConfig:
         return self.analyses.get(key, _DEFAULTS.get(key, True))
 
 
-def load_report_config(config_path: Path | None = None) -> ReportConfig:
+def share_config(overrides: dict[str, bool] | None = None) -> ReportConfig:
+    """Return the shorter set of analyses for a report to share, plus any *overrides*."""
+    return ReportConfig(
+        analyses={**{k: k in _SHARE_INCLUDED for k in _DEFAULTS}, **(overrides or {})}
+    )
+
+
+def load_report_config(config_path: Path | None = None, *, share: bool = False) -> ReportConfig:
     """
     Load ``egon.toml`` from *config_path* (or the cwd if None).
 
@@ -87,7 +108,7 @@ def load_report_config(config_path: Path | None = None) -> ReportConfig:
     """
     path = config_path or (Path.cwd() / "egon.toml")
     if not path.is_file():
-        return ReportConfig()
+        return share_config() if share else ReportConfig()
 
     with path.open("rb") as fh:
         raw = tomllib.load(fh)
@@ -102,6 +123,12 @@ def load_report_config(config_path: Path | None = None) -> ReportConfig:
         excluded_pairs = [(str(p[0]), str(p[1])) for p in raw_pairs if len(p) == 2]
     else:
         excluded_pairs = list(_DEFAULT_EXCLUDED_CORRELATION_PAIRS)
+
+    if share:
+        share_raw: dict = raw.get("report", {}).get("share", {})
+        analyses = share_config(
+            {k: bool(v) for k, v in share_raw.items() if k in _DEFAULTS}
+        ).analyses
 
     return ReportConfig(analyses=analyses, excluded_correlation_pairs=excluded_pairs)
 
