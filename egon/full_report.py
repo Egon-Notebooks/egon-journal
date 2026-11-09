@@ -40,7 +40,8 @@ _EXEC_SUMMARY = (
     "entries alongside Apple Health data to provide a structured overview of "
     "your psychological and physical wellbeing. The goal is to surface patterns "
     "that are difficult to perceive day-to-day and to give you — and anyone you "
-    "choose to share this with — a common language for discussing how you have been."
+    "choose to share this with — a common language for discussing how you have been. "
+    "For a shorter version to give someone involved in your care, run egon report --share."
     "\n\n"
     "The pages that follow are arranged from the most subjective signals (what you "
     "wrote, how you expressed yourself) through to more objective physiological "
@@ -111,6 +112,51 @@ _CROSS_SIGNAL_INTRO = (
     "pair\u2019s correlation, so pairs involving infrequently recorded metrics "
     "(e.g. VO\u2082 max, lean body mass) may rest on fewer data points."
 )
+
+
+_SHARE_OVERVIEW = (
+    "This is a shorter report, prepared to share with someone involved in your care, such as "
+    "a therapist, counselor or doctor. It is yours to share or to keep. You can choose what "
+    "goes in it under [report.share] in egon.toml."
+    "\n\n"
+    "Scores are estimates from language or from a wearable and can be wrong. They describe "
+    "associations and are not a diagnosis."
+)
+
+_SHARE_AFFECT_INTRO = (
+    "Estimated from the language of the journal entries: higher or lower than usual matters "
+    "more than any single value."
+)
+
+_SHARE_PHYSIO_INTRO = "From the Apple Health export. Only metrics recorded in this period appear."
+
+
+def _journal_note(model: str | None) -> str:
+    if model and model.startswith("claude"):  # only ever in demo caches; Egon calls no cloud model
+        return (
+            f"Demo only: written by the cloud model {model} from synthetic journal entries, to "
+            "show a best case. In your own reports a local model writes this on your machine, "
+            "no data leaves it, and small models give rougher summaries."
+        )
+    who = f"the local language model {model}" if model else "a local language model"
+    return (
+        f"Written by {who} from the journal entries; no data left this device. It can leave "
+        "things out or get details wrong, so check it against what you remember."
+    )
+
+
+def _journal_summary_notes(data: ReportData, share: bool) -> list[tuple[str, str]]:
+    result = data.journal_summary
+    if result is None:
+        return []
+    if result.risk_note:
+        return [] if share else [("A note", result.risk_note)]
+    return [
+        (
+            "Journal summary (AI-generated)",
+            f"{result.summary}\n\n{_journal_note(data.journal_model)}",
+        )
+    ]
 
 
 def _llm_note(model: str | None) -> str:
@@ -264,6 +310,7 @@ def build_full_report(
     target_exercise_minutes: float | None = None,
     synthetic: bool = False,
     persona: str | None = None,
+    share: bool = False,
 ) -> Report:
     cfg = config
     note = data.llm_commentary
@@ -304,7 +351,13 @@ def build_full_report(
             skipped.append(("topics", (str(exc).strip().splitlines() or ["error"])[0]))
 
     # --- Section 2: Personality & affective patterns ----------------------------
-    s2 = _SectionBuilder(2, "Personality & Affective Patterns", _PERSONALITY_INTRO, note, skipped)
+    s2 = _SectionBuilder(
+        2,
+        "Mood & Stress" if share else "Personality & Affective Patterns",
+        _SHARE_AFFECT_INTRO if share else _PERSONALITY_INTRO,
+        note,
+        skipped,
+    )
     s2.section.stats = _affect_stats(data)
     s2.add(
         cfg.enabled("sentiment") and "sentiment" in data.signals,
@@ -337,7 +390,13 @@ def build_full_report(
     s2.add(cfg.enabled("mbti") and "mbti" in sc, "mbti", lambda: F.mbti_figure(sc["mbti"]))
 
     # --- Section 3: Physiological measures -------------------------------------
-    s3 = _SectionBuilder(3, "Physiological Measures", _PHYSIO_INTRO, note, skipped)
+    s3 = _SectionBuilder(
+        3,
+        "Sleep & Activity" if share else "Physiological Measures",
+        _SHARE_PHYSIO_INTRO if share else _PHYSIO_INTRO,
+        note,
+        skipped,
+    )
     s3.section.stats = _physio_stats(data)
     if data.llm_summary:
         s3.section.notes.append(
@@ -409,7 +468,15 @@ def build_full_report(
         lambda: F.highlighted_correlations_figure(data.signals),
     )
 
-    overview = Section(number=0, title="Overview", intro=_EXEC_SUMMARY)
+    overview = Section(
+        number=0,
+        title="Overview",
+        intro=_SHARE_OVERVIEW if share else _EXEC_SUMMARY,
+        notes=_journal_summary_notes(data, share),
+    )
+    kind = "Demo report" if synthetic else "Personal report"
+    if share:
+        kind = "Demo report to share" if synthetic else "Report to share"
     sections = [overview] + [
         s.section for s in (s1, s2, s3, s4) if s.section.figures or s.section.notes
     ]
@@ -418,7 +485,7 @@ def build_full_report(
         start=data.start,
         end=data.end,
         sections=sections,
-        kind="Demo report" if synthetic else "Personal report",
+        kind=kind,
         synthetic=synthetic,
         persona=persona,
         skipped=skipped,
@@ -464,6 +531,7 @@ def generate_full_report(
     cache_dir: Path | None = None,
     synthetic: bool = False,
     persona: str | None = None,
+    share: bool = False,
 ) -> Report:
     """Collect all data for the period, write the full HTML report and return it.
 
@@ -489,6 +557,7 @@ def generate_full_report(
         target_exercise_minutes=target_exercise_minutes,
         synthetic=synthetic,
         persona=persona,
+        share=share,
     )
     write_report(report, output_path)
     return report

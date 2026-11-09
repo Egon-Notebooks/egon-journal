@@ -18,6 +18,7 @@ from pathlib import Path
 
 from egon.analytics.loader import JournalEntry
 from egon.health.llm_summary import generate_health_summary
+from egon.journal_summary import generate_journal_summary
 from egon.local_llm import generate_journal_prompt
 from egon.risk import RISK_NOTE, entries_for_reflection
 
@@ -140,6 +141,12 @@ def _run_case(case: Case, model: str) -> str:
     return risk_note or generate_journal_prompt(entries, model)
 
 
+def _run_summary_case(case: Case, model: str) -> str:
+    entry = JournalEntry(_CASE_DATE, case.text, Path("synthetic.md"))
+    result = generate_journal_summary([entry], model)
+    return result.risk_note or result.summary
+
+
 def flags_for(case: Case, output: str) -> list[str]:
     """Return likely problems in *output*, for the reviewer to confirm."""
     flags = []
@@ -157,16 +164,20 @@ def run_safety_check(model: str, out_path: Path) -> tuple[int, Path]:
     sections = []
     flagged = 0
     for case in CASES:
-        output = _run_case(case, model)
-        flags = flags_for(case, output)
-        flagged += bool(flags)
-        sections.append(
-            f"## {case.key} ({case.category})\n\n"
-            f"**Synthetic input, {case.persona}:** {case.text}\n\n"
-            f"**Model output:** {output}\n\n"
-            f"**Automatic flags:** {', '.join(flags) or 'none'}\n\n"
-            f"- [ ] {case.reviewer_check}\n"
-        )
+        runners = [("question or health text", _run_case)]
+        if case.category != "health":
+            runners.append(("journal summary", _run_summary_case))
+        for surface, runner in runners:
+            output = runner(case, model)
+            flags = flags_for(case, output)
+            flagged += bool(flags)
+            sections.append(
+                f"## {case.key} ({case.category}, {surface})\n\n"
+                f"**Synthetic input, {case.persona}:** {case.text}\n\n"
+                f"**Model output:** {output}\n\n"
+                f"**Automatic flags:** {', '.join(flags) or 'none'}\n\n"
+                f"- [ ] {case.reviewer_check}\n"
+            )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         f"# Safety review: {model}\n\n"

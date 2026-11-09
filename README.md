@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/tests.yml/badge.svg)](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/tests.yml)
 [![Lint](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/lint.yml/badge.svg)](https://github.com/Egon-Notebooks/egon-journal/actions/workflows/lint.yml)
+[![Coverage](https://raw.githubusercontent.com/Egon-Notebooks/egon-journal/badges/coverage.svg)](.github/workflows/tests.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -277,6 +278,16 @@ report was written. Reports go to `./reports/` by default; set `EGON_REPORTS_DIR
 `.env` (or pass `--reports-dir`) to keep them elsewhere. Model scores are cached per period
 in `<reports dir>/full_report/.cache/<period>/` and shared by all report commands, so each
 model runs at most once per period; delete a file there to re-score.
+
+**To share with someone involved in your care**, such as a therapist, counselor or doctor,
+`uv run egon report --for 2026-Q1 --share` writes a shorter report to
+`<reports dir>/share_report/2026-Q1.html`. It leaves out personality estimates, word lists and
+correlations by default; choose what goes in under `[report.share]` in `egon.toml`. Egon only
+writes the file; sharing it is up to you.
+
+With Ollama running, the full and shorter reports start with a short **AI summary of the
+period's journal entries**, naming any particularly important events. It is written on your machine and
+labeled as AI-generated. Turn it off with `llm_journal_summary = false`.
 
 `egon report` also writes all journal entries of the period into **one Markdown file**,
 `<reports dir>/journal_entries/<period>.md`, one dated section per entry. Most AI chatbots

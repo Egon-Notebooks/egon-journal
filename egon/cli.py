@@ -969,6 +969,7 @@ def _run_full_report(
     end: date_type,
     label: str,
     full_output: Path,
+    share: bool = False,
 ) -> str | None:
     def _parse_target(env_key: str) -> float | None:
         raw = os.getenv(env_key, "").strip()
@@ -993,7 +994,9 @@ def _run_full_report(
             target_resting_heart_rate=_parse_target("EGON_TARGET_RESTING_HEART_RATE"),
             target_exercise_minutes=_parse_target("EGON_TARGET_EXERCISE_MINUTES"),
             output_path=full_output,
-            config=load_report_config(),
+            config=load_report_config(share=share),
+            cache_dir=reports_dir() / "full_report" / ".cache" / label,
+            share=share,
         )
     except Exception as exc:
         typer.echo(f"  ✗ full report failed: {exc}", err=True)
@@ -2052,6 +2055,7 @@ def demo_report(
         "--output",
         help="Output HTML path (default: <reports dir>/demo/<folder>-<period>.html)",
     ),
+    share: bool = typer.Option(False, "--share", help="Build the shorter report to share."),
 ) -> None:
     """Build a full report from synthetic persona data, marked as a demo.
 
@@ -2060,7 +2064,7 @@ def demo_report(
     are ignored. Model scores and AI text are cached in <data>/model_scores/<period>/,
     so committing that folder makes the report reproducible without the models.
     """
-    from egon.config import ReportConfig
+    from egon.config import ReportConfig, share_config
     from egon.full_report import generate_full_report
 
     journal_dir = data_dir / "obsidian"
@@ -2084,7 +2088,8 @@ def demo_report(
         raise typer.Exit(1)
 
     entries = filter_entries(load_journal_entries(journal_dir), start, end)
-    out = output or reports_dir() / "demo" / f"{data_dir.name}-{label}.html"
+    suffix = "-share" if share else ""
+    out = output or reports_dir() / "demo" / f"{data_dir.name}-{label}{suffix}.html"
     _require_html(out)
     typer.echo(f"Demo report · {persona} · {label} · {len(entries)} journal entries")
     report = generate_full_report(
@@ -2094,10 +2099,11 @@ def demo_report(
         end=end,
         label=label,
         output_path=out,
-        config=ReportConfig(analyses={"wordcloud": True}),
+        config=share_config() if share else ReportConfig(analyses={"wordcloud": True}),
         cache_dir=data_dir / "model_scores" / label,
         synthetic=True,
         persona=persona,
+        share=share,
     )
     n = sum(len(s.figures) for s in report.sections)
     typer.echo(f"  ✓ {n} figures · {out}")
@@ -2131,6 +2137,11 @@ def report_all(
         False,
         "--full",
         help="Also compile all figures into one combined HTML report.",
+    ),
+    share: bool = typer.Option(
+        False,
+        "--share",
+        help="Write only a shorter report to share with someone involved in your care.",
     ),
     reports_dir_option: Optional[Path] = typer.Option(
         None,
@@ -2204,6 +2215,22 @@ def report_all(
 
     started = time.monotonic()
     _print_report_header(label, start, end, resolved_dir, entries, resolved_xml)
+
+    if share:
+        typer.echo("\nReport to share")
+        share_path = _run_full_report(
+            entries,
+            resolved_xml,
+            start,
+            end,
+            label,
+            full_output=reports_dir() / "share_report" / f"{label}.html",
+            share=True,
+        )
+        if share_path:
+            typer.echo(f"Open: open {share_path}")
+            typer.echo("Only you can decide whether to share it. Egon only wrote this file.")
+        return
 
     results: list[_StepResult] = []
     have_health = bool(resolved_xml and resolved_xml.is_file())
