@@ -116,6 +116,8 @@ uv run egon validate --path ./generated
 uv run egon validate --path ~/my-egon-graph/journal/Journal\ —\ 2026-04-03.md
 ```
 
+This release writes and reads `egon_version` "1"; `validate` says so if a node uses another version.
+
 ---
 
 ## Local LLM journal prompts

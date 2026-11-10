@@ -7,11 +7,16 @@ error strings. An empty list means the node is valid.
 
 from datetime import date as date_type
 
+# The node schema version this release writes, and the versions it can read.
+EGON_VERSION = "1"
+READABLE_EGON_VERSIONS = frozenset({"1"})
+
 VALID_NODE_TYPES = frozenset(
     {
         "article",
         "journal",
         "prompt",
+        "questionnaire",
         "summary",
     }
 )
@@ -24,6 +29,7 @@ _NODE_REQUIRED: dict[str, list[str]] = {
     "article": [],
     "journal": [],  # mood and energy are optional
     "prompt": ["related_article"],
+    "questionnaire": ["questionnaire", "measures"],
     "summary": ["period", "period_label"],
 }
 
@@ -50,8 +56,11 @@ def _check_universal(fm: dict) -> list[str]:
         else:
             errors.append(f"Field 'date' must be a string or date, got {type(d).__name__}")
 
-    if "egon_version" in fm and str(fm["egon_version"]) != "1":
-        errors.append(f"Field 'egon_version' must be '1', got '{fm['egon_version']}'")
+    if "egon_version" in fm and str(fm["egon_version"]) not in READABLE_EGON_VERSIONS:
+        errors.append(
+            f"Field 'egon_version' is '{fm['egon_version']}', but this version of egon-journal "
+            f"reads only {', '.join(sorted(READABLE_EGON_VERSIONS))}"
+        )
 
     if "tags" in fm and not isinstance(fm["tags"], list):
         errors.append("Field 'tags' must be a list")

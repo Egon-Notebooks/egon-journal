@@ -11,6 +11,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from egon.renderer import write_node
+from egon.schema import EGON_VERSION
 
 
 def _iso_week_label(d: date_type) -> str:
@@ -43,7 +44,7 @@ def make_weekly_summary(ref_date: date_type) -> tuple[dict, str]:
         "period": "week",
         "period_label": period_label,
         "tags": [],
-        "egon_version": "1",
+        "egon_version": EGON_VERSION,
     }
 
     body = (
@@ -102,7 +103,7 @@ def make_monthly_summary(ref_date: date_type) -> tuple[dict, str]:
         "period": "month",
         "period_label": period_label,
         "tags": [],
-        "egon_version": "1",
+        "egon_version": EGON_VERSION,
     }
 
     body = (

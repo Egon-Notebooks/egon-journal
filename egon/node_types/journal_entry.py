@@ -8,6 +8,7 @@ from datetime import date as date_type
 from pathlib import Path
 
 from egon.renderer import write_node
+from egon.schema import EGON_VERSION
 
 _BODY = "<!-- Write here. No required structure. -->\n"
 
@@ -22,7 +23,7 @@ def make_journal_entry(entry_date: date_type) -> tuple[dict, str]:
         "tags": [],
         "mood": "",
         "energy": "",
-        "egon_version": "1",
+        "egon_version": EGON_VERSION,
     }
     return frontmatter, _BODY
 
