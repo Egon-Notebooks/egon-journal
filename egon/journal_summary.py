@@ -18,7 +18,7 @@ from egon.analytics.loader import JournalEntry
 from egon.local_llm import build_context, chat
 from egon.risk import entries_for_reflection
 
-_PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
+_PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 _SYSTEM: str = (_PROMPTS_DIR / "journal_summary_system.txt").read_text(encoding="utf-8").strip()
 
 _COMBINE_SYSTEM: str = (

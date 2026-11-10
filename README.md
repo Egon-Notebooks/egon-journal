@@ -29,17 +29,32 @@ All scripts and notebooks in this repository are meant as *proof-of-concept*.
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/)
 
-## Setup
+## Install
+
+One command, with no need to clone this repository:
 
 ```bash
-# Clone and install
-git clone <repo>
+uv tool install git+https://github.com/Egon-Notebooks/egon-journal
+egon --help
+```
+
+Language models are optional. Add the extras you want, for example:
+
+```bash
+uv tool install --force "egon-journal[limbic,local-llm] @ git+https://github.com/Egon-Notebooks/egon-journal"
+```
+
+Create a `.env` file in the folder you run `egon` from to set your graph directories and
+Apple Health export (see *Environment variables* below). The examples in this README use
+`uv run egon`, for working from a clone; after this install, just type `egon`.
+
+## Development setup
+
+```bash
+git clone https://github.com/Egon-Notebooks/egon-journal
 cd egon-journal
 uv sync
-
-# Configure your graph directories and Apple Health export (optional but recommended)
 cp .env.example .env
-# Edit .env — see "Environment variables" below
 ```
 
 ---
@@ -293,7 +308,7 @@ labeled as AI-generated. Turn it off with `llm_journal_summary = false`.
 `<reports dir>/journal_entries/<period>.md`, one dated section per entry. Most AI chatbots
 accept only a few uploaded files, so this is the easy way to give one your whole journal for a period. The file is only written to your
 machine; anything you upload to a chatbot leaves it. On its own:
-`uv run egon report-journal-entries --for 2026-Q1`.
+`uv run egon report journal-entries --for 2026-Q1`.
 
 Available charts: word count, frequent words, first-person pronoun ratio, topics,
 sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,

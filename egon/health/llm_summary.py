@@ -36,7 +36,7 @@ from egon.health.apple_health import (
 from egon.health.sleep import filter_sleep_by_date, load_sleep_records
 from egon.local_llm import chat
 
-_PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
+_PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
 _SUMMARY_SYSTEM: str = (
     (_PROMPTS_DIR / "health_summary_system.txt").read_text(encoding="utf-8").strip()
 )
