@@ -20,6 +20,7 @@ from pathlib import Path
 import yaml
 
 from egon.renderer import write_node
+from egon.schema import EGON_VERSION
 
 
 def load_prompt_yaml(yaml_path: Path) -> dict:
@@ -45,7 +46,7 @@ def make_prompt_node(source: dict, generation_date: date_type) -> tuple[dict, st
         "type": "prompt",
         "tags": tags,
         "related_article": topic,
-        "egon_version": "1",
+        "egon_version": EGON_VERSION,
     }
 
     lines: list[str] = [f"# {title}", ""]

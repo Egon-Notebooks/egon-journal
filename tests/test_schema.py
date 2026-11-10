@@ -157,3 +157,18 @@ class TestSummaryNode:
         fm = _summary(period="quarterly")
         errors = validate(fm)
         assert any("period" in e for e in errors)
+
+
+class TestQuestionnaireNode:
+    def test_valid(self):
+        fm = _base("questionnaire", questionnaire="PHQ-9", measures="depression")
+        assert validate(fm) == []
+
+    def test_missing_instrument(self):
+        errors = validate(_base("questionnaire", measures="depression"))
+        assert any("questionnaire" in e for e in errors)
+
+
+def test_unreadable_egon_version_names_the_versions_it_reads():
+    errors = validate({**_base("article"), "egon_version": "2"})
+    assert any("reads only 1" in e for e in errors)
