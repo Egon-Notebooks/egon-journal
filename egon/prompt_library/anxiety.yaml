@@ -1,0 +1,11 @@
+name: "Anxiety"
+topic: "Understanding anxiety"
+tags:
+  - anxiety
+  - emotions
+prompt_text: |
+  Where do you feel anxiety in your body, or where did you feel it the last
+  time it appeared? Describe the physical sensation, not the story around it.
+  What was happening in the hours before it arrived?
+starter: "The last time I felt anxious..."
+duration_minutes: 5

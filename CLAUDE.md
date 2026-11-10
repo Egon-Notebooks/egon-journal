@@ -1,6 +1,6 @@
 # egon-journal
 
-Journaling CLI for the Egon graph: entries, prompts, programs, local language models
+Journaling CLI for the Egon graph: entries, prompts, local language models
 and interactive HTML reports. Workspace-wide rules (privacy, docs sync, American
 English, git conventions) are in `../CLAUDE.md`; product docs are in `../docs/`.
 

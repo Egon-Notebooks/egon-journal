@@ -42,13 +42,6 @@ from egon.limbic.sentiment import sentiment_by_day
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.local_llm import DEFAULT_MODEL, check_hardware, ensure_model, generate_journal_prompt
 from egon.node_types.journal_entry import generate_journal_entry
-from egon.node_types.program import (
-    generate_program as _generate_program,
-)
-from egon.node_types.program import (
-    generate_programs_from_dir,
-    load_program_yaml,
-)
 from egon.node_types.prompt import generate_prompts_from_dir
 from egon.node_types.summary import generate_monthly_summary, generate_weekly_summary
 from egon.report import figures
@@ -66,9 +59,8 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-_REPO_ROOT = Path(__file__).parent.parent
-_CONTENT_DIR = _REPO_ROOT / "content"
-_GENERATED_DIR = _REPO_ROOT / "generated"
+_PROMPT_LIBRARY = Path(__file__).parent / "prompt_library"
+_GENERATED_DIR = Path("generated")
 
 
 # ---------------------------------------------------------------------------
@@ -128,8 +120,8 @@ def new_summary(
 def generate_prompts(
     output: Optional[Path] = typer.Option(None, help="Output directory"),
 ) -> None:
-    """Generate all prompt nodes from YAML source files in content/prompts/."""
-    prompts_dir = _CONTENT_DIR / "prompts"
+    """Generate all prompt nodes from the prompt library."""
+    prompts_dir = _PROMPT_LIBRARY
     if not prompts_dir.exists():
         typer.echo(f"Error: prompts directory not found: {prompts_dir}", err=True)
         raise typer.Exit(1)
@@ -138,58 +130,6 @@ def generate_prompts(
     for p in paths:
         typer.echo(f"Generated: {p}")
     typer.echo(f"Done. {len(paths)} prompt(s) generated.")
-
-
-@app.command(name="generate-program")
-def generate_program(
-    name: str = typer.Option(..., "--name", help="Program title (must match YAML 'title' field)"),
-    output: Optional[Path] = typer.Option(None, help="Output directory"),
-) -> None:
-    """Generate all nodes for a specific program by title."""
-    programs_dir = _CONTENT_DIR / "programs"
-    source = _find_program(programs_dir, name)
-    if source is None:
-        typer.echo(f"Error: no program found with title '{name}'", err=True)
-        raise typer.Exit(1)
-    out_dir = _resolve_output(output, "EGON_GRAPH_DIR")
-    paths = _generate_program(source, date_type.today(), out_dir)
-    for p in paths:
-        typer.echo(f"Generated: {p}")
-    typer.echo(f"Done. {len(paths)} node(s) generated.")
-
-
-@app.command()
-def generate_all_programs(
-    output: Optional[Path] = typer.Option(None, help="Output directory"),
-) -> None:
-    """Generate all program nodes from YAML source files in content/programs/."""
-    programs_dir = _CONTENT_DIR / "programs"
-    if not programs_dir.exists():
-        typer.echo(f"Error: programs directory not found: {programs_dir}", err=True)
-        raise typer.Exit(1)
-    out_dir = _resolve_output(output, "EGON_GRAPH_DIR")
-    paths = generate_programs_from_dir(programs_dir, date_type.today(), out_dir)
-    for p in paths:
-        typer.echo(f"Generated: {p}")
-    typer.echo(f"Done. {len(paths)} node(s) generated.")
-
-
-@app.command()
-def list_programs() -> None:
-    """List available programs from YAML source files."""
-    programs_dir = _CONTENT_DIR / "programs"
-    if not programs_dir.exists():
-        typer.echo("No programs directory found.")
-        return
-    found = False
-    for yaml_path in sorted(programs_dir.glob("*.yaml")):
-        source = load_program_yaml(yaml_path)
-        title = source.get("title", yaml_path.stem)
-        duration = source.get("duration_days", "?")
-        typer.echo(f"  {title} ({duration} days)")
-        found = True
-    if not found:
-        typer.echo("No programs found.")
 
 
 @app.command(name="validate")
@@ -2299,14 +2239,3 @@ for _name, _command in _SINGLE_REPORTS.items():
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
-
-
-def _find_program(programs_dir: Path, title: str) -> Optional[dict]:
-    """Return the YAML source dict for the program whose title matches, or None."""
-    if not programs_dir.exists():
-        return None
-    for yaml_path in sorted(programs_dir.glob("*.yaml")):
-        source = load_program_yaml(yaml_path)
-        if source.get("title") == title:
-            return source
-    return None

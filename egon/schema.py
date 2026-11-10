@@ -12,8 +12,6 @@ VALID_NODE_TYPES = frozenset(
         "article",
         "journal",
         "prompt",
-        "program",
-        "program-day",
         "summary",
     }
 )
@@ -26,8 +24,6 @@ _NODE_REQUIRED: dict[str, list[str]] = {
     "article": [],
     "journal": [],  # mood and energy are optional
     "prompt": ["related_article"],
-    "program": ["duration_days"],
-    "program-day": ["program", "day"],
     "summary": ["period", "period_label"],
 }
 
@@ -77,14 +73,6 @@ def _check_type_fields(fm: dict) -> list[str]:
     if node_type == "summary" and "period" in fm:
         if fm["period"] not in ("week", "month"):
             errors.append(f"Field 'period' must be 'week' or 'month', got '{fm['period']}'")
-
-    if node_type == "program-day" and "day" in fm:
-        if not isinstance(fm["day"], int) or fm["day"] < 1:
-            errors.append("Field 'day' must be a positive integer")
-
-    if node_type == "program" and "duration_days" in fm:
-        if not isinstance(fm["duration_days"], int) or fm["duration_days"] < 1:
-            errors.append("Field 'duration_days' must be a positive integer")
 
     return errors
 
