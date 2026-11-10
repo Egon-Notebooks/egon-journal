@@ -11,7 +11,7 @@ Structured journaling support for the [Egon Notebooks](https://egonnotebooks.com
 
 Two jobs, both fully local:
 
-1. **Journaling nodes** — journal entries, prompts, structured programs and summary templates, as plain
+1. **Journaling nodes** — journal entries, prompts and summary templates, as plain
    Markdown files with YAML frontmatter, ready to drop into an Obsidian or Logseq vault.
 2. **Reports** — analyzes your journal and Apple Health export on your own device and produces
    interactive HTML reports on mood, stress, personality, sleep, activity and how they relate.
@@ -82,32 +82,12 @@ Files are named `Journal — YYYY-MM-DD.md`.
 ## Generating prompts
 
 ```bash
-# Generate all prompt nodes from content/prompts/*.yaml
+# Generate all prompt nodes from the prompt library
 uv run egon generate-prompts
 
 # Write to a specific directory
 uv run egon generate-prompts --output ~/my-egon-graph/prompts
 ```
-
----
-
-## Generating programs
-
-```bash
-# List available programs
-uv run egon list-programs
-
-# Generate one program by title
-uv run egon generate-program --name "14-Day Sleep Improvement"
-
-# Generate all programs
-uv run egon generate-all-programs
-
-# Write to a specific directory
-uv run egon generate-all-programs --output ~/my-egon-graph/programs
-```
-
-Each program produces one index node and one node per day.
 
 ---
 

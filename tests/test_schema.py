@@ -30,18 +30,6 @@ def _prompt(**kw) -> dict:
     return _base("prompt", related_article="Some article", **kw)
 
 
-def _program(**kw) -> dict:
-    defaults = {"duration_days": 7}
-    defaults.update(kw)
-    return _base("program", **defaults)
-
-
-def _program_day(**kw) -> dict:
-    defaults = {"program": "Some Program", "day": 1}
-    defaults.update(kw)
-    return _base("program-day", **defaults)
-
-
 def _summary(period="week", **kw) -> dict:
     return _base(
         "summary",
@@ -146,41 +134,6 @@ class TestPromptNode:
         fm = _base("prompt")  # no related_article
         errors = validate(fm)
         assert any("related_article" in e for e in errors)
-
-
-class TestProgramNode:
-    def test_valid(self):
-        assert validate(_program()) == []
-
-    def test_missing_duration_days(self):
-        fm = _base("program")
-        errors = validate(fm)
-        assert any("duration_days" in e for e in errors)
-
-    def test_duration_days_must_be_positive(self):
-        fm = _program(duration_days=0)
-        errors = validate(fm)
-        assert any("duration_days" in e for e in errors)
-
-
-class TestProgramDayNode:
-    def test_valid(self):
-        assert validate(_program_day()) == []
-
-    def test_missing_program(self):
-        fm = _base("program-day", day=1)
-        errors = validate(fm)
-        assert any("program" in e for e in errors)
-
-    def test_missing_day(self):
-        fm = _base("program-day", program="Some Program")
-        errors = validate(fm)
-        assert any("'day'" in e for e in errors)
-
-    def test_day_must_be_positive(self):
-        fm = _program_day(day=0)
-        errors = validate(fm)
-        assert any("day" in e for e in errors)
 
 
 class TestSummaryNode:

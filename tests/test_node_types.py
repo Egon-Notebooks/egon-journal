@@ -11,11 +11,6 @@ from egon.node_types.journal_entry import (
     journal_entry_filename,
     make_journal_entry,
 )
-from egon.node_types.program import (
-    generate_program,
-    make_program_day,
-    make_program_index,
-)
 from egon.node_types.prompt import generate_prompt, make_prompt_node, prompt_filename
 from egon.node_types.summary import (
     generate_monthly_summary,
@@ -137,12 +132,12 @@ class TestPromptNode:
         assert fm["type"] == "prompt"
 
     def test_generate_from_real_yaml(self, tmp_path):
-        """Smoke test: generate from the actual YAML files in content/prompts/."""
+        """Smoke test: generate from the actual YAML files in the prompt library."""
         from egon.node_types.prompt import generate_prompts_from_dir
 
-        content_dir = Path(__file__).parent.parent / "content" / "prompts"
+        content_dir = Path(__file__).parent.parent / "egon" / "prompt_library"
         if not content_dir.exists():
-            pytest.skip("content/prompts not found")
+            pytest.skip("prompt library not found")
         paths = generate_prompts_from_dir(content_dir, self.REF, tmp_path)
         assert len(paths) >= 1
         for p in paths:
@@ -185,91 +180,6 @@ SLEEP_SOURCE = {
         },
     ],
 }
-
-
-class TestProgramNode:
-    REF = date(2026, 4, 3)
-
-    def test_index_frontmatter_type(self):
-        fm, _ = make_program_index(SLEEP_SOURCE, self.REF)
-        assert fm["type"] == "program"
-
-    def test_index_frontmatter_duration_days(self):
-        fm, _ = make_program_index(SLEEP_SOURCE, self.REF)
-        assert fm["duration_days"] == 3
-
-    def test_index_frontmatter_valid(self):
-        fm, _ = make_program_index(SLEEP_SOURCE, self.REF)
-        fm_copy = {**fm, "date": str(fm["date"])}
-        assert validate(fm_copy) == []
-
-    def test_index_body_lists_all_days(self):
-        _, body = make_program_index(SLEEP_SOURCE, self.REF)
-        for n in range(1, 4):
-            assert f"[[14-Day Sleep Improvement {EM} Day {n:02d}]]" in body
-
-    def test_index_body_has_related_reading(self):
-        _, body = make_program_index(SLEEP_SOURCE, self.REF)
-        assert "[[Sleep and mental health]]" in body
-
-    def test_day_frontmatter_type(self):
-        fm, _ = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][0], self.REF)
-        assert fm["type"] == "program-day"
-
-    def test_day_frontmatter_program_link(self):
-        fm, _ = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][0], self.REF)
-        assert fm["program"] == "14-Day Sleep Improvement"
-
-    def test_day_frontmatter_day_number(self):
-        fm, _ = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][1], self.REF)
-        assert fm["day"] == 2
-
-    def test_day_frontmatter_valid(self):
-        fm, _ = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][0], self.REF)
-        fm_copy = {**fm, "date": str(fm["date"])}
-        assert validate(fm_copy) == []
-
-    def test_day_body_links_back_to_program(self):
-        _, body = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][0], self.REF)
-        assert "[[14-Day Sleep Improvement]]" in body
-
-    def test_day_body_has_article_link(self):
-        _, body = make_program_day(SLEEP_SOURCE, SLEEP_SOURCE["days"][0], self.REF)
-        assert "[[Sleep and mental health]]" in body
-
-    def test_generate_program_produces_all_files(self, tmp_path):
-        paths = generate_program(SLEEP_SOURCE, self.REF, tmp_path)
-        # 1 index + 3 day nodes
-        assert len(paths) == 4
-        for p in paths:
-            assert p.exists()
-
-    def test_day_filenames_are_zero_padded(self, tmp_path):
-        paths = generate_program(SLEEP_SOURCE, self.REF, tmp_path)
-        day_names = [p.name for p in paths if "Day" in p.name]
-        assert any("Day 01" in n for n in day_names)
-        assert any("Day 02" in n for n in day_names)
-        assert any("Day 03" in n for n in day_names)
-
-    def test_generate_from_real_yaml(self, tmp_path):
-        """Smoke test: generate from the actual 14-day sleep YAML."""
-        from egon.node_types.program import generate_programs_from_dir
-
-        content_dir = Path(__file__).parent.parent / "content" / "programs"
-        if not content_dir.exists():
-            pytest.skip("content/programs not found")
-        paths = generate_programs_from_dir(content_dir, self.REF, tmp_path)
-        # sleep (15 nodes) + anxiety (8 nodes) = 23
-        assert len(paths) >= 1
-        for p in paths:
-            assert p.exists()
-            fm, _ = _parse(p.read_text())
-            assert validate({**fm, "date": str(fm["date"])}) == []
-
-
-# ---------------------------------------------------------------------------
-# Summary node
-# ---------------------------------------------------------------------------
 
 
 class TestWeeklySummary:

@@ -1,7 +1,7 @@
 """
 Prompt node renderer from YAML source (type: prompt).
 
-Source YAML lives in content/prompts/*.yaml.
+Source YAML lives in egon/prompt_library/*.yaml.
 Filename convention: Prompt — {name}.md  (em dash, not hyphen)
 
 YAML source schema:

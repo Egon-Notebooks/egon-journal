@@ -1,0 +1,10 @@
+name: "Rumination"
+topic: "Rumination and how to interrupt it"
+tags:
+  - rumination
+  - thinking-patterns
+prompt_text: |
+  Describe a thought that has been repeating. When did it first appear?
+  What tends to trigger it? What do you do when you notice it?
+starter: "A thought that kept coming back to me recently..."
+duration_minutes: 5
