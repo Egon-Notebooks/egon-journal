@@ -29,7 +29,7 @@ from egon.analytics.word_count import (
     period_label,
     word_counts_by_day,
 )
-from egon.config import load_local_llm_config, reports_dir
+from egon.config import load_graph_app, load_local_llm_config, reports_dir
 from egon.health.apple_health import (
     daily_mean,
     daily_sum,
@@ -91,8 +91,16 @@ def new_entry(
     """Create a journal entry for today (or a given date)."""
     entry_date = date_type.fromisoformat(date) if date else date_type.today()
     out_dir = _resolve_output(output, "EGON_JOURNAL_DIR")
-    path = generate_journal_entry(entry_date, out_dir)
-    typer.echo(f"Created: {path}")
+    try:
+        path = generate_journal_entry(entry_date, out_dir, load_graph_app())
+    except FileExistsError as exc:
+        typer.echo(f"Already exists, left unchanged: {exc}")
+        path = Path(str(exc))
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+    else:
+        typer.echo(f"Created: {path}")
     if open:
         editor = os.environ.get("EDITOR", "nano")
         subprocess.run([editor, str(path)])

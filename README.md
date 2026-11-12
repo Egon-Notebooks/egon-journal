@@ -75,6 +75,11 @@ uv run egon new-entry --open
 uv run egon new-entry --output ~/my-egon-graph/journal
 ```
 
+`new-entry` never overwrites an entry that already exists. If your graph is in Logseq, set
+`app = "logseq"` under `[graph]` in `egon.toml` and point `EGON_JOURNAL_DIR` at the graph's
+`journals/` folder: entries are then written as Logseq's own daily pages
+(`2026_11_11.md`), and reports read them like any other entry.
+
 Files are named `Journal — YYYY-MM-DD.md`.
 
 ---

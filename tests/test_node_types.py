@@ -252,3 +252,34 @@ class TestMonthlySummary:
         path = generate_monthly_summary(self.REF, tmp_path)
         assert path.exists()
         assert "2026-04" in path.name
+
+
+class TestLogseqJournalEntry:
+    REF = date(2026, 4, 3)
+
+    def test_written_as_logseq_journal_page(self, tmp_path):
+        from egon.node_types.journal_entry import generate_journal_entry
+
+        path = generate_journal_entry(self.REF, tmp_path, app="logseq")
+        assert path.name == "2026_04_03.md"
+        assert path.read_text().startswith("type:: journal\negon_version:: 1\n")
+
+    def test_never_overwrites_an_existing_entry(self, tmp_path):
+        from egon.node_types.journal_entry import generate_journal_entry
+
+        for app in ("obsidian", "logseq"):
+            path = generate_journal_entry(self.REF, tmp_path, app=app)
+            path.write_text("Something I wrote.")
+            with pytest.raises(FileExistsError):
+                generate_journal_entry(self.REF, tmp_path, app=app)
+            assert path.read_text() == "Something I wrote."
+
+    def test_logseq_pages_load_as_entries_without_their_properties(self, tmp_path):
+        from egon.analytics.loader import load_journal_entries
+
+        (tmp_path / "2026_04_03.md").write_text(
+            "type:: journal\negon_version:: 1\n\n- Slept badly.\n"
+        )
+        (tmp_path / "Sleep.md").write_text("type:: article\n\n- Not a journal entry.\n")
+        entries = load_journal_entries(tmp_path)
+        assert [(e.date, e.body.strip()) for e in entries] == [(self.REF, "- Slept badly.")]
