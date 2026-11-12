@@ -114,3 +114,17 @@ class TestReportsDir:
 
         monkeypatch.setenv("EGON_REPORTS_DIR", "  ")
         assert reports_dir() == Path("reports")
+
+
+def test_graph_app_defaults_to_obsidian_and_reads_logseq(tmp_path):
+    import pytest
+
+    from egon.config import load_graph_app
+
+    assert load_graph_app(tmp_path / "missing.toml") == "obsidian"
+    path = tmp_path / "egon.toml"
+    path.write_text('[graph]\napp = "Logseq"\n')
+    assert load_graph_app(path) == "logseq"
+    path.write_text('[graph]\napp = "notion"\n')
+    with pytest.raises(ValueError):
+        load_graph_app(path)

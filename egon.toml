@@ -6,6 +6,12 @@
 # All keys default to `true` unless listed here.
 # Omit a key entirely to accept the default.
 
+# Which app your graph lives in: "obsidian" (default) or "logseq". With "logseq",
+# `egon new-entry` writes Logseq's daily journal page (journals/YYYY_MM_DD.md), so point
+# EGON_JOURNAL_DIR at your graph's journals/ folder.
+[graph]
+app = "obsidian"
+
 [report.analyses]
 wordcloud     = false   # most frequent words (formerly a word cloud); opt in
 topics        = true    # BERTopic topic modeling (requires `uv sync --extra topics`)

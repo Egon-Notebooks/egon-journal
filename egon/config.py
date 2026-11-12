@@ -163,6 +163,21 @@ class LocalLlmConfig:
     model: str = _DEFAULT_LOCAL_LLM_MODEL
 
 
+GRAPH_APPS = ("obsidian", "logseq")
+
+
+def load_graph_app(config_path: Path | None = None) -> str:
+    """Return ``app`` from ``[graph]`` in ``egon.toml``: "obsidian" (default) or "logseq"."""
+    path = config_path or (Path.cwd() / "egon.toml")
+    if not path.is_file():
+        return "obsidian"
+    with path.open("rb") as fh:
+        app = str(tomllib.load(fh).get("graph", {}).get("app", "obsidian")).lower()
+    if app not in GRAPH_APPS:
+        raise ValueError(f"[graph] app in egon.toml must be 'obsidian' or 'logseq', got '{app}'")
+    return app
+
+
 def load_local_llm_config(config_path: Path | None = None) -> LocalLlmConfig:
     """Load ``[local_llm]`` section from ``egon.toml``, falling back to defaults."""
     path = config_path or (Path.cwd() / "egon.toml")

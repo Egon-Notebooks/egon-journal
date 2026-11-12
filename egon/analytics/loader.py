@@ -69,7 +69,11 @@ def _parse_file(path: Path) -> JournalEntry | None:
                     if entry_date:
                         return JournalEntry(date=entry_date, body=body, path=path, meta=meta)
     else:
-        body = content
+        # Logseq journal pages carry page properties ("key:: value") instead of YAML.
+        props = dict(re.findall(r"^([a-z_-]+):: *(.*)$", content, re.M))
+        if props.get("type", "journal") != "journal":
+            return None
+        body = re.sub(r"^[a-z_-]+:: .*\n?", "", content, flags=re.M)
 
     # Fall back: try to extract date from filename  "Journal — YYYY-MM-DD.md"
     entry_date = _date_from_filename(path.stem)
