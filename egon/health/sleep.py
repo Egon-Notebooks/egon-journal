@@ -168,6 +168,28 @@ def load_sleep_onset(xml_path: Path) -> list[tuple[date_type, float]]:
     return sorted(result, key=lambda x: x[0])
 
 
+def rolling_sd_minutes(
+    data: list[tuple[date_type, float]], window: int = 7, min_nights: int = 4
+) -> list[tuple[date_type, float]]:
+    """
+    Standard deviation, in minutes, of hourly values over the trailing *window* days.
+
+    Used for sleep regularity: applied to sleep onset it shows how much bedtime varies,
+    applied to hours asleep how much sleep length varies. Days with fewer than
+    *min_nights* nights in the window are left out.
+    """
+    from datetime import timedelta
+    from statistics import pstdev
+
+    by_day = dict(data)
+    out = []
+    for day, _ in data:
+        values = [by_day[d] for i in range(window) if (d := day - timedelta(days=i)) in by_day]
+        if len(values) >= min_nights:
+            out.append((day, pstdev(values) * 60))
+    return out
+
+
 def filter_sleep_by_date(
     data: list[tuple[date_type, float]],
     start: date_type,

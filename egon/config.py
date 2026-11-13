@@ -43,6 +43,8 @@ _DEFAULTS: dict[str, bool] = {
     "step_count": True,
     "exercise": True,
     "vo2max": True,
+    "daylight": True,
+    "sleep_regularity": True,
     # Section 2 additions
     "emotion": True,
     "cognitive_bias": True,

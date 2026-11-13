@@ -19,11 +19,12 @@ Usage:
 from collections.abc import Callable
 from datetime import date as date_type
 from pathlib import Path
-from statistics import mean
+from statistics import mean, pstdev
 
 from egon.analytics.correlation import correlation_matrix, top_pairs
 from egon.analytics.loader import JournalEntry
 from egon.config import ReportConfig, load_report_config
+from egon.health.sleep import rolling_sd_minutes
 from egon.report import figures as F
 from egon.report.charts.sleep import format_duration
 from egon.report.data import ReportData, build_signals, collect_report_data
@@ -270,6 +271,13 @@ def _physio_stats(data: ReportData) -> list[Stat]:
                 "average per night",
             )
         )
+    if len(data.sleep_onset) >= 7:
+        spread = pstdev(v for _, v in data.sleep_onset) * 60
+        stats.append(Stat("Bedtime spread", f"{spread:.0f}", "min", "standard deviation"))
+    if s := data.health.get("daylight"):
+        stats.append(
+            Stat("Daylight", f"{mean(v for _, v in s.data):.0f}", "min", "average per day")
+        )
     if s := data.health.get("steps"):
         stats.append(Stat("Steps", f"{mean(v for _, v in s.data):,.0f}", "", "average per day"))
     if s := data.health.get("resting_heart_rate"):
@@ -431,6 +439,18 @@ def build_full_report(
         cfg.enabled("sleep") and bool(data.sleep_hours),
         "sleep",
         lambda: F.sleep_figure(data.sleep_hours, data.sleep_onset or None),
+    )
+    s3.add(
+        cfg.enabled("sleep_regularity") and len(data.sleep_onset) >= 7,
+        "sleep-regularity",
+        lambda: F.sleep_regularity_figure(
+            rolling_sd_minutes(data.sleep_onset), rolling_sd_minutes(data.sleep_hours)
+        ),
+    )
+    s3.add(
+        cfg.enabled("daylight") and "daylight" in hl,
+        "daylight",
+        lambda: F.daylight_figure(hl["daylight"].data),
     )
     s3.add(
         cfg.enabled("step_count") and "steps" in hl,

@@ -616,6 +616,62 @@ def sleep_figure(hours: Series, onset: Series | None = None, commentary: str = "
     )
 
 
+def daylight_figure(data: Series, commentary: str = "") -> Figure:
+    return Figure(
+        key="daylight",
+        title="Time in daylight",
+        caption="Minutes per day in daylight, measured by Apple Watch, with a 7-day trailing mean",
+        spec=daily_series_chart(data, label="Daylight", unit="min", color=theme.OCHRE, mark="bar"),
+        why=(
+            "Daylight sets the body clock that times sleep and mood. In over 400,000 UK "
+            "adults, more time in outdoor light was associated with lower odds of "
+            "depression, better mood and easier waking (Burns et al., 2021). It is one of "
+            "the simplest things to change: a walk outside counts."
+        ),
+        how_to_read=(
+            "Gray bars are days; the line is the 7-day average. Apple Watch counts daylight "
+            "with its light sensor, so time with the watch covered or off is missed. "
+            + _DRAG_TO_ZOOM
+        ),
+        commentary=commentary,
+        table=_table(["Date", "Daylight (min)"], data, ",.0f"),
+    )
+
+
+def sleep_regularity_figure(bedtime_sd: Series, length_sd: Series, commentary: str = "") -> Figure:
+    panels = [
+        (bedtime_sd, {"label": "Bedtime varies by", "unit": "min", "color": theme.PLUM}),
+        (length_sd, {"label": "Sleep length varies by", "unit": "min", "color": theme.BLUE}),
+    ]
+    rows = {d: ["", ""] for d, _ in bedtime_sd + length_sd}
+    for d, v in bedtime_sd:
+        rows[d][0] = f"{v:.0f}"
+    for d, v in length_sd:
+        rows[d][1] = f"{v:.0f}"
+    return Figure(
+        key="sleep-regularity",
+        title="Sleep regularity",
+        caption="How much your bedtime and sleep length varied over the previous 7 nights",
+        spec=stacked_series_chart([(s, kw) for s, kw in panels if s]),
+        why=(
+            "When you sleep matters as well as how long. Irregular sleep is associated with "
+            "lower mood and wellbeing (Phillips et al., 2017), and disrupted daily rhythms with "
+            "a higher risk of mood disorders (Lyall et al., 2018). A regular bedtime is one of "
+            "the more reliable ways to sleep better."
+        ),
+        how_to_read=(
+            "Each point is the spread (standard deviation) of the 7 nights up to that day. "
+            "Lower is more regular. People differ, so compare a week with your own "
+            "usual level rather than with anyone else. " + _DRAG_TO_ZOOM
+        ),
+        commentary=commentary,
+        table=Table(
+            ["Night of", "Bedtime spread (min)", "Sleep length spread (min)"],
+            [[d.isoformat(), *v] for d, v in sorted(rows.items())],
+        ),
+    )
+
+
 def step_count_figure(data: Series, commentary: str = "") -> Figure:
     return Figure(
         key="step-count",

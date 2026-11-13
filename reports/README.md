@@ -392,6 +392,28 @@ Default output: `./reports/sleep/<period>.html`
 
 ---
 
+### Sleep regularity
+
+How much your bedtime and your sleep length varied over the previous 7 nights (standard
+deviation, in minutes), from the same Apple Health sleep data. Lower is more regular.
+
+```bash
+uv run egon report sleep-regularity --for 2026-Q1
+```
+
+Default output: `./reports/sleep_regularity/<period>.html`
+
+### Time in daylight
+
+Minutes per day in daylight, measured by the Apple Watch light sensor (watchOS 10 and
+later). Time with the watch covered or off is missed.
+
+```bash
+uv run egon report daylight --for 2026-Q1
+```
+
+Default output: `./reports/daylight/<period>.html`
+
 ### Step count
 
 Plots daily total steps from an Apple Health export as bars with a 7-day mean and a
@@ -518,7 +540,7 @@ All `report-*` commands share these options:
 - **`--output`** — Output file path (`.html`; `.md` for `report-journal-entries`). For a
   PDF, open the report and use *Print → Save as PDF*.
 
-Health reports (`weight`, `resting-heart-rate`, `hrv`, `sleep`, `step-count`, `exercise`, `vo2max`) also accept:
+Health reports (`weight`, `resting-heart-rate`, `hrv`, `sleep`, `sleep-regularity`, `daylight`, `step-count`, `exercise`, `vo2max`) also accept:
 
 - **`--xml`** — Apple Health export path; falls back to `EGON_APPLE_HEALTH_XML` in `.env`
 
