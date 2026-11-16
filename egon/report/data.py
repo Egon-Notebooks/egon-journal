@@ -182,6 +182,7 @@ HEALTH_METRICS: dict[str, tuple[str, Callable]] = {
     "StepCount": ("steps", daily_sum),
     "AppleExerciseTime": ("exercise", daily_sum),
     "VO2Max": ("vo2max", daily_mean),
+    "TimeInDaylight": ("daylight", daily_sum),
 }
 
 
@@ -238,6 +239,7 @@ def build_signals(
         "steps": "steps",
         "exercise": "exercise (min)",
         "vo2max": "VO₂ max",
+        "daylight": "daylight (min)",
     }
     for key, name in names.items():
         if key in health:

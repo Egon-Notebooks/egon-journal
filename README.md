@@ -299,7 +299,8 @@ machine; anything you upload to a chatbot leaves it. On its own:
 
 Available charts: word count, frequent words, first-person pronoun ratio, topics,
 sentiment, stress, loneliness, emotion, cognitive distortions, Big Five, MBTI,
-weight, resting heart rate, HRV, sleep, steps, exercise, VO₂ max, and cross-signal
+weight, resting heart rate, HRV, sleep and its regularity, time in daylight, steps,
+exercise, VO₂ max, and cross-signal
 correlations.
 
 An example built from synthetic data is on the website's

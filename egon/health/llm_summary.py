@@ -57,6 +57,7 @@ _QUANTITY_METRICS: list[tuple[str, str, str, str]] = [
     ("StepCount", "step-count", "Steps", "sum"),
     ("AppleExerciseTime", "exercise", "Exercise time", "sum"),
     ("VO2Max", "vo2max", "VO₂ max", "mean"),
+    ("TimeInDaylight", "daylight", "Time in daylight", "sum"),
 ]
 
 

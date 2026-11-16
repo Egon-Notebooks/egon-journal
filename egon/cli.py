@@ -37,7 +37,12 @@ from egon.health.apple_health import (
     infer_unit,
     load_records,
 )
-from egon.health.sleep import filter_sleep_by_date, load_sleep_onset, load_sleep_records
+from egon.health.sleep import (
+    filter_sleep_by_date,
+    load_sleep_onset,
+    load_sleep_records,
+    rolling_sd_minutes,
+)
 from egon.limbic.sentiment import sentiment_by_day
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.local_llm import DEFAULT_MODEL, check_hardware, ensure_model, generate_journal_prompt
@@ -1275,6 +1280,78 @@ def report_sleep(
     _save_figure(figures.sleep_figure(data, onset_data), resolved_output, label, start, end)
 
 
+def report_sleep_regularity(
+    xml_path: Optional[Path] = typer.Option(
+        None,
+        "--xml",
+        help="Path to Apple Health export.xml (default: $EGON_APPLE_HEALTH_XML)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output HTML path (default: <reports dir>/sleep_regularity/<period-label>.html)",
+    ),
+) -> None:
+    """Plot how much bedtime and sleep length vary, from an Apple Health export."""
+    resolved_xml = _resolve_apple_health_xml(xml_path)
+    if not resolved_xml:
+        typer.echo(
+            "Error: no Apple Health export found.\n"
+            "Set EGON_APPLE_HEALTH_XML in .env or pass --xml.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if not resolved_xml.is_file():
+        typer.echo(f"Error: file not found: {resolved_xml}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Parsing {resolved_xml.name} ...")
+    all_data = load_sleep_records(resolved_xml)
+    if not all_data:
+        typer.echo("Error: no SleepAnalysis records found in export.", err=True)
+        raise typer.Exit(1)
+
+    data = filter_sleep_by_date(all_data, start, end)
+    if not data:
+        typer.echo(f"No sleep data found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    all_onset = load_sleep_onset(resolved_xml)
+    onset_data = filter_sleep_by_date(all_onset, start, end)
+    if len(onset_data) < 7:
+        typer.echo(f"Not enough nights for regularity in period '{label}' (needs 7).", err=True)
+        raise typer.Exit(1)
+
+    resolved_output = output or reports_dir() / "sleep_regularity" / f"{label}.html"
+
+    typer.echo(f"Found {len(data)} nights of sleep data for {label}.")
+    figure = figures.sleep_regularity_figure(
+        rolling_sd_minutes(onset_data), rolling_sd_minutes(data)
+    )
+    _save_figure(figure, resolved_output, label, start, end)
+
+
 def report_step_count(
     xml_path: Optional[Path] = typer.Option(
         None,
@@ -1402,6 +1479,72 @@ def report_vo2max(
 
     typer.echo(f"Found {len(data)} days of VO2 max data for {label}.")
     _save_figure(figures.vo2max_figure(data, unit=unit), resolved_output, label, start, end)
+
+
+def report_daylight(
+    xml_path: Optional[Path] = typer.Option(
+        None,
+        "--xml",
+        help="Path to Apple Health export.xml (default: $EGON_APPLE_HEALTH_XML)",
+    ),
+    period: str = typer.Option(
+        "all-time",
+        "--period",
+        help="Time period relative to today: week, month, quarter, year, all-time",
+    ),
+    for_period: Optional[str] = typer.Option(
+        None,
+        "--for",
+        help="Specific period value, e.g. 2025, 2026-02, 2026-W14, 2026-Q2. Overrides --period.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output HTML path (default: <reports dir>/daylight/<period-label>.html)",
+    ),
+) -> None:
+    """Plot daily time in daylight (Apple Watch) from an Apple Health export."""
+    resolved_xml = _resolve_apple_health_xml(xml_path)
+    if not resolved_xml:
+        typer.echo(
+            "Error: no Apple Health export found.\n"
+            "Set EGON_APPLE_HEALTH_XML in .env or pass --xml.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if not resolved_xml.is_file():
+        typer.echo(f"Error: file not found: {resolved_xml}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        if for_period:
+            start, end, label = parse_period_value(for_period)
+        else:
+            _ref = last_complete_period(period, date_type.today())
+            start, end = period_bounds(period, _ref)
+            label = period_label(period, _ref)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1)
+
+    records = _load_and_report(resolved_xml)
+
+    daylight_records = records.get("TimeInDaylight", [])
+    if not daylight_records:
+        typer.echo(
+            "Error: no TimeInDaylight records found in export (it needs an Apple Watch).", err=True
+        )
+        raise typer.Exit(1)
+
+    data = filter_by_date(daily_sum(daylight_records), start, end)
+    if not data:
+        typer.echo(f"No daylight data found for period '{label}'.", err=True)
+        raise typer.Exit(1)
+
+    resolved_output = output or reports_dir() / "daylight" / f"{label}.html"
+
+    typer.echo(f"Found {len(data)} days of daylight data for {label}.")
+    _save_figure(figures.daylight_figure(data), resolved_output, label, start, end)
 
 
 def report_topics(
@@ -2117,6 +2260,8 @@ def report_all(
         ("sleep", lambda: report_sleep(xml_path=xml_path, **_hkw)),
         ("step-count", lambda: report_step_count(xml_path=xml_path, **_hkw)),
         ("vo2max", lambda: report_vo2max(xml_path=xml_path, **_hkw)),
+        ("daylight", lambda: report_daylight(xml_path=xml_path, **_hkw)),
+        ("sleep-regularity", lambda: report_sleep_regularity(xml_path=xml_path, **_hkw)),
         ("exercise", lambda: report_exercise(xml_path=xml_path, **_hkw)),
         (
             "correlations",
@@ -2230,6 +2375,8 @@ _SINGLE_REPORTS = {
     "sleep": report_sleep,
     "step-count": report_step_count,
     "vo2max": report_vo2max,
+    "daylight": report_daylight,
+    "sleep-regularity": report_sleep_regularity,
     "topics": report_topics,
     "exercise": report_exercise,
     "emotion": report_emotion,
