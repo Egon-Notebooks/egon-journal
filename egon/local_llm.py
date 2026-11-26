@@ -11,6 +11,7 @@ Ollama must be installed and running:
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from egon.analytics.loader import JournalEntry
@@ -98,6 +99,7 @@ def ensure_model(model: str) -> None:
         _raise_connection_error(exc)
 
     if model in local_names:
+        _announce_loading(ollama, model)
         return
 
     print(f"Model '{model}' not found locally — pulling from Ollama library…")
@@ -117,6 +119,21 @@ def ensure_model(model: str) -> None:
     except Exception as exc:
         _raise_connection_error(exc)
     print()
+    _announce_loading(ollama, model)
+
+
+def _announce_loading(ollama, model: str) -> None:
+    """Say so when *model* still has to be loaded, so a slow first answer is not a hang."""
+    try:
+        loaded = {m.model for m in ollama.ps().models}
+    except Exception:
+        return  # not worth failing over; the request itself will report real problems
+    if model not in loaded:
+        print(
+            f"Loading {model} into memory. On computers without a supported graphics chip "
+            "this can take a few minutes the first time.",
+            file=sys.stderr,
+        )
 
 
 def build_context(entries: list[JournalEntry]) -> str:
@@ -159,8 +176,20 @@ def generate_journal_prompt(entries: list[JournalEntry], model: str) -> str:
     )
 
 
+LOAD_TIMEOUT_HELP = (
+    "Ollama took too long to load the model and gave up. It usually works on a second try, "
+    "while the model is still in memory."
+    "\nTo give it more time and keep the model loaded, run this once and restart the Ollama app:"
+    "\n  launchctl setenv OLLAMA_LOAD_TIMEOUT 15m"
+    "\n  launchctl setenv OLLAMA_KEEP_ALIVE 30m"
+    '\nOr choose a smaller model in egon.toml, e.g. model = "llama3.2:3b" under [local_llm].'
+)
+
+
 def _raise_connection_error(exc: Exception) -> None:
     msg = str(exc).lower()
+    if "timed out" in msg and ("llama-server" in msg or "load" in msg or "start" in msg):
+        raise RuntimeError(LOAD_TIMEOUT_HELP) from exc
     if any(k in msg for k in ("connection", "refused", "connect", "socket")):
         raise RuntimeError(
             "Cannot connect to Ollama. Is the Ollama app running?"
