@@ -147,6 +147,19 @@ You need **both**: the Ollama app runs the language model on your machine, and t
 A plain `uv sync` removes optional extras again, so keep using `uv sync --extra local-llm`
 (add `--extra limbic` / `--extra topics` if you use those too).
 
+**If the first answer is slow or times out.** On a computer without a graphics chip that
+Ollama can use (for example an Intel Mac), loading a 7B model into memory can take several
+minutes, and Ollama gives up after 5. Egon says when a model still has to be loaded. To give
+Ollama more time and keep the model in memory between commands, run this once and restart
+the Ollama app:
+
+```bash
+launchctl setenv OLLAMA_LOAD_TIMEOUT 15m
+launchctl setenv OLLAMA_KEEP_ALIVE 30m
+```
+
+A smaller model such as `llama3.2:3b` loads faster but follows instructions less well.
+
 ### Usage
 
 ```bash

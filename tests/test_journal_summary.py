@@ -142,3 +142,33 @@ def test_demo_summary_from_a_cloud_model_says_so():
     note = dict(report.sections[0].notes)["Journal summary (AI-generated)"]
     assert "cloud model claude-opus-5-5" in note
     assert "no data left this device" not in note
+
+
+def test_ollama_load_timeout_explains_what_to_do():
+    import pytest
+
+    from egon.local_llm import LOAD_TIMEOUT_HELP, _raise_connection_error
+
+    with pytest.raises(RuntimeError) as info:
+        _raise_connection_error(
+            Exception("timed out waiting for llama-server to start - (status code: 500)")
+        )
+    assert str(info.value) == LOAD_TIMEOUT_HELP
+    assert "OLLAMA_LOAD_TIMEOUT" in str(info.value)
+    assert str(info.value).splitlines()[0].startswith("Ollama took too long")
+
+
+def test_loading_notice_only_when_the_model_is_not_in_memory(capsys):
+    from types import SimpleNamespace
+
+    from egon.local_llm import _announce_loading
+
+    def fake(loaded):
+        return SimpleNamespace(
+            ps=lambda: SimpleNamespace(models=[SimpleNamespace(model=m) for m in loaded])
+        )
+
+    _announce_loading(fake(["qwen2.5:7b"]), "qwen2.5:7b")
+    assert capsys.readouterr().err == ""
+    _announce_loading(fake([]), "qwen2.5:7b")
+    assert "Loading qwen2.5:7b" in capsys.readouterr().err
