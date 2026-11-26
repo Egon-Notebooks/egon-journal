@@ -61,26 +61,9 @@ cp .env.example .env
 
 ## Writing journal entries
 
-```bash
-# Create an entry for today (written to EGON_JOURNAL_DIR or ./generated/)
-uv run egon new-entry
-
-# Backdate an entry
-uv run egon new-entry --date 2026-04-01
-
-# Create and open immediately in $EDITOR
-uv run egon new-entry --open
-
-# Write to a specific directory
-uv run egon new-entry --output ~/my-egon-graph/journal
-```
-
-`new-entry` never overwrites an entry that already exists. If your graph is in Logseq, set
-`app = "logseq"` under `[graph]` in `egon.toml` and point `EGON_JOURNAL_DIR` at the graph's
-`journals/` folder: entries are then written as Logseq's own daily pages
-(`2026_11_11.md`), and reports read them like any other entry.
-
-Files are named `Journal — YYYY-MM-DD.md`.
+Write your journal entries in Obsidian or Logseq, using their daily notes. Point
+`EGON_JOURNAL_DIR` at the folder where they are saved. Egon reads entries named by date,
+such as Obsidian's `2026-11-26.md`, Logseq's `2026_11_26.md` or `Journal — 2026-11-26.md`.
 
 ---
 
@@ -333,7 +316,7 @@ Set these in `.env` (copy from `.env.example`):
 
 | Variable                          | Purpose                                                    |
 |-----------------------------------|------------------------------------------------------------|
-| `EGON_JOURNAL_DIR`                | Where `new-entry` writes and reports read journal entries  |
+| `EGON_JOURNAL_DIR`                | Where reports and prompts read your journal entries        |
 | `EGON_SUMMARIES_DIR`              | Where `new-summary` writes                                 |
 | `EGON_GRAPH_DIR`                  | Root of your assembled graph (used by `index`)             |
 | `EGON_APPLE_HEALTH_XML`           | Apple Health `export.xml`, used by health reports          |

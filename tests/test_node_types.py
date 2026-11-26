@@ -6,11 +6,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-from egon.node_types.journal_entry import (
-    generate_journal_entry,
-    journal_entry_filename,
-    make_journal_entry,
-)
 from egon.node_types.prompt import generate_prompt, make_prompt_node, prompt_filename
 from egon.node_types.summary import (
     generate_monthly_summary,
@@ -36,47 +31,6 @@ def _parse(content: str) -> tuple[dict, str]:
     parts = content.split("---", 2)
     fm = yaml.safe_load(parts[1])
     return fm, parts[2]
-
-
-# ---------------------------------------------------------------------------
-# Journal entry
-# ---------------------------------------------------------------------------
-
-
-class TestJournalEntry:
-    REF = date(2026, 4, 3)
-
-    def test_filename_uses_em_dash(self):
-        assert journal_entry_filename(self.REF) == f"Journal {EM} 2026-04-03.md"
-
-    def test_frontmatter_fields(self):
-        fm, _ = make_journal_entry(self.REF)
-        assert fm["type"] == "journal"
-        assert fm["title"] == f"Journal {EM} 2026-04-03"
-        assert fm["egon_version"] == "1"
-        assert fm["tags"] == []
-        assert "mood" in fm
-        assert "energy" in fm
-
-    def test_frontmatter_valid(self):
-        fm, _ = make_journal_entry(self.REF)
-        # Convert date object to string for validation (as yaml.safe_load would)
-        fm_copy = {**fm, "date": str(fm["date"])}
-        assert validate(fm_copy) == []
-
-    def test_generates_file(self, tmp_path):
-        path = generate_journal_entry(self.REF, tmp_path)
-        assert path.exists()
-        assert path.name == f"Journal {EM} 2026-04-03.md"
-        content = path.read_text()
-        fm, body = _parse(content)
-        assert fm["type"] == "journal"
-        assert "Write here" in body
-
-    def test_different_dates_produce_different_files(self, tmp_path):
-        p1 = generate_journal_entry(date(2026, 1, 1), tmp_path)
-        p2 = generate_journal_entry(date(2026, 1, 2), tmp_path)
-        assert p1 != p2
 
 
 # ---------------------------------------------------------------------------
@@ -254,25 +208,8 @@ class TestMonthlySummary:
         assert "2026-04" in path.name
 
 
-class TestLogseqJournalEntry:
+class TestLogseqJournalPages:
     REF = date(2026, 4, 3)
-
-    def test_written_as_logseq_journal_page(self, tmp_path):
-        from egon.node_types.journal_entry import generate_journal_entry
-
-        path = generate_journal_entry(self.REF, tmp_path, app="logseq")
-        assert path.name == "2026_04_03.md"
-        assert path.read_text().startswith("type:: journal\negon_version:: 1\n")
-
-    def test_never_overwrites_an_existing_entry(self, tmp_path):
-        from egon.node_types.journal_entry import generate_journal_entry
-
-        for app in ("obsidian", "logseq"):
-            path = generate_journal_entry(self.REF, tmp_path, app=app)
-            path.write_text("Something I wrote.")
-            with pytest.raises(FileExistsError):
-                generate_journal_entry(self.REF, tmp_path, app=app)
-            assert path.read_text() == "Something I wrote."
 
     def test_logseq_pages_load_as_entries_without_their_properties(self, tmp_path):
         from egon.analytics.loader import load_journal_entries
