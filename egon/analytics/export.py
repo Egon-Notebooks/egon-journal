@@ -10,7 +10,7 @@ import re
 
 from egon.analytics.loader import JournalEntry
 
-# The placeholder that `egon new-entry` writes into an empty entry.
+# The placeholder that early versions of egon-journal wrote into an empty entry.
 _PLACEHOLDER = "<!-- Write here. No required structure. -->"
 _HEADING = re.compile(r"^(#{1,6})(?=\s)")
 _FENCE = re.compile(r"^\s*(```|~~~)")

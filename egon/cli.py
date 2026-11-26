@@ -8,7 +8,6 @@ import contextlib
 import io
 import os
 import re
-import subprocess
 import sys
 import time
 from datetime import date as date_type
@@ -29,7 +28,7 @@ from egon.analytics.word_count import (
     period_label,
     word_counts_by_day,
 )
-from egon.config import load_graph_app, load_local_llm_config, reports_dir
+from egon.config import load_local_llm_config, reports_dir
 from egon.health.apple_health import (
     daily_mean,
     daily_sum,
@@ -46,7 +45,6 @@ from egon.health.sleep import (
 from egon.limbic.sentiment import sentiment_by_day
 from egon.linker import index_graph, inject_wikilinks, load_topics
 from egon.local_llm import DEFAULT_MODEL, check_hardware, ensure_model, generate_journal_prompt
-from egon.node_types.journal_entry import generate_journal_entry
 from egon.node_types.prompt import generate_prompts_from_dir
 from egon.node_types.summary import generate_monthly_summary, generate_weekly_summary
 from egon.report import figures
@@ -85,30 +83,6 @@ def _resolve_output(cli_output: Optional[Path], env_var: str) -> Path:
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
-
-
-@app.command()
-def new_entry(
-    date: Optional[str] = typer.Option(None, help="Entry date as YYYY-MM-DD (default: today)"),
-    open: bool = typer.Option(False, "--open", help="Open the file in $EDITOR after creating"),
-    output: Optional[Path] = typer.Option(None, help="Output directory"),
-) -> None:
-    """Create a journal entry for today (or a given date)."""
-    entry_date = date_type.fromisoformat(date) if date else date_type.today()
-    out_dir = _resolve_output(output, "EGON_JOURNAL_DIR")
-    try:
-        path = generate_journal_entry(entry_date, out_dir, load_graph_app())
-    except FileExistsError as exc:
-        typer.echo(f"Already exists, left unchanged: {exc}")
-        path = Path(str(exc))
-    except ValueError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(1)
-    else:
-        typer.echo(f"Created: {path}")
-    if open:
-        editor = os.environ.get("EDITOR", "nano")
-        subprocess.run([editor, str(path)])
 
 
 @app.command()
